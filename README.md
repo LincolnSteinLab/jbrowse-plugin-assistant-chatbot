@@ -1,4 +1,4 @@
-# jb-bot
+# jbrowse-config-assistant-bot
 
 A tool for querying your JBrowse configuration file.
 
