@@ -15,6 +15,9 @@ llama-index-readers-file = "^0.1.31"
 grpcio = "1.60.1"
 llama-index-multi-modal-llms-gemini = "^0.1.7"
 llama-index-llms-openai = "^0.1.27"
+flask = "^3.0.3"
+load-dotenv = "^0.1.0"
+flask-cors = "^5.0.0"
 
 
 [build-system]

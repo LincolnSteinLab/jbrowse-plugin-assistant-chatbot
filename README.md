@@ -10,22 +10,33 @@ A tool for querying your JBrowse configuration file.
 
 ## Usage
 
-### Interactively
+### Web Interface
 
 ```
-poetry run python bin/jb-bot.py -c my-config.json
+poetry shell
+flask --app jb-bot/util.py run
 ```
 
-### Non-interactively
+**Note**: It takes a few minutes for the bot to spin up
+
+### CLI
+
+#### Interactively
 
 ```
-poetry run python bin/jb-bot.py -p "What tracks do you have that show epigenetic modifications?" -c my-config.json
+poetry run python jb-bot/app.py -c my-config-directory
+```
+
+#### Non-interactively
+
+```
+poetry run python jb-bot/app.py -p "What tracks do you have that show epigenetic modifications?" -c my-config-directory
 ```
 
 ## Options
 
 ```
--c -config : your JBrowse configuration file.
+-c -config : directory to your JBrowse configuration file.
 -h -help   : print this help message and exit.
 -p -prompt : prompt query regarding your JBrowse config.json.
 ```
