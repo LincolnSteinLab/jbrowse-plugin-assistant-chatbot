@@ -12,25 +12,32 @@ A tool for querying your JBrowse configuration file.
 
 ### Web Interface
 
+In `/jb-bot`:
+
 ```
-poetry shell
-flask --app jb-bot/util.py run
+poetry run flask —app jb-bot/util.py run
 ```
 
-**Note**: It takes a few minutes for the bot to spin up
+**Note**: It may take few minutes for the bot to spin up
+
+Open another tab, in `/web-app`
+
+```
+yarn dev
+```
 
 ### CLI
 
 #### Interactively
 
 ```
-poetry run python jb-bot/app.py -c my-config-directory
+poetry run python jb-bot/app.py
 ```
 
 #### Non-interactively
 
 ```
-poetry run python jb-bot/app.py -p "What tracks do you have that show epigenetic modifications?" -c my-config-directory
+poetry run python jb-bot/app.py -p "What tracks do you have that show epigenetic modifications?"
 ```
 
 ## Options
@@ -38,6 +45,7 @@ poetry run python jb-bot/app.py -p "What tracks do you have that show epigenetic
 ```
 -c -config : directory to your JBrowse configuration file.
 -h -help   : print this help message and exit.
+-m -model  : specify the model you want to use, "openai" or "gemini"
 -p -prompt : prompt query regarding your JBrowse config.json.
 ```
 
@@ -45,9 +53,16 @@ poetry run python jb-bot/app.py -p "What tracks do you have that show epigenetic
 
 ### Environment variables
 
-- `GOOGLE_API_KEY`: API key to interface with [Google Gemini]() (required).
+- `GOOGLE_API_KEY`: API key to interface with [Google Gemini]().
+- `OPENAI_API_KEY`: API key to interface with [OpenAI]().
+- `CONFIG`: Path to configuration file(s) (may be remote location)
+- `HOST`: the host URL of your JBrowse instance (used for generating dynamic links)
+
+At least one language model specification is required.
 
 Configure your environment variables with the `POETRY_` alias:
+
+e.g.
 
 ```
 export POETRY_GOOGLE_API_KEY=your_google_api_key
@@ -65,7 +80,9 @@ and install the poetry plugin `poetry-plugin-dotenv`:
 pipx inject poetry poetry-plugin-dotenv
 ```
 
-## Web UI
+## Future enhancements
+
+- compatibility with custom models
 
 ## Acknowledgements
 

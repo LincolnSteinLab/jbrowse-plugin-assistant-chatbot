@@ -1,7 +1,10 @@
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.readers.remote import RemoteReader
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.embeddings.gemini import GeminiEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.gemini import Gemini
+from llama_index.llms.openai import OpenAI
 
 class ChatBot:
     SYS_PROMPT="""
@@ -39,16 +42,27 @@ class ChatBot:
             - only respond to questions related to JBrowse 2 or the user's provided
             configuration files.
     """
-    def __init__(self, config, host, is_interactive):
+    def __init__(self, config, host, model, is_interactive):
         self.config = config
         self.host = host
+        self.model = model
         self.is_interactive = is_interactive
-        self.engine = self.setup(config)
+        self.engine = self.setup(config, model)
 
-    def setup(self, config):
-        documents = SimpleDirectoryReader(config).load_data()
-        Settings.embed_model = GeminiEmbedding(model_name="models/embedding-001")
-        Settings.llm = Gemini(model="models/gemini-1.5-flash", request_timeout=360.0)
+    def setup(self, config, model):
+        try:
+            documents = RemoteReader().load_data(url=config)
+        except ValueError:
+            documents = SimpleDirectoryReader(config).load_data()
+        except:
+            raise ValueError("Ensure your CONFIG field is a valid URL or valid directory.")
+
+        if (model == 'gemini'):
+            Settings.embed_model = GeminiEmbedding(model_name="models/embedding-001")
+            Settings.llm = Gemini(model="models/gemini-1.5-flash", request_timeout=360.0)
+        if (model == 'openai'):
+            Settings.embed_model = OpenAIEmbedding()
+            Settings.llm = OpenAI()
 
         index = VectorStoreIndex.from_documents(documents)
 

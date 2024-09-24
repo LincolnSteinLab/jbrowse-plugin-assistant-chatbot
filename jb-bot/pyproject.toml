@@ -8,16 +8,18 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-llama-index-core = "^0.10.58"
-llama-index-embeddings-gemini = "^0.1.8"
-llama-index-llms-gemini = "^0.1.11"
-llama-index-readers-file = "^0.1.31"
+llama-index-core = "^0.11.10"
+llama-index-embeddings-gemini = "^0.2.0"
+llama-index-llms-gemini = "^0.3.5"
+llama-index-readers-file = "^0.2.2"
 grpcio = "1.60.1"
-llama-index-multi-modal-llms-gemini = "^0.1.7"
-llama-index-llms-openai = "^0.1.27"
+llama-index-multi-modal-llms-gemini = "^0.3.1"
+llama-index-llms-openai = "^0.2.9"
 flask = "^3.0.3"
-load-dotenv = "^0.1.0"
 flask-cors = "^5.0.0"
+python-dotenv = "^1.0.1"
+llama-index-embeddings-openai = "^0.2.5"
+llama-index-readers-remote = "^0.2.0"
 
 
 [build-system]

@@ -11,16 +11,22 @@ app = Flask(__name__)
 load_dotenv()
 
 app.config['GOOGLE_API_KEY'] = os.environ.get('GOOGLE_API_KEY')
+app.config['OPENAI_API_KEY'] = os.environ.get('OPENAI_API_KEY')
 app.config['CONFIG'] = os.environ.get('CONFIG')
 app.config['HOST'] = os.environ.get('HOST')
 
 print('Initializing ChatBot...')
-llm = ChatBot(app.config['CONFIG'], app.config['HOST'], True)
+if (not app.config['OPENAI_API_KEY'] == ''):
+  app.config['MODEL'] = 'openai'
+  llm = ChatBot(app.config['CONFIG'], app.config['HOST'], 'openai', True)
+if (not app.config['GOOGLE_API_KEY'] == ''):
+  app.config['MODEL'] = 'gemini'
+  llm = ChatBot(app.config['CONFIG'], app.config['HOST'], 'gemini', True)
 
 @app.route('/')
 def index():
-  print('Chatbot is running!')
-  # maybe have some sort of log on this page to show requests ?
+  print(f'Chatbot is running!\nRunning {app.config['MODEL']} model\nUsing {app.config['CONFIG']} config\nHost found at: {app.config['HOST']}')
+  # TODO: add a log of each request sent
   return 'Chatbot is running!'
 
 @app.route('/api/message', methods=['POST', 'OPTIONS'])
