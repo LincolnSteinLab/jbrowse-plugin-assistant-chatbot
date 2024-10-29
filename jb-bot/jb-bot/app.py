@@ -1,8 +1,12 @@
 import os
 import argparse
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.markdown import Markdown
 
-from ChatBot import ChatBot
+from LangChainChatBot import ChatBot
+
+console = Console()
 
 class Config:
   def __init__(self, model, config='./', host='host/jbrowse'):
@@ -45,17 +49,20 @@ def main():
     interactive(llm)
 
 def non_interactive(llm, prompt):
-  print(f'\nResponse: {llm.run(prompt)}')
+  mdprint(f'\nResponse: {llm.run(prompt)}')
+
+def mdprint(text):
+  console.print(Markdown(text))
 
 def interactive(llm):
   open_chat = True
-  print('This interactive JBrowse assistant can help you navigate your configuration file. Enter a query relating to your config.json, or enter "q" to exit.')
+  mdprint('This interactive JBrowse assistant can help you navigate your configuration file. Enter a query relating to your config.json, or enter "q" to exit.')
   while open_chat is True:
     query = input('\nQuery: ')
     if (query.lower().rstrip() == 'q'):
       open_chat = False
     else:
-      print(f'\nResponse: \n\n{llm.run(query)}')
+      mdprint(f'\nResponse: \n\n{llm.run(query)}')
 
 if __name__ == "__main__":
   main()

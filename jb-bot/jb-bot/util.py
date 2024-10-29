@@ -1,3 +1,7 @@
+"""
+**NOTE**: The tool LangServe https://python.langchain.com/docs/langserve/ may be more appropriate for this component of the bot solution. The tool is currently built with Flask.
+"""
+
 import os
 from flask import request, jsonify
 from dotenv import load_dotenv
