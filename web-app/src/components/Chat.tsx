@@ -10,8 +10,8 @@ export default function Chat() {
       <Card
         variant="outlined"
         sx={{
-          width: 500,
-          height: 650,
+          width: '75%',
+          height: '100%',
           overflow: 'hidden',
           overflowY: 'scroll',
         }}

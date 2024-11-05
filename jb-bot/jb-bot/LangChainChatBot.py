@@ -99,7 +99,7 @@ class ChatBot:
                         {{session_spec}} is to be replaced with the session spec you crafted in the step prior
 
                         Before presenting the link to the user, ensure all special characters are encoded.
-                        Print the URL plainly so the user can see where it is linking to.
+                        Print the encoded URL plainly so the user can see where it is linking to. Also provide the user with a hyperlink.
 
             B. If the user is asking a general question about JBrowse 2 usage and specification, answer using the following steps:
                 1. Using your knowledge about the JBrowse documentation, find the answer to the user's question within the documentation.

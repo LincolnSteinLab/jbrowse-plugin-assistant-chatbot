@@ -10,6 +10,7 @@ import { MessagesContext } from '@/context/messages'
 
 export default function ChatInput() {
   const [input, setInput] = useState<string>('')
+  const [isDisabled, setIsDisabled] = useState(false)
   const { messages, addMessage } = useContext(MessagesContext)
 
   const sendMessage = async (userInput: string) => {
@@ -48,10 +49,9 @@ export default function ChatInput() {
         text: finalText.replace(/['"]+/g, ''),
       }
 
+      setIsDisabled(false)
       addMessage(responseMessage)
     }
-
-    setInput('')
   }
 
   return (
@@ -59,6 +59,7 @@ export default function ChatInput() {
       value={input}
       label="Write a message..."
       variant="standard"
+      disabled={isDisabled}
       sx={{
         width: '100%',
       }}
@@ -66,6 +67,8 @@ export default function ChatInput() {
       onKeyDown={e => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault()
+          setInput('')
+          setIsDisabled(true)
           sendMessage(input)
         }
       }}
@@ -73,7 +76,11 @@ export default function ChatInput() {
         input: {
           endAdornment: (
             <InputAdornment position="end">
-              <IconButton color="primary" onClick={() => sendMessage(input)}>
+              <IconButton
+                disabled={isDisabled}
+                color="primary"
+                onClick={() => sendMessage(input)}
+              >
                 <SendIcon />
               </IconButton>
             </InputAdornment>

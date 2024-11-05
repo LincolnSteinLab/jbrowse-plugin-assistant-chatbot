@@ -1,4 +1,5 @@
 import { Box, Grid2, Typography } from '@mui/material'
+import Markdown from 'react-markdown'
 
 import { IChatMessage } from '../util'
 
@@ -45,18 +46,19 @@ function BotMessage({ message }: { message: string }) {
           justifyContent: 'flex-start',
         }}
       >
-        <Typography
-          variant="body2"
+        <Box
           sx={{
+            display: 'flex',
+            flexDirection: 'column',
             padding: 1,
             borderRadius: 1,
             bgcolor: '#e5e7eb',
-            wordBreak: 'break-all',
             whiteSpace: 'normal',
+            width: '-webkit-fill-available',
           }}
         >
-          {message}
-        </Typography>
+          <Markdown className="markdown">{message}</Markdown>
+        </Box>
       </Box>
     </Grid2>
   )

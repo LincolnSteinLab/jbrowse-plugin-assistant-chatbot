@@ -25,3 +25,35 @@ body {
     text-wrap: balance;
   }
 }
+
+.markdown ul {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  list-style: disc outside none;
+}
+
+.markdown ul li {
+  margin-left: 2em;
+  display: list-item;
+  text-align: -webkit-match-parent;
+}
+
+.markdown p {
+  font-size: 14px;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+.markdown pre {
+  font-size: 14px;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+.markdown a {
+  color: blue;
+}
+
+.markdown code {
+  word-wrap: break-word;
+}
