@@ -1,4 +1,5 @@
-from typing import Sequence
+
+from typing import Sequence, Literal
 from typing_extensions import Annotated, TypedDict
 
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -6,21 +7,29 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.document_loaders import JSONLoader, WebBaseLoader
 from langchain_community.document_loaders.merge import MergedDataLoader
 from langchain_community.vectorstores import Chroma
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, AIMessageChunk
+from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
 
+from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import START, StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
+from rich.console import Console
+from rich.markdown import Markdown
 class State(TypedDict):
     input: str
     chat_history: Annotated[Sequence[BaseMessage], add_messages]
     context: str
     answer: str
 
+def mdprint(text):
+  Console.print(Markdown(text))
 class ChatBot:
     CXT_PROMPT="""
             Given a chat history and the latest user question which might reference context in the chat history,
@@ -56,7 +65,7 @@ class ChatBot:
                     {{
                         "views": [
                             {{
-                            "type": {{view_type}},
+                            "type": "{{view_type}}",
                             "tracks": [{{track_ids}}], //  (self vs self alignment)
                             "views": [
                                 {{ "loc": "{{loc}}", "assembly": "{{assembly_1}}" }},
@@ -86,7 +95,7 @@ class ChatBot:
                         {{assembly}} is to be replaced with the assemblyName associated with the tracks of interest; note that if the user has
                         asked for synteny, they might have {{assembly_1}} and {{assembly_2}} that could be parsed out of their query or their tracks
                         {{track_ids}} is to be replaced with a comma delimited list of the trackId's relating to the
-                        tracks resulting from thier query
+                        tracks resulting from thier query, each surrounded by double quotes "
                         {{view_type}} should default to LinearGenomeView, but can be one of the following depending on what the
                         user has asked of you: LinearGenomeView, CircularView, DotplotView, SpreadsheetView, SVInspectorView, or LinearSyntenyView
                         {{loc}} to the be replaced with the loc determined either from the user or your own determination in the step prior
@@ -120,6 +129,21 @@ class ChatBot:
 
         self.engine = self.setup(config, model)
 
+    @tool
+    def query(self, query: str):
+        """Call query."""
+        return [query if True else ""]
+
+    def should_continue(self, state: State):
+        messages = state["chat_history"]
+        last_message = messages[-1]
+        # If there is no function call, then we finish
+        if not last_message.tool_calls:
+            return END
+        # Otherwise if there is, we continue
+        else:
+            return "tools"
+
     def setup(self, config, model):
         tracks_loader = JSONLoader(file_path=config, jq_schema=".tracks[]", text_content=False)
 
@@ -127,12 +151,15 @@ class ChatBot:
 
         merged_docs = MergedDataLoader([tracks_loader, jbrowse_loader]).load()
 
+        callbacks = [StreamingStdOutCallbackHandler()]
+
         if (model == 'gemini'):
             embedding = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
             llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.0, seed=45, max_tokens=None, timeout=None)
         if (model == 'openai'):
             embedding = OpenAIEmbeddings()
-            llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.0, seed=45, max_tokens=None, timeout=None)
+            llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.0, seed=45, max_tokens=None, timeout=None, callbacks=callbacks, streaming=True)
+            # llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.0, seed=45, max_tokens=None, timeout=None)
 
         self.llm = llm
         vector_store = Chroma.from_documents(documents=merged_docs, embedding=embedding)
@@ -163,16 +190,22 @@ class ChatBot:
 
         rag_chain = create_retrieval_chain(history_aware_retriever, docs_chain)
 
+        tools = [self.query]
+        tool_node = ToolNode(tools)
+
         # LangGraph for history maintenence
         self.workflow.add_edge(START, "model")
         self.workflow.add_node("model", self.call_model)
+        self.workflow.add_node("tools", tool_node)
+        self.workflow.add_conditional_edges("model", self.should_continue, ["tools", END])
+        self.workflow.add_edge("tools", "model")
         # init app
         self.app = self.workflow.compile(checkpointer=self.memory)
 
         return rag_chain
 
-    def call_model(self, state: State):
-        response = self.engine.invoke(state)
+    async def call_model(self, state: State, config: RunnableConfig):
+        response = await self.engine.ainvoke(state, config)
         return {
             "chat_history": [
                 HumanMessage(state["input"]),
@@ -193,5 +226,19 @@ class ChatBot:
 
     def run(self, query):
         query = query + self.set_variables()
-        output = self.app.invoke( { "input": query }, config=self.CONFIG )
-        return output["answer"]
+        return self.stream(query)
+
+    async def stream(self, query):
+        first = True
+        async for msg in self.app.astream( { "input": query }, config=self.CONFIG, stream_mode="messages"):
+            if isinstance(msg, AIMessageChunk):
+                if first:
+                    gathered = msg
+                    first = False
+                else:
+                    gathered = gathered + msg
+
+                if msg.tool_call_chunks:
+                    mdprint(gathered.tool_calls)
+                    # yield str(gathered.tool_calls)
+                    yield gathered.tool_calls

@@ -3,10 +3,11 @@
 """
 
 import os
-from flask import request, jsonify
+import asyncio
+
+from flask import Flask, request, Response, stream_with_context
 from dotenv import load_dotenv
 from flask_cors import cross_origin
-from flask import Flask
 
 from .LangChainChatBot import ChatBot
 
@@ -27,6 +28,10 @@ elif (not app.config['GOOGLE_API_KEY'] == ''):
   app.config['MODEL'] = 'gemini'
   llm = ChatBot(app.config['CONFIG'], app.config['HOST'], 'gemini', True)
 
+def generate_answer_stream(query):
+  """Streams the answer to the route"""
+  yield llm.run(query)
+
 @app.route('/')
 def index():
   # TODO: add a log of each request sent
@@ -36,7 +41,10 @@ def index():
 @cross_origin()
 def message():
   data = request.get_json()
-  return str(llm.run(data['message']['text'])).rstrip('\n')
+  user_message = data['message']['text']
+  return Response(stream_with_context(generate_answer_stream(user_message)), mimetype="text/event-stream")
+  # return str(llm.run(user_message)).rstrip('\n')
 
 if __name__ == '__main__':
-  app.run()
+  loop = asyncio.new_event_loop()
+  loop.run_until_complete(app.run(debug=True))
