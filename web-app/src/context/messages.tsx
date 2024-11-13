@@ -13,9 +13,11 @@ const defaultValue = [
 export const MessagesContext = createContext<{
   messages: IChatMessage[]
   addMessage: (message: IChatMessage) => void
+  removeMessage: (id: string) => void
 }>({
   messages: [],
   addMessage: () => {},
+  removeMessage: () => {},
 })
 
 export function MessagesProvider({ children }: { children: React.ReactNode }) {
@@ -25,8 +27,12 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, message])
   }
 
+  const removeMessage = (id: string) => {
+    setMessages(prev => prev.filter(message => message.id !== id))
+  }
+
   return (
-    <MessagesContext.Provider value={{ messages, addMessage }}>
+    <MessagesContext.Provider value={{ messages, addMessage, removeMessage }}>
       {children}
     </MessagesContext.Provider>
   )

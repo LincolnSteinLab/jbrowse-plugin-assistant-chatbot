@@ -86,7 +86,7 @@ class ChatBot:
                         {{assembly}} is to be replaced with the assemblyName associated with the tracks of interest; note that if the user has
                         asked for synteny, they might have {{assembly_1}} and {{assembly_2}} that could be parsed out of their query or their tracks
                         {{track_ids}} is to be replaced with a comma delimited list of the trackId's relating to the
-                        tracks resulting from thier query
+                        tracks resulting from their query
                         {{view_type}} should default to LinearGenomeView, but can be one of the following depending on what the
                         user has asked of you: LinearGenomeView, CircularView, DotplotView, SpreadsheetView, SVInspectorView, or LinearSyntenyView
                         {{loc}} to the be replaced with the loc determined either from the user or your own determination in the step prior

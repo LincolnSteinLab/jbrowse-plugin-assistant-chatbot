@@ -8,10 +8,16 @@ import SendIcon from '@mui/icons-material/Send'
 import { IChatMessage } from '../util'
 import { MessagesContext } from '@/context/messages'
 
+const loadingMessage: IChatMessage = {
+  id: 'loadingMessage',
+  isUserMessage: false,
+  text: '',
+}
+
 export default function ChatInput() {
   const [input, setInput] = useState<string>('')
   const [isDisabled, setIsDisabled] = useState(false)
-  const { messages, addMessage } = useContext(MessagesContext)
+  const { messages, addMessage, removeMessage } = useContext(MessagesContext)
 
   const sendMessage = async (userInput: string) => {
     const message: IChatMessage = {
@@ -21,6 +27,8 @@ export default function ChatInput() {
     }
 
     addMessage(message)
+
+    addMessage(loadingMessage)
 
     const response = await fetch('http://127.0.0.1:5000/api/message', {
       method: 'POST',
@@ -48,6 +56,8 @@ export default function ChatInput() {
         isUserMessage: false,
         text: finalText.replace(/['"]+/g, ''),
       }
+
+      removeMessage('loadingMessage')
 
       setIsDisabled(false)
       addMessage(responseMessage)

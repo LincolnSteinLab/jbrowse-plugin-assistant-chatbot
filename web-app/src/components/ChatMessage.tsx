@@ -1,4 +1,4 @@
-import { Box, Grid2, Typography } from '@mui/material'
+import { Box, Grid2, Typography, CircularProgress } from '@mui/material'
 import Markdown from 'react-markdown'
 
 import { IChatMessage } from '../util'
@@ -27,6 +27,7 @@ export default function ChatMessage({
               return (
                 <BotMessage
                   key={`bot-message-${message.id}`}
+                  id={`${message.id}`}
                   message={message.text}
                 />
               )
@@ -37,7 +38,7 @@ export default function ChatMessage({
   )
 }
 
-function BotMessage({ message }: { message: string }) {
+function BotMessage({ id, message }: { id: string; message: string }) {
   return (
     <Grid2 size={8}>
       <Box
@@ -57,7 +58,11 @@ function BotMessage({ message }: { message: string }) {
             width: '-webkit-fill-available',
           }}
         >
-          <Markdown className="markdown">{message}</Markdown>
+          {id === 'loadingMessage' ? (
+            <CircularProgress />
+          ) : (
+            <Markdown className="markdown">{message}</Markdown>
+          )}
         </Box>
       </Box>
     </Grid2>

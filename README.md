@@ -22,7 +22,7 @@ poetry install
 In `/web-app`:
 
 ```
-yarn start
+yarn dev
 ```
 
 Note that you must have keys configured for your language model of choice for the application to work. See [Environment Variables](#environment-variables) for details.
@@ -34,7 +34,7 @@ Note that you must have keys configured for your language model of choice for th
 In `/jb-bot`:
 
 ```
-poetry run flask —app jb-bot/util.py run
+poetry run flask —-app jb-bot/util.py run
 ```
 
 **Note**: It may take few minutes for the bot to spin up
