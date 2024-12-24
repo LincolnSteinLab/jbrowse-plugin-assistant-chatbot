@@ -8,8 +8,8 @@ import {
   stateModel as helloViewStateModel,
 } from './HelloView'
 
-export default class TemplatePlugin extends Plugin {
-  name = 'TemplatePlugin'
+export default class ConfigAssistantPlugin extends Plugin {
+  name = 'ConfigAssistantPlugin'
   version = version
 
   install(pluginManager: PluginManager) {
