@@ -1,5 +1,6 @@
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
+import css from 'rollup-plugin-import-css'
 
 function stringToBoolean(string) {
   if (string === undefined) {
@@ -19,9 +20,23 @@ const includeCJS = stringToBoolean(process.env.JB_CJS)
 const includeESMBundle = stringToBoolean(process.env.JB_ESM_BUNDLE)
 const includeNPM = stringToBoolean(process.env.JB_NPM)
 
-export default createRollupConfig(globals.default, {
+const configs = createRollupConfig(globals.default, {
   includeUMD,
   includeCJS,
   includeESMBundle,
   includeNPM,
 })
+
+configs.forEach(config => {
+  config.onwarn = (warning, warn) => {
+    if (warning.message.includes('"use client"')) {
+      return
+    }
+    warn(warning)
+  }
+  config.plugins.push(
+    css()
+  )
+})
+
+export default configs

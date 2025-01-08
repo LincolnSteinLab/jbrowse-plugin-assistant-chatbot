@@ -1,5 +1,3 @@
-![Integration](git+https://github.com/LincolnSteinLab/jbrowse-config-assistant-bot/workflows/Integration/badge.svg?branch=main)
-
 # jbrowse-plugin-config-assistant
 
 > Template to quickly start a new JBrowse plugin

@@ -4,5 +4,63 @@
       "name": "ConfigAssistant",
       "url": "http://localhost:9000/dist/jbrowse-plugin-config-assistant.umd.development.js"
     }
+  ],
+  "assemblies": [
+    {
+      "name": "hg38",
+      "aliases": ["GRCh38"],
+      "sequence": {
+        "type": "ReferenceSequenceTrack",
+        "trackId": "P6R5xbRqRr",
+        "adapter": {
+          "type": "BgzipFastaAdapter",
+          "fastaLocation": {
+            "uri": "https://jbrowse.org/genomes/GRCh38/fasta/hg38.prefix.fa.gz",
+            "locationType": "UriLocation"
+          },
+          "faiLocation": {
+            "uri": "https://jbrowse.org/genomes/GRCh38/fasta/hg38.prefix.fa.gz.fai",
+            "locationType": "UriLocation"
+          },
+          "gziLocation": {
+            "uri": "https://jbrowse.org/genomes/GRCh38/fasta/hg38.prefix.fa.gz.gzi",
+            "locationType": "UriLocation"
+          }
+        }
+      },
+      "refNameAliases": {
+        "adapter": {
+          "type": "RefNameAliasAdapter",
+          "location": {
+            "uri": "https://jbrowse.org/genomes/GRCh38/hg38_aliases.txt",
+            "locationType": "UriLocation"
+          }
+        }
+      }
+    }
+  ],
+  "tracks": [
+    {
+      "type": "VariantTrack",
+      "trackId": "demo_vcf",
+      "name": "demo_vcf",
+      "assemblyNames": ["hg38"],
+      "category": ["Annotation"],
+      "adapter": {
+        "type": "VcfAdapter",
+        "vcfLocation": {
+          "locationType": "UriLocation",
+          "uri": "https://s3.amazonaws.com/jbrowse.org/genomes/hg19/skbr3/reads_lr_skbr3.fa_ngmlr-0.2.3_mapped.bam.sniffles1kb_auto_l8_s5_noalt.new.vcf"
+        }
+      },
+      "displays": [
+        {
+          "type": "ChordVariantDisplay",
+          "displayId": "demo_ch_v_disp",
+          "onChordClick": "jexl:openWidgetOnChordClick(feature, track, pluginManager)",
+          "renderer": { "type": "StructuralVariantChordRenderer" }
+        }
+      ]
+    }
   ]
 }

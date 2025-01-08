@@ -63,7 +63,6 @@
     "@jbrowse/cli": "^2.6.1",
     "@jbrowse/core": "^2.6.1",
     "@jbrowse/development-tools": "^2.1.1",
-    "@mui/material": "^5.10.5",
     "@mui/system": "^5.10.5",
     "@mui/x-data-grid": "^7.6.1",
     "@schemastore/package": "^0.0.10",
@@ -95,18 +94,30 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rimraf": "^5.0.1",
-    "rollup": "^3.0.0",
+    "rollup-plugin-import-css": "^3.5.8",
     "rxjs": "^7.8.1",
     "serve": "^14.2.0",
     "shx": "^0.3.3",
     "start-server-and-test": "^2.0.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.3.0",
-    "tss-react": "^4.8.6",
-    "typescript": "^5.3.3"
+    "tss-react": "^4.8.6"
+  },
+  "overrides": {
+    "@jbrowse/development-tools": {
+      "@mui/material": "^6.0.0",
+      "rollup": "^3.0.0",
+      "typescript": "^5.3.3"
+    }
   },
   "peerDependencies": {
     "@jbrowse/core": "^2.0.0"
+  },
+  "dependencies": {
+    "@assistant-ui/react": "^0.7.33",
+    "@langchain/core": "^0.3.27",
+    "@langchain/langgraph": "^0.2.39",
+    "styled-components": "^6.1.14"
   },
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",
