@@ -27,9 +27,20 @@ const configs = createRollupConfig(globals.default, {
   includeNPM,
 })
 
+const ignoreWarningCodes = [
+  'MODULE_LEVEL_DIRECTIVE',  // removes 'use client' directives for bundling
+  'THIS_IS_UNDEFINED',  // replaces top-level `this` with `undefined`
+]
+const ignoreWarningPrefixes = [
+  'Circular dependency: node_modules/',  // 3rd party circulars not our problem
+]
+
 configs.forEach(config => {
   config.onwarn = (warning, warn) => {
-    if (warning.message.includes('"use client"')) {
+    if (
+      ignoreWarningCodes.includes(warning.code) ||
+      ignoreWarningPrefixes.some(prefix => warning.message.startsWith(prefix))
+    ) {
       return
     }
     warn(warning)

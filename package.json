@@ -31,18 +31,18 @@
     "setup:jbrowse:create": "jbrowse create .jbrowse",
     "clean": "rimraf dist",
     "start": "npm-run-all --sequential clean --parallel start:*",
-    "start:watch": "cross-env JB_NPM=false NODE_ENV=development rollup --config --watch --bundleConfigAsCjs",
+    "start:watch": "x-var JB_NPM=false NODE_ENV=development rollup --config --watch --bundleConfigAsCjs",
     "start:server": "serve --cors --listen $npm_package_config_port .",
     "prebuild": "npm-run-all clean",
     "build": "rollup --config --bundleConfigAsCjs",
     "browse": "npm-run-all jbrowse:*",
     "jbrowse:configure": "shx cp jbrowse_config.json .jbrowse/config.json",
-    "jbrowse:serve": "cross-var serve --listen $npm_package_config_browse_port .jbrowse",
+    "jbrowse:serve": "x-var serve --listen $npm_package_config_browse_port .jbrowse",
     "test": "jest",
-    "test:e2e": "cross-var start-test \"npm-run-all --parallel start browse\" \"$npm_package_config_port|$npm_package_config_browse_port\" \"npm-run-all cypress:run\"",
-    "cypress:run": "cross-var cypress run --headless --browser chrome --config baseUrl=http://localhost:$npm_package_config_browse_port",
-    "cypress:open": "cross-var cypress open --config baseUrl=http://localhost:$npm_package_config_browse_port",
-    "lint": "eslint --ext .js,.ts,.jsx,.tsx src/",
+    "test:e2e": "x-var start-test \"npm-run-all --parallel start browse\" \"$npm_package_config_port|$npm_package_config_browse_port\" \"npm-run-all cypress:run\"",
+    "cypress:run": "x-var cypress run --headless --browser chrome --config baseUrl=http://localhost:$npm_package_config_browse_port",
+    "cypress:open": "x-var cypress open --config baseUrl=http://localhost:$npm_package_config_browse_port",
+    "lint": "eslint --ext .js,.ts,.jsx,.tsx --fix src/",
     "prepublishOnly": "npm-run-all test",
     "prepack": "npm-run-all build",
     "postversion": "git push --follow-tags"
@@ -71,11 +71,9 @@
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
-    "@typescript-eslint/eslint-plugin": "^7.12.0",
-    "@typescript-eslint/parser": "^7.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
     "chalk": "^4.0.0",
-    "cross-env": "^7.0.3",
-    "cross-var": "^1.1.0",
     "cypress": "^13.6.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^9.1.0",
@@ -101,17 +99,14 @@
     "start-server-and-test": "^2.0.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.3.0",
-    "tss-react": "^4.8.6"
+    "tss-react": "^4.8.6",
+    "x-var": "^2.1.0"
   },
   "overrides": {
     "@jbrowse/development-tools": {
+      "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
-    },
-    "cross-var": {
-      "babel-traverse": "@babel/traverse@^7.23.2",
-      "cross-spawn": "^7.0.5",
-      "json5": "^2.2.2"
     }
   },
   "peerDependencies": {

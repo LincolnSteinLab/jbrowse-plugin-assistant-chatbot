@@ -7,61 +7,57 @@ import {
   ThreadMessage,
   useLocalRuntime,
 } from '@assistant-ui/react'
-import { AIMessage, BaseMessage, BaseMessageFields, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import {
+  AIMessage,
+  BaseMessage,
+  BaseMessageFields,
+  HumanMessage,
+  SystemMessage,
+} from '@langchain/core/messages'
 import React from 'react'
-import { createGlobalStyle } from 'styled-components';
-import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent';
+import { createGlobalStyle } from 'styled-components'
+import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
 
-import auiStyles from '@assistant-ui/react/styles/index.css';
+import auiStyles from '@assistant-ui/react/styles/index.css'
 import customStyles from './ChatbotWidget.css'
 
-const AssistantUIStyle = createGlobalStyle`${auiStyles}`
-const CustomStyle = createGlobalStyle`${customStyles}`
+const AssistantUIStyle = createGlobalStyle`${auiStyles as string}`
+const CustomStyle = createGlobalStyle`${customStyles as string}`
 
-const chatAgent = new ChatAgent();
+const chatAgent = new ChatAgent()
 
 class LocalLangchainAdapter implements ChatModelAdapter {
-  async *run({
-    messages,
-    runConfig,
-    abortSignal,
-    context,
-  }: ChatModelRunOptions) {
+  async *run({ messages }: ChatModelRunOptions) {
     const lc_messages: BaseMessage[] = messages.map((tm: ThreadMessage) => {
-      const {
-        id, createdAt, role, content, metadata, attachments, status
-      } = tm;
-      let fields: BaseMessageFields = {
+      const fields: BaseMessageFields = {
         content: tm.content.map(part => {
           switch (part.type) {
             case 'text':
-              return { type: 'text', text: part.text };
+              return { type: 'text', text: part.text }
             default:
-              throw new Error(`Unknown content part type: ${part.type}`);
+              throw new Error(`Unknown content part type: ${part.type}`)
           }
         }),
         id: tm.id,
-      };
+      }
       switch (tm.role) {
         case 'system':
-          return new SystemMessage(fields);
+          return new SystemMessage(fields)
         case 'assistant':
-          return new AIMessage(fields);
+          return new AIMessage(fields)
         case 'user':
-          return new HumanMessage(fields);
-        default:
-          throw new Error(`Unknown message role: ${role}`);
+          return new HumanMessage(fields)
       }
-    });
-    const stream = chatAgent.stream(lc_messages);
-    let text = '';
+    })
+    const stream = chatAgent.stream(lc_messages)
+    let text = ''
     for await (const part of stream) {
-      text += getMessageContentText(part);
+      text += getMessageContentText(part)
       yield {
         content: [{ type: 'text', text }] as ThreadAssistantContentPart[],
-      };
+      }
     }
-    return;
+    return
   }
 }
 
@@ -72,7 +68,7 @@ export default function ReactComponent() {
     <AssistantRuntimeProvider runtime={runtime}>
       <AssistantUIStyle />
       <CustomStyle />
-      <div className='chat-widget'>
+      <div className="chat-widget">
         <Thread
           welcome={{
             message: 'Enter your OpenAI API key to start chatting.',

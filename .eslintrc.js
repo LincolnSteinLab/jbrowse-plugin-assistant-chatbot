@@ -2,7 +2,6 @@ module.exports = {
   root: true,
   extends: [
     'plugin:prettier/recommended',
-    'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-type-checked',
     'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
@@ -18,6 +17,7 @@ module.exports = {
     ecmaFeatures: {
       jsx: true,
     },
+    projectService: true,
     tsconfigRootDir: __dirname,
     project: './tsconfig.json',
   },
