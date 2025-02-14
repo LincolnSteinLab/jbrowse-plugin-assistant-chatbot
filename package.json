@@ -107,6 +107,11 @@
     "@jbrowse/development-tools": {
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
+    },
+    "cross-var": {
+      "babel-traverse": "@babel/traverse@^7.23.2",
+      "cross-spawn": "^7.0.5",
+      "json5": "^2.2.2"
     }
   },
   "peerDependencies": {
