@@ -1,0 +1,11 @@
+:root {
+  --aui-thread-max-width: infinity;
+}
+
+.chat-widget {
+  position: absolute;
+  top: 48px;
+  bottom: 0;
+  width: 100%;
+  max-width: 100%;
+}
