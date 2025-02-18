@@ -2,11 +2,11 @@ import {
   AssistantRuntimeProvider,
   ChatModelAdapter,
   ChatModelRunOptions,
-  Thread,
   ThreadAssistantContentPart,
   ThreadMessage,
   useLocalRuntime,
 } from '@assistant-ui/react'
+import { Thread, makeMarkdownText } from '@assistant-ui/react-ui'
 import {
   AIMessage,
   BaseMessage,
@@ -18,11 +18,15 @@ import React from 'react'
 import { createGlobalStyle } from 'styled-components'
 import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
 
-import auiStyles from '@assistant-ui/react/styles/index.css'
+import auiStyles from '@assistant-ui/react-ui/styles/index.css'
+import auiMdStyles from '@assistant-ui/react-markdown/styles/markdown.css'
 import customStyles from './ChatbotWidget.css'
 
 const AssistantUIStyle = createGlobalStyle`${auiStyles as string}`
+const AssistantUIMdStyle = createGlobalStyle`${auiMdStyles as string}`
 const CustomStyle = createGlobalStyle`${customStyles as string}`
+
+const MarkdownText = makeMarkdownText()
 
 const chatAgent = new ChatAgent()
 
@@ -67,9 +71,11 @@ export default function ReactComponent() {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <AssistantUIStyle />
+      <AssistantUIMdStyle />
       <CustomStyle />
       <div className="chat-widget">
         <Thread
+          assistantMessage={{ components: { Text: MarkdownText } }}
           welcome={{
             message: 'Enter your OpenAI API key to start chatting.',
           }}

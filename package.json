@@ -114,6 +114,8 @@
   },
   "dependencies": {
     "@assistant-ui/react": "^0.7.33",
+    "@assistant-ui/react-markdown": "^0.7.20",
+    "@assistant-ui/react-ui": "^0.1.7",
     "@langchain/core": "^0.3.27",
     "@langchain/langgraph": "^0.2.39",
     "@langchain/openai": "^0.4.2",
