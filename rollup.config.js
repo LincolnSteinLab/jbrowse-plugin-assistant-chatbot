@@ -1,6 +1,14 @@
+import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
 import css from 'rollup-plugin-import-css'
+
+function postcssTransform(code) {
+  return execSync('npx postcss', {
+    input: code,
+    encoding: 'utf8',
+  })
+}
 
 function stringToBoolean(string) {
   if (string === undefined) {
@@ -46,7 +54,10 @@ configs.forEach(config => {
     warn(warning)
   }
   config.plugins.push(
-    css()
+    css({
+      transform: postcssTransform,
+      inject: true,
+    })
   )
 })
 

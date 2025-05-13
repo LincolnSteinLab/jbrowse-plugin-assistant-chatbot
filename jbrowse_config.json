@@ -8,7 +8,9 @@
   "assemblies": [
     {
       "name": "hg38",
-      "aliases": ["GRCh38"],
+      "aliases": [
+        "GRCh38"
+      ],
       "sequence": {
         "type": "ReferenceSequenceTrack",
         "trackId": "P6R5xbRqRr",
@@ -44,8 +46,12 @@
       "type": "VariantTrack",
       "trackId": "demo_vcf",
       "name": "demo_vcf",
-      "assemblyNames": ["hg38"],
-      "category": ["Annotation"],
+      "assemblyNames": [
+        "hg38"
+      ],
+      "category": [
+        "Annotation"
+      ],
       "adapter": {
         "type": "VcfAdapter",
         "vcfLocation": {
@@ -58,7 +64,9 @@
           "type": "ChordVariantDisplay",
           "displayId": "demo_ch_v_disp",
           "onChordClick": "jexl:openWidgetOnChordClick(feature, track, pluginManager)",
-          "renderer": { "type": "StructuralVariantChordRenderer" }
+          "renderer": {
+            "type": "StructuralVariantChordRenderer"
+          }
         }
       ]
     }
