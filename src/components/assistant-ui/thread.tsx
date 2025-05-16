@@ -4,8 +4,7 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
-} from "@assistant-ui/react";
-import React, { FC } from "react";
+} from '@assistant-ui/react'
 import {
   ArrowDownIcon,
   CheckIcon,
@@ -15,19 +14,20 @@ import {
   PencilIcon,
   RefreshCwIcon,
   SendHorizontalIcon,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import React, { type FC } from 'react'
 
-import { Button } from "@/components/ui/button";
-import { MarkdownText } from "@/components/assistant-ui/markdown-text";
-import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
+import { MarkdownText } from '@/components/assistant-ui/markdown-text'
+import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export const Thread: FC = () => {
   return (
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"
       style={{
-        ["--thread-max-width" as string]: "42rem",
+        ['--thread-max-width' as string]: '42rem',
       }}
     >
       <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-8">
@@ -51,8 +51,8 @@ export const Thread: FC = () => {
         </div>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
-  );
-};
+  )
+}
 
 const ThreadScrollToBottom: FC = () => {
   return (
@@ -65,23 +65,21 @@ const ThreadScrollToBottom: FC = () => {
         <ArrowDownIcon />
       </TooltipIconButton>
     </ThreadPrimitive.ScrollToBottom>
-  );
-};
+  )
+}
 
 const ThreadWelcome: FC = () => {
   return (
     <ThreadPrimitive.Empty>
       <div className="flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
         <div className="flex w-full flex-grow flex-col items-center justify-center">
-          <p className="mt-4 font-medium">
-            How can I help you today?
-          </p>
+          <p className="mt-4 font-medium">How can I help you today?</p>
         </div>
         <ThreadWelcomeSuggestions />
       </div>
     </ThreadPrimitive.Empty>
-  );
-};
+  )
+}
 
 const ThreadWelcomeSuggestions: FC = () => {
   return (
@@ -107,22 +105,21 @@ const ThreadWelcomeSuggestions: FC = () => {
         </span>
       </ThreadPrimitive.Suggestion>
     </div>
-  );
-};
+  )
+}
 
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="focus-within:border-ring/20 flex w-full flex-wrap items-end rounded-lg border bg-inherit px-2.5 shadow-sm transition-colors ease-in">
       <ComposerPrimitive.Input
         rows={1}
-        autoFocus
         placeholder="Write a message..."
         className="placeholder:text-muted-foreground max-h-40 flex-grow resize-none border-none bg-transparent px-2 py-4 text-sm outline-none focus:ring-0 disabled:cursor-not-allowed"
       />
       <ComposerAction />
     </ComposerPrimitive.Root>
-  );
-};
+  )
+}
 
 const ComposerAction: FC = () => {
   return (
@@ -150,8 +147,8 @@ const ComposerAction: FC = () => {
         </ComposerPrimitive.Cancel>
       </ThreadPrimitive.If>
     </>
-  );
-};
+  )
+}
 
 const UserMessage: FC = () => {
   return (
@@ -164,8 +161,8 @@ const UserMessage: FC = () => {
 
       <BranchPicker className="col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
     </MessagePrimitive.Root>
-  );
-};
+  )
+}
 
 const UserActionBar: FC = () => {
   return (
@@ -180,8 +177,8 @@ const UserActionBar: FC = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Edit>
     </ActionBarPrimitive.Root>
-  );
-};
+  )
+}
 
 const EditComposer: FC = () => {
   return (
@@ -197,8 +194,8 @@ const EditComposer: FC = () => {
         </ComposerPrimitive.Send>
       </div>
     </ComposerPrimitive.Root>
-  );
-};
+  )
+}
 
 const AssistantMessage: FC = () => {
   return (
@@ -211,8 +208,8 @@ const AssistantMessage: FC = () => {
 
       <BranchPicker className="col-start-2 row-start-2 -ml-2 mr-2" />
     </MessagePrimitive.Root>
-  );
-};
+  )
+}
 
 const AssistantActionBar: FC = () => {
   return (
@@ -238,8 +235,8 @@ const AssistantActionBar: FC = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
     </ActionBarPrimitive.Root>
-  );
-};
+  )
+}
 
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   className,
@@ -248,7 +245,10 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   return (
     <BranchPickerPrimitive.Root
       hideWhenSingleBranch
-      className={cn("text-muted-foreground inline-flex items-center text-xs", className)}
+      className={cn(
+        'text-muted-foreground inline-flex items-center text-xs',
+        className,
+      )}
       {...rest}
     >
       <BranchPickerPrimitive.Previous asChild>
@@ -265,8 +265,8 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
         </TooltipIconButton>
       </BranchPickerPrimitive.Next>
     </BranchPickerPrimitive.Root>
-  );
-};
+  )
+}
 
 const CircleStopIcon = () => {
   return (
@@ -279,5 +279,5 @@ const CircleStopIcon = () => {
     >
       <rect width="10" height="10" x="3" y="3" rx="2" />
     </svg>
-  );
-};
+  )
+}

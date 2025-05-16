@@ -8,9 +8,9 @@ import {
   isAIMessageChunk,
   MessageContentText,
 } from '@langchain/core/messages'
-import { ChatOpenAI } from '@langchain/openai'
-import { Annotation, StateGraph } from '@langchain/langgraph/web'
 import { RunnableConfig } from '@langchain/core/runnables'
+import { Annotation, StateGraph } from '@langchain/langgraph/web'
+import { ChatOpenAI } from '@langchain/openai'
 
 const StateAnnotation = Annotation.Root({
   messages: Annotation<BaseMessageLike[]>({

@@ -1,4 +1,5 @@
 import '../../styles/globals.css'
+
 import {
   AssistantRuntimeProvider,
   ChatModelAdapter,
@@ -7,7 +8,7 @@ import {
   ThreadMessage,
   useLocalRuntime,
 } from '@assistant-ui/react'
-import { Thread } from '@/components/assistant-ui/thread'
+import { createJBrowseTheme } from '@jbrowse/core/ui'
 import {
   AIMessage,
   BaseMessage,
@@ -15,8 +16,11 @@ import {
   HumanMessage,
   SystemMessage,
 } from '@langchain/core/messages'
+import { ThemeProvider } from '@mui/material'
 import React from 'react'
+
 import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
+import { Thread } from '@/components/assistant-ui/thread'
 
 const chatAgent = new ChatAgent()
 
@@ -59,10 +63,12 @@ export default function ReactComponent() {
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <div className="chat-widget">
-        <Thread/>
-      </div>
-    </AssistantRuntimeProvider>
+    <ThemeProvider theme={createJBrowseTheme({ cssVariables: true })}>
+      <AssistantRuntimeProvider runtime={runtime}>
+        <div className="chat-widget">
+          <Thread />
+        </div>
+      </AssistantRuntimeProvider>
+    </ThemeProvider>
   )
 }

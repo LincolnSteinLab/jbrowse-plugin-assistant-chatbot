@@ -9,6 +9,7 @@ import {
   SessionWithWidgets,
 } from '@jbrowse/core/util'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
+
 import { version } from '../package.json'
 import {
   ReactComponent as ChatbotWidgetReactComponent,
@@ -57,9 +58,7 @@ export default class ConfigAssistantPlugin extends Plugin {
         icon: SmartToyIcon,
         onClick: (session: SessionWithWidgets) => {
           let chatbotWidget = session.widgets.get('Chatbot')
-          if (!chatbotWidget) {
-            chatbotWidget = session.addWidget('ChatbotWidget', 'Chatbot')
-          }
+          chatbotWidget ??= session.addWidget('ChatbotWidget', 'Chatbot')
           session.showWidget(chatbotWidget)
         },
       })

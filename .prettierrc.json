@@ -3,5 +3,14 @@
   "singleQuote": true,
   "trailingComma": "all",
   "arrowParens": "avoid",
-  "proseWrap": "always"
+  "proseWrap": "always",
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports"
+  ],
+  "importOrder": [
+    "^.+\\.css$",
+    "<THIRD_PARTY_MODULES>",
+    "^(\\.{1,2}|@)\/.*$"
+  ],
+  "importOrderSeparation": true
 }
