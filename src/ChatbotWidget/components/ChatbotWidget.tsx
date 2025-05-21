@@ -8,7 +8,8 @@ import {
   ThreadMessage,
   useLocalRuntime,
 } from '@assistant-ui/react'
-import { createJBrowseTheme } from '@jbrowse/core/ui'
+import { defaultThemes } from '@jbrowse/core/ui'
+import { getSession } from '@jbrowse/core/util'
 import {
   AIMessage,
   BaseMessage,
@@ -16,10 +17,12 @@ import {
   HumanMessage,
   SystemMessage,
 } from '@langchain/core/messages'
-import { ThemeProvider } from '@mui/material'
+import { createTheme, ThemeProvider } from '@mui/material/styles'
+import { observer } from 'mobx-react'
 import React from 'react'
 
 import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
+import stateModel from '../stateModel'
 import { Thread } from '@/components/assistant-ui/thread'
 
 const chatAgent = new ChatAgent()
@@ -59,16 +62,26 @@ class LocalLangchainAdapter implements ChatModelAdapter {
   }
 }
 
-export default function ReactComponent() {
+const ChatbotWidget = observer(function ({
+  model,
+}: {
+  model: typeof stateModel
+}) {
+  const { allThemes, themeName = 'default' } = getSession(model)
+  const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
+  themeOptions.cssVariables = true
+  const theme = createTheme(themeOptions)
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
   return (
-    <ThemeProvider theme={createJBrowseTheme({ cssVariables: true })}>
+    <ThemeProvider theme={theme}>
       <AssistantRuntimeProvider runtime={runtime}>
-        <div className="chat-widget">
+        <div className='absolute top-[48px] bottom-0 w-full max-w-full'>
           <Thread />
         </div>
       </AssistantRuntimeProvider>
     </ThemeProvider>
   )
-}
+})
+
+export default ChatbotWidget
