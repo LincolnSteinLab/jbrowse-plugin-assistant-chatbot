@@ -12,7 +12,7 @@
           --color-primary-foreground: var(--mui-palette-primary-contrastText);
                    --color-secondary: var(--mui-palette-secondary-main);
         --color-secondary-foreground: var(--mui-palette-secondary-contrastText);
-                       --color-muted: var(--mui-palette-background-paper);
+                       --color-muted: var(--mui-palette-divider);
             --color-muted-foreground: var(--mui-palette-text-secondary);
                       --color-accent: var(--mui-palette-tertiary-main);
            --color-accent-foreground: var(--mui-palette-tertiary-contrastText);
