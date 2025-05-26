@@ -24,6 +24,9 @@ import React from 'react'
 import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
 import stateModel from '../stateModel'
 import { Thread } from '@/components/assistant-ui/thread'
+import { ThreadList } from '@/components/assistant-ui/thread-list'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const chatAgent = new ChatAgent()
 
@@ -76,9 +79,31 @@ const ChatbotWidget = observer(function ({
   return (
     <ThemeProvider theme={theme}>
       <AssistantRuntimeProvider runtime={runtime}>
-        <div className='absolute top-[48px] bottom-0 w-full max-w-full'>
-          <Thread />
-        </div>
+        <Tabs
+          defaultValue="chat"
+          className="absolute gap-0 top-[48px] bottom-0 w-full max-w-full overflow-hidden"
+        >
+          <div className="flex items-center p-2">
+            <TabsList>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="threads">Threads</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </div>
+          <Separator />
+          <div className='relative flex-1'>
+              <TabsContent value="chat" className='absolute inset-0'>
+                <Thread />
+              </TabsContent>
+              <TabsContent value="threads" className="absolute inset-0 p-2 overflow-y-scroll">
+                <ThreadList />
+              </TabsContent>
+              <TabsContent value="settings" className="absolute inset-0 p-2 overflow-y-scroll">
+                Hello World
+              </TabsContent>
+          </div>
+
+        </Tabs>
       </AssistantRuntimeProvider>
     </ThemeProvider>
   )
