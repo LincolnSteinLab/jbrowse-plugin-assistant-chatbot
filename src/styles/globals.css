@@ -19,7 +19,7 @@
                  --color-destructive: var(--mui-palette-error-main);
       --color-destructive-foreground: var(--mui-palette-error-contrastText);
                       --color-border: var(--mui-palette-divider);
-                       --color-input: var(--mui-palette-background-paper);
+                       --color-input: var(--mui-palette-divider);
                         --color-ring: var(--mui-palette-primary-main);
                      --color-chart-1: var(--mui-palette-bases-C-main);
                      --color-chart-2: var(--mui-palette-bases-A-main);

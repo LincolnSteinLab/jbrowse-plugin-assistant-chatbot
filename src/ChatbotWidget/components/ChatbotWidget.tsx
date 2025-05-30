@@ -8,6 +8,7 @@ import {
   ThreadMessage,
   useLocalRuntime,
 } from '@assistant-ui/react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { defaultThemes } from '@jbrowse/core/ui'
 import { getSession } from '@jbrowse/core/util'
 import {
@@ -19,19 +20,37 @@ import {
 } from '@langchain/core/messages'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { observer } from 'mobx-react'
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 
 import { ChatAgent, getMessageContentText } from '../../chat/ChatAgent'
-import stateModel from '../stateModel'
+import {
+  IChatWidgetModel,
+  ISettingsFormModel,
+  Settings,
+  SettingsFormSchema,
+} from '../stateModel'
 import { Thread } from '@/components/assistant-ui/thread'
 import { ThreadList } from '@/components/assistant-ui/thread-list'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 
 const chatAgent = new ChatAgent()
 
 class LocalLangchainAdapter implements ChatModelAdapter {
-  async *run({ messages }: ChatModelRunOptions) {
+  async *run({ messages, context }: ChatModelRunOptions) {
     const lc_messages: BaseMessage[] = messages.map((tm: ThreadMessage) => {
       const fields: BaseMessageFields = {
         content: tm.content.map(part => {
@@ -53,7 +72,7 @@ class LocalLangchainAdapter implements ChatModelAdapter {
           return new HumanMessage(fields)
       }
     })
-    const stream = chatAgent.stream(lc_messages)
+    const stream = chatAgent.stream(lc_messages, context)
     let text = ''
     for await (const part of stream) {
       text += getMessageContentText(part)
@@ -65,17 +84,93 @@ class LocalLangchainAdapter implements ChatModelAdapter {
   }
 }
 
+function withExceptionCapturing<S, T extends unknown[]>(
+  fn: (...rest: T) => Promise<S>,
+) {
+  return (...args: T) => {
+    fn(...args).catch(error => {
+      console.error('Unexpected error', error)
+    })
+  }
+}
+
+const SettingsForm = observer(function ({
+  model,
+}: {
+  model: ISettingsFormModel
+}) {
+  const form = useForm<Settings>({
+    resolver: zodResolver(SettingsFormSchema),
+    defaultValues: model.settings,
+  })
+  const onSubmit = withExceptionCapturing(
+    form.handleSubmit((s: Settings) => model.set(s)),
+  )
+  return (
+    <Form {...form}>
+      <form onSubmit={onSubmit} className="grid gap-2">
+        <FormField
+          control={form.control}
+          name="openAIApiKey"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>OpenAI API key</FormLabel>
+              <FormControl>
+                <Input type="password" {...field} />
+              </FormControl>
+              <FormDescription>
+                Used to generate responses from OpenAI directly from your
+                browser.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="systemPrompt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>System Prompt</FormLabel>
+              <FormControl>
+                <Textarea {...field} />
+              </FormControl>
+              <FormDescription>
+                Used to set the context for the chat.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Save</Button>
+      </form>
+    </Form>
+  )
+})
+
 const ChatbotWidget = observer(function ({
   model,
 }: {
-  model: typeof stateModel
+  model: IChatWidgetModel
 }) {
   const { allThemes, themeName = 'default' } = getSession(model)
+  // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
   const theme = createTheme(themeOptions)
+  // Setup assistant-ui runtime
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
+  // Register chat settings as a context provider for the runtime
+  useEffect(() =>
+    runtime.registerModelContextProvider({
+      getModelContext: () => ({
+        config: {
+          apiKey: model.settingsForm.settings?.openAIApiKey,
+        },
+      }),
+    }),
+  )
   return (
     <ThemeProvider theme={theme}>
       <AssistantRuntimeProvider runtime={runtime}>
@@ -91,18 +186,23 @@ const ChatbotWidget = observer(function ({
             </TabsList>
           </div>
           <Separator />
-          <div className='relative flex-1'>
-              <TabsContent value="chat" className='absolute inset-0'>
-                <Thread />
-              </TabsContent>
-              <TabsContent value="threads" className="absolute inset-0 p-2 overflow-y-scroll">
-                <ThreadList />
-              </TabsContent>
-              <TabsContent value="settings" className="absolute inset-0 p-2 overflow-y-scroll">
-                Hello World
-              </TabsContent>
+          <div className="relative flex-1">
+            <TabsContent value="chat" className="absolute inset-0">
+              <Thread />
+            </TabsContent>
+            <TabsContent
+              value="threads"
+              className="absolute inset-0 p-2 overflow-y-scroll"
+            >
+              <ThreadList />
+            </TabsContent>
+            <TabsContent
+              value="settings"
+              className="absolute inset-0 p-2 overflow-y-scroll"
+            >
+              <SettingsForm model={model.settingsForm} />
+            </TabsContent>
           </div>
-
         </Tabs>
       </AssistantRuntimeProvider>
     </ThemeProvider>

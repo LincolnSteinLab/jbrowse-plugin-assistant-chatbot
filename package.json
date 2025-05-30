@@ -114,10 +114,12 @@
   "dependencies": {
     "@assistant-ui/react": "^0.7.91",
     "@assistant-ui/react-markdown": "^0.7.21",
+    "@hookform/resolvers": "^5.0.1",
     "@langchain/core": "^0.3.27",
     "@langchain/langgraph": "^0.2.39",
     "@langchain/openai": "^0.4.2",
     "@mui/material": "^7.1.0",
+    "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
@@ -126,9 +128,11 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.510.0",
     "mobx-react": "^9.2.0",
+    "react-hook-form": "^7.56.4",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
-    "tw-animate-css": "^1.2.9"
+    "tw-animate-css": "^1.2.9",
+    "zod": "^3.25.36"
   },
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",

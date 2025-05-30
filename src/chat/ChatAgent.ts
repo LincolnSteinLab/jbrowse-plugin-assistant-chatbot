@@ -1,3 +1,4 @@
+import { ModelContext } from '@assistant-ui/react'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
@@ -49,36 +50,27 @@ export class ChatAgent {
     state: typeof StateAnnotation.State,
     config?: RunnableConfig,
   ) => {
-    const { messages } = state
     if (!this.llm) {
-      const lastMessage = messages[messages.length - 1] as BaseMessage
-      try {
-        this.llm = new ChatOpenAI({
-          model: 'gpt-4o-mini',
-          temperature: 0.0,
-          openAIApiKey: getMessageContentText(lastMessage),
-          streaming: true,
-        })
-      } catch {
-        return {
-          messages: new AIMessage({
-            content: 'Invalid OpenAI API key.',
-          }),
-        }
-      }
       return {
         messages: new AIMessage({
-          content: 'Thanks! You can now start chatting.',
+          content: 'Error: LLM not initialized.',
         }),
       }
     }
+    const { messages } = state
     const responseMessage = await this.llm.invoke(messages, config)
     return {
       messages: [responseMessage],
     }
   }
 
-  async *stream(messages: BaseMessageLike[]) {
+  async *stream(messages: BaseMessageLike[], modelContext: ModelContext) {
+    this.llm = new ChatOpenAI({
+      apiKey: modelContext.config?.apiKey,
+      model: 'gpt-4o-mini',
+      streaming: true,
+      temperature: 0.0,
+    })
     const stream = await this.graph!.stream(
       {
         messages: messages,

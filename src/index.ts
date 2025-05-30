@@ -1,24 +1,15 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 import { ConfigurationSchema } from '@jbrowse/core/configuration'
-import ViewType from '@jbrowse/core/pluggableElementTypes/ViewType'
 import WidgetType from '@jbrowse/core/pluggableElementTypes/WidgetType'
-import {
-  AbstractSessionModel,
-  isAbstractMenuManager,
-  SessionWithWidgets,
-} from '@jbrowse/core/util'
+import { isAbstractMenuManager, SessionWithWidgets } from '@jbrowse/core/util'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
 
 import { version } from '../package.json'
 import {
   ReactComponent as ChatbotWidgetReactComponent,
-  stateModel as chatbotWidgetStateModel,
+  ChatWidgetModel,
 } from './ChatbotWidget'
-import {
-  ReactComponent as HelloViewReactComponent,
-  stateModel as helloViewStateModel,
-} from './HelloView'
 
 const configSchema = ConfigurationSchema('ChatbotWidget', {})
 
@@ -27,19 +18,12 @@ export default class ConfigAssistantPlugin extends Plugin {
   version = version
 
   install(pluginManager: PluginManager) {
-    pluginManager.addViewType(() => {
-      return new ViewType({
-        name: 'HelloView',
-        stateModel: helloViewStateModel,
-        ReactComponent: HelloViewReactComponent,
-      })
-    })
     pluginManager.addWidgetType(() => {
       return new WidgetType({
         name: 'ChatbotWidget',
         heading: 'Chatbot Heading',
         configSchema: configSchema,
-        stateModel: chatbotWidgetStateModel,
+        stateModel: ChatWidgetModel,
         ReactComponent: ChatbotWidgetReactComponent,
       })
     })
@@ -47,12 +31,6 @@ export default class ConfigAssistantPlugin extends Plugin {
 
   configure(pluginManager: PluginManager) {
     if (isAbstractMenuManager(pluginManager.rootModel)) {
-      pluginManager.rootModel.appendToMenu('Add', {
-        label: 'Hello View',
-        onClick: (session: AbstractSessionModel) => {
-          session.addView('HelloView', {})
-        },
-      })
       pluginManager.rootModel.appendToMenu('Tools', {
         label: 'Chatbot',
         icon: SmartToyIcon,

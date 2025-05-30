@@ -27,10 +27,10 @@ export const Thread: FC = () => {
     <ThreadPrimitive.Root
       className="bg-background box-border flex h-full flex-col overflow-hidden"
       style={{
-        ['--thread-max-width' as string]: '42rem',
+        ['--thread-max-width' as string]: 'infinity',
       }}
     >
-      <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-8">
+      <ThreadPrimitive.Viewport className="flex h-full flex-col items-center overflow-y-scroll scroll-smooth bg-inherit px-4 pt-4">
         <ThreadWelcome />
 
         <ThreadPrimitive.Messages
@@ -86,22 +86,22 @@ const ThreadWelcomeSuggestions: FC = () => {
     <div className="mt-3 flex w-full items-stretch justify-center gap-4">
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="What is the weather in Tokyo?"
+        prompt="How do I use JBrowse?"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          What is the weather in Tokyo?
+          How do I use JBrowse?
         </span>
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="What is assistant-ui?"
+        prompt="This is an interesting prompt for the user."
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          What is assistant-ui?
+          This is an interesting prompt for the user.
         </span>
       </ThreadPrimitive.Suggestion>
     </div>

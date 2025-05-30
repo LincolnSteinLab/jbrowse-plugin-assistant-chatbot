@@ -71,67 +71,55 @@ const useCopyToClipboard = ({
 
 const defaultComponents = memoizeMarkdownComponents({
   h1: ({ className, ...props }) => (
-    <h1
+    <h1 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
         'mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0',
         className,
       )}
       {...props}
-    >
-      [header not loaded]
-    </h1>
+    ></h1>
   ),
   h2: ({ className, ...props }) => (
-    <h2
+    <h2 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
         'mb-4 mt-8 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    >
-      [header not loaded]
-    </h2>
+    ></h2>
   ),
   h3: ({ className, ...props }) => (
-    <h3
+    <h3 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
         'mb-4 mt-6 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    >
-      [header not loaded]
-    </h3>
+    ></h3>
   ),
   h4: ({ className, ...props }) => (
-    <h4
+    <h4 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
         'mb-4 mt-6 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    >
-      [header not loaded]
-    </h4>
+    ></h4>
   ),
   h5: ({ className, ...props }) => (
-    <h5
+    <h5 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
         'my-4 text-lg font-semibold first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    >
-      [header not loaded]
-    </h5>
+    ></h5>
   ),
   h6: ({ className, ...props }) => (
-    <h6
+    <h6 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn('my-4 font-semibold first:mt-0 last:mb-0', className)}
       {...props}
-    >
-      [header not loaded]
-    </h6>
+    ></h6>
   ),
   p: ({ className, ...props }) => (
     <p
@@ -140,15 +128,13 @@ const defaultComponents = memoizeMarkdownComponents({
     />
   ),
   a: ({ className, ...props }) => (
-    <a
+    <a // eslint-disable-line jsx-a11y/anchor-has-content
       className={cn(
         'text-primary font-medium underline underline-offset-4',
         className,
       )}
       {...props}
-    >
-      [link not loaded]
-    </a>
+    ></a>
   ),
   blockquote: ({ className, ...props }) => (
     <blockquote

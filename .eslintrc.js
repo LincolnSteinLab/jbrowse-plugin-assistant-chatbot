@@ -24,6 +24,12 @@ module.exports = {
   },
   rules: {
     '@typescript-eslint/no-empty-function': 0,
+    '@typescript-eslint/no-empty-object-type': [
+      'error',
+      {
+        allowInterfaces: 'with-single-extends'
+      },
+    ],
     '@typescript-eslint/no-unsafe-assignment': 0,
     '@typescript-eslint/no-unsafe-call': 0,
     '@typescript-eslint/no-unsafe-return': 0,
