@@ -9,8 +9,11 @@
   ],
   "importOrder": [
     "^.+\\.css$",
+    "^.+\\.json$",
     "<THIRD_PARTY_MODULES>",
-    "^(\\.{1,2}|@)\/.*$"
+    "^@\/.*$",
+    "^\\.\\.\/.*$",
+    "^\\.\/.*$"
   ],
   "importOrderSeparation": true
 }

@@ -3,11 +3,9 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
   AIMessageChunk,
-  BaseMessage,
   BaseMessageChunk,
   BaseMessageLike,
   isAIMessageChunk,
-  MessageContentText,
 } from '@langchain/core/messages'
 import { RunnableConfig } from '@langchain/core/runnables'
 import { Annotation, StateGraph } from '@langchain/langgraph/web'
@@ -18,17 +16,6 @@ const StateAnnotation = Annotation.Root({
     reducer: (x, y) => x.concat(y),
   }),
 })
-
-export function getMessageContentText(message: BaseMessage) {
-  if (typeof message.content === 'string') {
-    return message.content
-  } else {
-    return message.content
-      .filter(cnt => cnt.type === 'text' && cnt.text)
-      .map(cnt => (cnt as MessageContentText).text)
-      .join('')
-  }
-}
 
 export class ChatAgent {
   private llm?: BaseChatModel

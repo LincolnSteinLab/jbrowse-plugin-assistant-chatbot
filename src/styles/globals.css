@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Map JBrowse theme MUI CSS variables to shadcn/ui */
 @theme inline {
                   --color-background: var(--mui-palette-background-paper);
                   --color-foreground: var(--mui-palette-text-primary);

@@ -1,3 +1,5 @@
+import { version } from '../package.json'
+
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 import { ConfigurationSchema } from '@jbrowse/core/configuration'
@@ -5,26 +7,22 @@ import WidgetType from '@jbrowse/core/pluggableElementTypes/WidgetType'
 import { isAbstractMenuManager, SessionWithWidgets } from '@jbrowse/core/util'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
 
-import { version } from '../package.json'
-import {
-  ReactComponent as ChatbotWidgetReactComponent,
-  ChatWidgetModel,
-} from './ChatbotWidget'
+import { ChatbotWidget, ChatWidgetModel } from './JBrowseAssistant'
 
 const configSchema = ConfigurationSchema('ChatbotWidget', {})
 
 export default class ConfigAssistantPlugin extends Plugin {
-  name = 'ConfigAssistantPlugin'
+  name = 'JBrowseAssistantPlugin'
   version = version
 
   install(pluginManager: PluginManager) {
     pluginManager.addWidgetType(() => {
       return new WidgetType({
         name: 'ChatbotWidget',
-        heading: 'Chatbot Heading',
+        heading: 'JBrowse Assistant',
         configSchema: configSchema,
         stateModel: ChatWidgetModel,
-        ReactComponent: ChatbotWidgetReactComponent,
+        ReactComponent: ChatbotWidget,
       })
     })
   }
@@ -32,11 +30,11 @@ export default class ConfigAssistantPlugin extends Plugin {
   configure(pluginManager: PluginManager) {
     if (isAbstractMenuManager(pluginManager.rootModel)) {
       pluginManager.rootModel.appendToMenu('Tools', {
-        label: 'Chatbot',
+        label: 'Assistant',
         icon: SmartToyIcon,
         onClick: (session: SessionWithWidgets) => {
-          let chatbotWidget = session.widgets.get('Chatbot')
-          chatbotWidget ??= session.addWidget('ChatbotWidget', 'Chatbot')
+          let chatbotWidget = session.widgets.get('JBrowseAssistant')
+          chatbotWidget ??= session.addWidget('ChatbotWidget', 'JBrowseAssistant')
           session.showWidget(chatbotWidget)
         },
       })
