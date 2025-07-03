@@ -20,7 +20,7 @@ import {
   ISettingsFormModel,
   Settings,
   SettingsFormSchema,
-} from '../schema/SettingsFormModel'
+} from './model/SettingsFormModel'
 
 function withExceptionCapturing<S, T extends unknown[]>(
   fn: (...rest: T) => Promise<S>,

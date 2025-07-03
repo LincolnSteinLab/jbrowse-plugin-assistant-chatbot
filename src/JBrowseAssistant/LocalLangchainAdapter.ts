@@ -1,7 +1,7 @@
 import {
   ChatModelAdapter,
   ChatModelRunOptions,
-  ThreadAssistantContentPart,
+  ChatModelRunResult,
   ThreadMessage,
 } from '@assistant-ui/react'
 import {
@@ -14,8 +14,13 @@ import {
 } from '@langchain/core/messages'
 
 import { ChatAgent } from './agent/ChatAgent'
+import { BaseTool } from './tools/BaseTool'
 
-export function getMessageContentText(message: BaseMessage) {
+function getLangchainTools(tools: Record<string, BaseTool>) {
+  return Object.values(tools).map(tool => tool.execute({}))
+}
+
+function getMessageContentText(message: BaseMessage) {
   if (typeof message.content === 'string') {
     return message.content
   } else {
@@ -58,13 +63,19 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
           return new HumanMessage(fields)
       }
     })
-    const stream = this.chatAgent.stream(lc_messages, context)
+    const stream = this.chatAgent.stream(lc_messages, {
+      tools: getLangchainTools(
+        (context.tools as Record<string, BaseTool>) || {},
+      ),
+      systemPrompt: context.system,
+      apiKey: context.config?.apiKey,
+    })
     let text = ''
     for await (const part of stream) {
       text += getMessageContentText(part)
       yield {
-        content: [{ type: 'text', text }] as ThreadAssistantContentPart[],
-      }
+        content: [{ type: 'text', text }],
+      } as ChatModelRunResult
     }
     return
   }

@@ -34,7 +34,10 @@ export default class ConfigAssistantPlugin extends Plugin {
         icon: SmartToyIcon,
         onClick: (session: SessionWithWidgets) => {
           let chatbotWidget = session.widgets.get('JBrowseAssistant')
-          chatbotWidget ??= session.addWidget('ChatbotWidget', 'JBrowseAssistant')
+          chatbotWidget ??= session.addWidget(
+            'ChatbotWidget',
+            'JBrowseAssistant',
+          )
           session.showWidget(chatbotWidget)
         },
       })

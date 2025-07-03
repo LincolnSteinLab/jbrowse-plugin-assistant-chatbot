@@ -13,16 +13,17 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
-import { IChatWidgetModel } from '../schema/ChatbotWidgetModel'
+import { JBrowseConfigTool } from '../tools/JBrowseConfigRetriever'
 
 import { SettingsForm } from './SettingsForm'
+import { IChatWidgetModel } from './model/ChatbotWidgetModel'
 
 export const ChatbotWidget = observer(function ({
   model,
 }: {
   model: IChatWidgetModel
 }) {
-  const { allThemes, themeName = 'default' } = getSession(model)
+  const { allThemes, jbrowse, themeName = 'default' } = getSession(model)
   // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
@@ -31,15 +32,19 @@ export const ChatbotWidget = observer(function ({
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
   // Register chat settings as a context provider for the runtime
-  useEffect(() =>
-    runtime.registerModelContextProvider({
+  useEffect(() => {
+    return runtime.registerModelContextProvider({
       getModelContext: () => ({
+        system: model.settingsForm.settings?.systemPrompt,
+        tools: {
+          jbrowseConfig: new JBrowseConfigTool(jbrowse),
+        },
         config: {
           apiKey: model.settingsForm.settings?.openAIApiKey,
         },
       }),
-    }),
-  )
+    })
+  })
   return (
     <ThemeProvider theme={theme}>
       <AssistantRuntimeProvider runtime={runtime}>
