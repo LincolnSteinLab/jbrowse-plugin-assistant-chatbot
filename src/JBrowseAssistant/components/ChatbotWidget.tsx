@@ -13,7 +13,8 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
-import { JBrowseConfigTool } from '../tools/JBrowseConfigRetriever'
+import { JBrowseConfigTool } from '../tools/JBrowseConfig'
+import { JBrowseDocumentationTool } from '../tools/JBrowseDocumentation'
 
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
@@ -38,6 +39,7 @@ export const ChatbotWidget = observer(function ({
         system: model.settingsForm.settings?.systemPrompt,
         tools: {
           jbrowseConfig: new JBrowseConfigTool(jbrowse),
+          jbrowseDocumentation: new JBrowseDocumentationTool(),
         },
         config: {
           apiKey: model.settingsForm.settings?.openAIApiKey,

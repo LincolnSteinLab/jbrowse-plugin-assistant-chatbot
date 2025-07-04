@@ -1,3 +1,6 @@
+import { PretrainedModelOptions } from '@huggingface/transformers'
+import { HuggingFaceTransformersEmbeddings } from '@langchain/community/embeddings/huggingface_transformers'
+import { Embeddings } from '@langchain/core/embeddings'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
@@ -7,11 +10,22 @@ import {
   isAIMessageChunk,
   SystemMessage,
 } from '@langchain/core/messages'
-import { RunnableConfig } from '@langchain/core/runnables'
+import { Runnable, RunnableConfig } from '@langchain/core/runnables'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 import { ChatOpenAI } from '@langchain/openai'
+
+export interface EmbeddingsSpec {
+  embeddings: Embeddings
+  config_id: string
+}
+
+interface ConfigurableSpec {
+  embeddings_spec: EmbeddingsSpec
+}
+
+export type RunConfig = RunnableConfig<ConfigurableSpec>
 
 const StateAnnotation = Annotation.Root({
   systemPrompt: Annotation<string>,
@@ -22,15 +36,16 @@ const StateAnnotation = Annotation.Root({
 
 export class ChatAgent {
   private llm?: BaseChatModel
+  private llm_with_tools?: Runnable
   private graph?: ReturnType<typeof this.createWorkflow>
-  private tool_node: ToolNode
+  private tool_node?: ToolNode
 
   constructor() {
     this.graph = this.createWorkflow()
-    this.tool_node = new ToolNode([])
   }
 
   createWorkflow() {
+    this.tool_node = new ToolNode([])
     const workflow = new StateGraph(StateAnnotation)
       .addNode('agent', this.callModel)
       .addNode('tools', this.tool_node)
@@ -65,7 +80,8 @@ export class ChatAgent {
     }
     const { systemPrompt, messages } = state
     messages.unshift(new SystemMessage(systemPrompt))
-    const responseMessage = await this.llm.invoke(messages, config)
+    const model = this.llm_with_tools ?? this.llm
+    const responseMessage = await model.invoke(messages, config)
     return {
       messages: [responseMessage],
     }
@@ -89,13 +105,30 @@ export class ChatAgent {
       streaming: true,
       temperature: 0.0,
     })
-    this.tool_node.tools = tools ?? []
+    if (tools && this.llm?.bindTools && this.tool_node) {
+      this.llm_with_tools = this.llm.bindTools(tools)
+      this.tool_node.tools = tools ?? []
+    }
+    const config: RunConfig = {
+      configurable: {
+        embeddings_spec: {
+          embeddings: new HuggingFaceTransformersEmbeddings({
+            model: 'onnx-community/Qwen3-Embedding-0.6B-ONNX',
+            pretrainedOptions: { device: 'webgpu' } as PretrainedModelOptions,
+          }),
+          config_id: 'onnx-community/Qwen3-Embedding-0.6B-ONNX',
+        },
+      },
+    }
     const stream = await this.graph!.stream(
       {
         systemPrompt: systemPrompt,
         messages: messages,
       },
-      { streamMode: 'messages' },
+      {
+        ...config,
+        streamMode: 'messages',
+      },
     )
     for await (const [message, _metadata] of stream) {
       if (isAIMessageChunk(message as BaseMessageChunk)) {
