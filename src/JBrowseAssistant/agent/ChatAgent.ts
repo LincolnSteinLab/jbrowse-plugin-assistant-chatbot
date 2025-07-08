@@ -51,7 +51,7 @@ export class ChatAgent {
       .addNode('tools', this.tool_node)
       .addEdge(START, 'agent')
       .addConditionalEdges('agent', this.shouldContinue, ['tools', END])
-      .addEdge('agent', END)
+      .addEdge('tools', 'agent')
     return workflow.compile()
   }
 
@@ -113,10 +113,13 @@ export class ChatAgent {
       configurable: {
         embeddings_spec: {
           embeddings: new HuggingFaceTransformersEmbeddings({
-            model: 'onnx-community/Qwen3-Embedding-0.6B-ONNX',
-            pretrainedOptions: { device: 'webgpu' } as PretrainedModelOptions,
+            model: 'Snowflake/snowflake-arctic-embed-s',
+            pretrainedOptions: {
+              device: 'webgpu',
+              dtype: 'q4',
+            } as PretrainedModelOptions,
           }),
-          config_id: 'onnx-community/Qwen3-Embedding-0.6B-ONNX',
+          config_id: 'Snowflake/snowflake-arctic-embed-s',
         },
       },
     }
