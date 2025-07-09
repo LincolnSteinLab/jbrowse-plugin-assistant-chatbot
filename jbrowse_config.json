@@ -1,7 +1,7 @@
 {
   "plugins": [
     {
-      "name": "ConfigAssistant",
+      "name": "AssistantChatbot",
       "url": "http://localhost:9000/dist/jbrowse-plugin-config-assistant.umd.development.js"
     }
   ],

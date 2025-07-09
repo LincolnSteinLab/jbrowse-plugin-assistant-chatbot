@@ -1,19 +1,19 @@
 {
-  "name": "jbrowse-plugin-config-assistant",
+  "name": "jbrowse-plugin-assistant-chatbot",
   "version": "0.0.1",
   "private": true,
-  "description": "An LLM chatbot widget for querying your JBrowse configuration file.",
+  "description": "An LLM chatbot assistant widget for JBrowse.",
   "keywords": [
     "jbrowse",
     "jbrowse2"
   ],
-  "homepage": "https://github.com/LincolnSteinLab/jbrowse-config-assistant-bot#readme",
+  "homepage": "https://github.com/LincolnSteinLab/jbrowse-plugin-assistant-chatbot#readme",
   "bugs": {
-    "url": "https://github.com/LincolnSteinLab/jbrowse-config-assistant-bot/issues"
+    "url": "https://github.com/LincolnSteinLab/jbrowse-plugin-assistant-chatbot/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LincolnSteinLab/jbrowse-config-assistant-bot.git"
+    "url": "git+https://github.com/LincolnSteinLab/jbrowse-plugin-assistant-chatbot.git"
   },
   "license": "Apache-2.0",
   "author": "Greg Hogue <ghogue@oicr.on.ca>",
@@ -54,7 +54,7 @@
     },
     "jbrowse": {
       "plugin": {
-        "name": "ConfigAssistant"
+        "name": "AssistantChatbot"
       }
     }
   },
@@ -136,11 +136,11 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
     "tw-animate-css": "^1.2.9",
-    "zod": "^3.25.36"
+    "zod": "3.25.67"
   },
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",
   "jbrowse-plugin": {
-    "name": "ConfigAssistant"
+    "name": "AssistantChatbot"
   }
 }

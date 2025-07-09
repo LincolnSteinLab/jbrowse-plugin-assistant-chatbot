@@ -6,17 +6,8 @@ import {
   MappingDocumentTransformer,
 } from '@langchain/core/documents'
 import { MessageContentComplex } from '@langchain/core/messages'
-import { InMemoryStore } from '@langchain/core/stores'
 import { DynamicStructuredTool } from '@langchain/core/tools'
-import {
-  MarkdownTextSplitter,
-  TokenTextSplitter,
-} from '@langchain/textsplitters'
-import { ParentDocumentRetriever } from 'langchain/retrievers/parent_document'
-import { MemoryVectorStore } from 'langchain/vectorstores/memory'
 import { z } from 'zod'
-
-import { EmbeddingsSpec } from '../agent/ChatAgent'
 
 import { BaseTool } from './BaseTool'
 
@@ -24,7 +15,6 @@ const description =
   'Search JBrowse website pages (in English) using a simple bag-of-words search'
 
 const docsLocalStorageKey = 'chatbot-jb-docs'
-const vectorStoreLocalStoragePrefix = 'chatbot-jb-vectorstore-'
 
 const QuerySchema = z.strictObject({
   query: z.string(),
@@ -78,69 +68,6 @@ async function fetchJBrowseDocuments() {
   return documents
 }
 
-async function getJBrowseVectorRetriever({
-  embeddings,
-  config_id,
-}: EmbeddingsSpec) {
-  // Set up the vector store and retriever
-  const vectorstore = new MemoryVectorStore(embeddings)
-  const byteStore = new InMemoryStore<Uint8Array>()
-  const retriever = new ParentDocumentRetriever({
-    vectorstore,
-    byteStore,
-    parentSplitter: new MarkdownTextSplitter({
-      chunkSize: 10000,
-      chunkOverlap: 20,
-    }),
-    childSplitter: new TokenTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 0,
-    }),
-    childK: 20,
-    parentK: 10,
-  })
-
-  // Restore from cached vectors from localStorage, if they exist
-  const vectorStoreKey = vectorStoreLocalStoragePrefix + config_id
-  const vectorStr = localStorageGetItem(vectorStoreKey)
-  if (vectorStr) {
-    const {
-      memoryVectors,
-      store,
-    }: {
-      memoryVectors: MemoryVectorStore['memoryVectors']
-      store: Record<string, Uint8Array>
-    } = JSON.parse(vectorStr)
-    vectorstore.memoryVectors = memoryVectors
-    await byteStore.mset(Object.entries(store))
-    return retriever
-  }
-
-  // Otherwise, fetch the documents and add them to the retriever
-  const documents = await fetchJBrowseDocuments()
-  if (!documents?.length) {
-    return null
-  }
-  await retriever.addDocuments(documents)
-
-  // Cache vectors to localStorage for next time
-  const store_keys: string[] = []
-  for await (const key of byteStore.yieldKeys()) {
-    store_keys.push(key)
-  }
-  console.log(vectorstore.memoryVectors)
-  console.log(await byteStore.mget(store_keys))
-  /*localStorageSetItem(
-    vectorStoreKey,
-    JSON.stringify({
-      memoryVectors: vectorstore.memoryVectors,
-      store: await byteStore.mget(store_keys),
-    }),
-  )*/
-
-  return retriever
-}
-
 function getJBrowseDocumentationTool() {
   return new DynamicStructuredTool({
     name: 'JBrowseDocumentation',
@@ -148,27 +75,6 @@ function getJBrowseDocumentationTool() {
     schema: QuerySchema,
     func: async ({ query }) => {
       console.log(query)
-      /*
-      const config = config_ as RunConfig
-      if (!config?.configurable?.embeddings_spec) {
-        return 'This tool is not working; avoid using'
-      }
-      let retriever: BaseRetriever | null = null
-      try {
-        retriever = await getJBrowseVectorRetriever(
-          config.configurable.embeddings_spec,
-        )
-      } catch (error) {
-        console.error('Failed to get JBrowse retriever', error)
-      }
-      if (!retriever) {
-        return 'JBrowse website lookup not available; avoid using'
-      }
-      retriever = BM25Retriever.fromDocuments(
-        await retriever.invoke(query),
-        { k: 5 },
-      )
-      */
       const retriever = BM25Retriever.fromDocuments(
         await fetchJBrowseDocuments(),
         { k: 5 },

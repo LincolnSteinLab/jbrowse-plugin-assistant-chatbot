@@ -11,7 +11,7 @@ import { ChatbotWidget, ChatWidgetModel } from './JBrowseAssistant'
 
 const configSchema = ConfigurationSchema('ChatbotWidget', {})
 
-export default class ConfigAssistantPlugin extends Plugin {
+export default class AssistantChatbotPlugin extends Plugin {
   name = 'JBrowseAssistantPlugin'
   version = version
 
