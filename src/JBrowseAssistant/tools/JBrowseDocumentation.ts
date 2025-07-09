@@ -20,6 +20,9 @@ import { EmbeddingsSpec } from '../agent/ChatAgent'
 
 import { BaseTool } from './BaseTool'
 
+const description =
+  'Search JBrowse website pages (in English) using a simple bag-of-words search'
+
 const docsLocalStorageKey = 'chatbot-jb-docs'
 const vectorStoreLocalStoragePrefix = 'chatbot-jb-vectorstore-'
 
@@ -59,7 +62,7 @@ async function fetchJBrowseDocuments() {
     {
       recursive: true,
       ignoreFiles: [
-        /(README|SCREENSHOTS|title|\/(config|models)\/.*)\.md|^(?!.+\.mdx?$).+/,
+        /(README|SCREENSHOTS|title|\/(blog|config|models)\/.*)\.md|^(?!.+\.mdx?$).+/,
       ],
     },
   )
@@ -137,9 +140,6 @@ async function getJBrowseVectorRetriever({
 
   return retriever
 }
-
-const description =
-  'Query for JBrowse website pages (in English) using a vector similarity search.'
 
 function getJBrowseDocumentationTool() {
   return new DynamicStructuredTool({

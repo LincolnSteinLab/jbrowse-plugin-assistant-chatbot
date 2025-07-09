@@ -3,7 +3,7 @@ import { IAnyStateTreeNode } from 'mobx-state-tree'
 
 import { BaseTool, EmptySchema } from './BaseTool'
 
-const description = 'Gets the current JBrowse session config JSON.'
+const description = "Get the current config.json of the user's JBrowse session"
 
 function getJBrowseConfigTool(jbrowseConfig: IAnyStateTreeNode) {
   return new DynamicStructuredTool({
