@@ -1,4 +1,4 @@
-# jbrowse-plugin-config-assistant
+# jbrowse-plugin-assistant-chatbot
 
 > Template to quickly start a new JBrowse plugin
 

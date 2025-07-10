@@ -43,7 +43,7 @@
   "plugins": [
     {
       "name": "AssistantChatbot",
-      "url": "http://localhost:9000/dist/jbrowse-plugin-config-assistant.umd.development.js"
+      "url": "http://localhost:9000/dist/jbrowse-plugin-assistant-chatbot.umd.development.js"
     }
   ],
   "defaultSession": {
