@@ -1,4 +1,5 @@
-import '../../styles/globals.css'
+// @ts-expect-error : Handled by rollup-plugin-import-css
+import styles from '../../styles/globals.css'
 
 import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
@@ -18,6 +19,18 @@ import { JBrowseDocumentationTool } from '../tools/JBrowseDocumentation'
 
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
+
+// Inject global styles
+if (
+  typeof document !== 'undefined' &&
+  typeof document.getElementById === 'function' &&
+  !document.getElementById('chatbot-css')
+) {
+  const styleElement = document.createElement('style')
+  styleElement.id = 'chatbot-css'
+  styleElement.textContent = styles
+  document.head.appendChild(styleElement)
+}
 
 export const ChatbotWidget = observer(function ({
   model,

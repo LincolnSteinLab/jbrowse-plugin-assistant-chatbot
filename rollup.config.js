@@ -56,7 +56,6 @@ configs.forEach(config => {
   config.plugins.push(
     css({
       transform: postcssTransform,
-      inject: true,
     })
   )
 })

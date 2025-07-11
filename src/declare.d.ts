@@ -1,6 +1,5 @@
 import { createTheme } from '@mui/material'
 
-declare module '*.css'
 declare module '*.json'
 
 declare module '@mui/material' {

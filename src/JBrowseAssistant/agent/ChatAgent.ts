@@ -1,5 +1,3 @@
-import { PretrainedModelOptions } from '@huggingface/transformers'
-import { HuggingFaceTransformersEmbeddings } from '@langchain/community/embeddings/huggingface_transformers'
 import { Embeddings } from '@langchain/core/embeddings'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
@@ -22,7 +20,7 @@ export interface EmbeddingsSpec {
 }
 
 interface ConfigurableSpec {
-  embeddings_spec: EmbeddingsSpec
+  embeddings_spec?: EmbeddingsSpec
 }
 
 export type RunConfig = RunnableConfig<ConfigurableSpec>
@@ -111,16 +109,6 @@ export class ChatAgent {
     }
     const config: RunConfig = {
       configurable: {
-        embeddings_spec: {
-          embeddings: new HuggingFaceTransformersEmbeddings({
-            model: 'Snowflake/snowflake-arctic-embed-s',
-            pretrainedOptions: {
-              device: 'webgpu',
-              dtype: 'q4',
-            } as PretrainedModelOptions,
-          }),
-          config_id: 'Snowflake/snowflake-arctic-embed-s',
-        },
       },
     }
     const stream = await this.graph!.stream(
