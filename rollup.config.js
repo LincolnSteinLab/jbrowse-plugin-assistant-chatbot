@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
+import commonjs from '@rollup/plugin-commonjs'
+import copy from 'rollup-plugin-copy'
 import css from 'rollup-plugin-import-css'
 
 function postcssTransform(code) {
@@ -53,9 +55,19 @@ configs.forEach(config => {
     }
     warn(warning)
   }
+  const commonjsIndex = config.plugins.findIndex(plugin => plugin.name === 'commonjs')
+  config.plugins[commonjsIndex] = commonjs({
+    ignoreDynamicRequires: true,
+  })
   config.plugins.push(
     css({
       transform: postcssTransform,
+    }),
+    copy({
+      targets: [{
+        src: 'node_modules/onnxruntime-web/dist/ort-*.{js,mjs,wasm}',
+        dest: 'dist'
+      }]
     })
   )
 })

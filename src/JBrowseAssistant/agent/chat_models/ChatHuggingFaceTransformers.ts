@@ -5,6 +5,7 @@ import {
   type Chat,
   type TextGenerationSingle,
   TextStreamer,
+  pipeline,
 } from '@huggingface/transformers'
 import {
   BaseChatModelParams,
@@ -29,13 +30,13 @@ class TextStreamerWithStatus extends TextStreamer {
 export interface ChatHuggingFaceTransformersFields extends BaseChatModelParams {
   model: string
   pretrainedOptions?: PretrainedModelOptions
-  pipelineOptions?: TextGenerationConfig
+  pipelineOptions?: Partial<TextGenerationConfig>
 }
 
-export class ChatHuggingFaceTransformers extends SimpleChatModel<ChatHuggingFaceTransformersFields> {
+export class ChatHuggingFaceTransformers extends SimpleChatModel {
   model: string
   pretrainedOptions?: PretrainedModelOptions
-  pipelineOptions?: TextGenerationConfig
+  pipelineOptions?: Partial<TextGenerationConfig>
 
   private pipelinePromise: Promise<TextGenerationPipeline> | null = null
 
@@ -52,7 +53,6 @@ export class ChatHuggingFaceTransformers extends SimpleChatModel<ChatHuggingFace
 
   private async getPipeline() {
     if (!this.pipelinePromise) {
-      const { pipeline } = await import('@huggingface/transformers')
       // @ts-expect-error : huge union type, but always the same in this case
       this.pipelinePromise = pipeline(
         'text-generation',

@@ -14,6 +14,10 @@ import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 import { ChatOpenAI } from '@langchain/openai'
 
+import { ChatHuggingFaceTransformers } from './chat_models/ChatHuggingFaceTransformers'
+
+console.log(import.meta.url)
+
 export interface EmbeddingsSpec {
   embeddings: Embeddings
   config_id: string
@@ -97,19 +101,23 @@ export class ChatAgent {
       apiKey: string | undefined
     },
   ) {
-    this.llm = new ChatOpenAI({
-      apiKey: apiKey,
-      model: 'gpt-4o-mini',
-      streaming: true,
-      temperature: 0.0,
+    this.llm = new ChatHuggingFaceTransformers({
+      model: 'HuggingFaceTB/SmolLM2-1.7B-Instruct',
+      pretrainedOptions: {
+        device: 'webgpu',
+        dtype: 'q4f16'
+      },
+      pipelineOptions: {
+        max_new_tokens: 512,
+        temperature: 0.0,
+      },
     })
     if (tools && this.llm?.bindTools && this.tool_node) {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []
     }
     const config: RunConfig = {
-      configurable: {
-      },
+      configurable: {},
     }
     const stream = await this.graph!.stream(
       {
