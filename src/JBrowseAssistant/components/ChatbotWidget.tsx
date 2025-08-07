@@ -14,8 +14,11 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
-import { JBrowseConfigTool } from '../tools/JBrowseConfig'
-import { JBrowseDocumentationTool } from '../tools/JBrowseDocumentation'
+import {
+  JBrowseConfigTool,
+  JBrowseDocumentationTool,
+  NavigateLinearGenomeViewTool,
+} from '../tools'
 
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
@@ -37,7 +40,7 @@ export const ChatbotWidget = observer(function ({
 }: {
   model: IChatWidgetModel
 }) {
-  const { allThemes, jbrowse, themeName = 'default' } = getSession(model)
+  const { allThemes, jbrowse, themeName = 'default', views } = getSession(model)
   // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
@@ -53,6 +56,7 @@ export const ChatbotWidget = observer(function ({
         tools: {
           jbrowseConfig: new JBrowseConfigTool(jbrowse),
           jbrowseDocumentation: new JBrowseDocumentationTool(),
+          navigateLinearGenomeView: new NavigateLinearGenomeViewTool(views),
         },
         config: {
           apiKey: model.settingsForm.settings?.openAIApiKey,
