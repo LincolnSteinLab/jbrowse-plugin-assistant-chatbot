@@ -93,7 +93,7 @@
     "react-dom": "^18.2.0",
     "rimraf": "^5.0.1",
     "rollup-plugin-import-css": "^3.5.8",
-    "serve": "^14.2.0",
+    "serve": "^14.2.4",
     "shx": "^0.3.3",
     "start-server-and-test": "^2.0.0",
     "tailwindcss": "^4.1.6",
