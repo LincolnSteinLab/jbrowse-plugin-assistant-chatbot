@@ -8,7 +8,7 @@ const description = "Get the current config.json of the user's JBrowse session"
 function getJBrowseConfigTool(jbrowseConfig: IAnyStateTreeNode) {
   return new DynamicStructuredTool({
     name: 'JBrowseConfig',
-    description: description,
+    description,
     schema: EmptySchema,
     // eslint-disable-next-line @typescript-eslint/require-await
     func: async ({}) => JSON.stringify(jbrowseConfig, null, '\t'),

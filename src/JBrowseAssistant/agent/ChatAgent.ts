@@ -108,8 +108,7 @@ export class ChatAgent {
       this.tool_node.tools = tools ?? []
     }
     const config: RunConfig = {
-      configurable: {
-      },
+      configurable: {},
     }
     const stream = await this.graph!.stream(
       {

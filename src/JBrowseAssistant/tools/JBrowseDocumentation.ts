@@ -71,7 +71,7 @@ async function fetchJBrowseDocuments() {
 function getJBrowseDocumentationTool() {
   return new DynamicStructuredTool({
     name: 'JBrowseDocumentation',
-    description: description,
+    description,
     schema: QuerySchema,
     func: async ({ query }) => {
       console.log(query)
