@@ -9,16 +9,9 @@ import { MessageContentComplex } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod'
 
-import { BaseTool } from './BaseTool'
-
-const description =
-  'Search JBrowse website pages (in English) using a simple bag-of-words search'
+import { createTool } from './factory'
 
 const docsLocalStorageKey = 'chatbot-jb-docs'
-
-const QuerySchema = z.strictObject({
-  query: z.string(),
-})
 
 class JBrowseDocumentTransformer extends MappingDocumentTransformer {
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -68,34 +61,27 @@ async function fetchJBrowseDocuments() {
   return documents
 }
 
-function getJBrowseDocumentationTool() {
-  return new DynamicStructuredTool({
-    name: 'JBrowseDocumentation',
-    description,
-    schema: QuerySchema,
-    func: async ({ query }) => {
-      console.log(query)
-      const retriever = BM25Retriever.fromDocuments(
-        await fetchJBrowseDocuments(),
-        { k: 5 },
-      )
-      const results = await retriever.invoke(query)
-      const content: MessageContentComplex = { type: 'text' }
-      for (const [i, doc] of results.entries()) {
-        content[doc.metadata.source ?? i] = doc.pageContent
-      }
-      return content
-    },
-  })
-}
-
-export class JBrowseDocumentationTool extends BaseTool<
-  ReturnType<typeof getJBrowseDocumentationTool>
-> {
-  description = description
-
-  constructor() {
-    super()
-    this.lc_tool = getJBrowseDocumentationTool()
-  }
-}
+export const JBrowseDocumentationTool = createTool(
+  'Search JBrowse website pages (in English) using a simple bag-of-words search',
+  description =>
+    new DynamicStructuredTool({
+      name: 'JBrowseDocumentation',
+      description,
+      schema: z.strictObject({
+        query: z.string(),
+      }),
+      func: async ({ query }) => {
+        console.log(query)
+        const retriever = BM25Retriever.fromDocuments(
+          await fetchJBrowseDocuments(),
+          { k: 5 },
+        )
+        const results = await retriever.invoke(query)
+        const content: MessageContentComplex = { type: 'text' }
+        for (const [i, doc] of results.entries()) {
+          content[doc.metadata.source ?? i] = doc.pageContent
+        }
+        return content
+      },
+    }),
+)

@@ -14,9 +14,9 @@ import {
 } from '@langchain/core/messages'
 
 import { ChatAgent } from './agent/ChatAgent'
-import { BaseTool } from './tools/BaseTool'
+import { JBTool } from './tools/factory'
 
-function getLangchainTools(tools: Record<string, BaseTool>) {
+function getLangchainTools(tools: Record<string, JBTool>) {
   return Object.values(tools).map(tool => tool.execute({}))
 }
 
@@ -64,9 +64,7 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
       }
     })
     const stream = this.chatAgent.stream(lc_messages, {
-      tools: getLangchainTools(
-        (context.tools as Record<string, BaseTool>) || {},
-      ),
+      tools: getLangchainTools((context.tools as Record<string, JBTool>) || {}),
       systemPrompt: context.system,
       apiKey: context.config?.apiKey,
     })

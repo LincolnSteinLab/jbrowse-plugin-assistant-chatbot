@@ -54,9 +54,9 @@ export const ChatbotWidget = observer(function ({
       getModelContext: () => ({
         system: model.settingsForm.settings?.systemPrompt,
         tools: {
-          jbrowseConfig: new JBrowseConfigTool(jbrowse),
-          jbrowseDocumentation: new JBrowseDocumentationTool(),
-          navigateLinearGenomeView: new NavigateLinearGenomeViewTool(views),
+          jbrowseConfig: JBrowseConfigTool(jbrowse),
+          jbrowseDocumentation: JBrowseDocumentationTool({}),
+          navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
         },
         config: {
           apiKey: model.settingsForm.settings?.openAIApiKey,
