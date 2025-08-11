@@ -48,7 +48,7 @@ export const ChatbotWidget = observer(function ({
   // Setup assistant-ui runtime
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
-  // Register chat settings as a context provider for the runtime
+  // Register chat settings and tools as a context provider for the runtime
   useEffect(() => {
     return runtime.registerModelContextProvider({
       getModelContext: () => ({

@@ -14,7 +14,7 @@ import {
 } from '@langchain/core/messages'
 
 import { ChatAgent } from './agent/ChatAgent'
-import { JBTool } from './tools/factory'
+import { JBTool } from './tools/base'
 
 function getLangchainTools(tools: Record<string, JBTool>) {
   return Object.values(tools).map(tool => tool.execute({}))

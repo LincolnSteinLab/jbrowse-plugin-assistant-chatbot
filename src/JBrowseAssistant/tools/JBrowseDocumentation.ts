@@ -9,7 +9,7 @@ import { MessageContentComplex } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod'
 
-import { createTool } from './factory'
+import { createTool } from './base'
 
 const docsLocalStorageKey = 'chatbot-jb-docs'
 

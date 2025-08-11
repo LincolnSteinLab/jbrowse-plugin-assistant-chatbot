@@ -1,7 +1,7 @@
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { IAnyStateTreeNode } from 'mobx-state-tree'
 
-import { createTool, EmptySchema } from './factory'
+import { createTool, EmptySchema } from './base'
 
 export const JBrowseConfigTool = createTool(
   "Get the current config.json of the user's JBrowse session",

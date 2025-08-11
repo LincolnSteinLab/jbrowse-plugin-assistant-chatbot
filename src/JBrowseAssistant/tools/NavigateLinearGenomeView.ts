@@ -3,7 +3,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { z } from 'zod'
 
-import { createTool } from './factory'
+import { createTool } from './base'
 
 export const NavigateLinearGenomeViewTool = createTool(
   'Moves and zooms a linear genome view to a specific location',
