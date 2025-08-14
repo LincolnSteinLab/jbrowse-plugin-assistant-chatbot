@@ -18,6 +18,8 @@ import {
   JBrowseConfigTool,
   JBrowseDocumentationTool,
   NavigateLinearGenomeViewTool,
+  SearchAndNavigateLGVTool,
+  ViewsTool,
 } from '../tools'
 
 import { SettingsForm } from './SettingsForm'
@@ -40,7 +42,14 @@ export const ChatbotWidget = observer(function ({
 }: {
   model: IChatWidgetModel
 }) {
-  const { allThemes, jbrowse, themeName = 'default', views } = getSession(model)
+  const {
+    allThemes,
+    assemblyManager,
+    jbrowse,
+    textSearchManager,
+    themeName = 'default',
+    views,
+  } = getSession(model)
   // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
@@ -57,6 +66,12 @@ export const ChatbotWidget = observer(function ({
           jbrowseConfig: JBrowseConfigTool(jbrowse),
           jbrowseDocumentation: JBrowseDocumentationTool({}),
           navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
+          searchAndNavigateLGV: SearchAndNavigateLGVTool({
+            assemblyManager,
+            textSearchManager,
+            views,
+          }),
+          views: ViewsTool(views),
         },
         config: {
           apiKey: model.settingsForm.settings?.openAIApiKey,
