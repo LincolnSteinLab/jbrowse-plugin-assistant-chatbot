@@ -14,6 +14,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
 import {
@@ -49,16 +56,57 @@ export const SettingsForm = observer(function ({
       <form onSubmit={onSubmit} className="grid gap-2">
         <FormField
           control={form.control}
-          name="openAIApiKey"
+          name="provider"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>OpenAI API key</FormLabel>
+              <FormLabel>LLM Provider</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select provider..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {SettingsFormSchema.shape.provider.options.map(provider => (
+                    <SelectItem key={provider} value={provider}>
+                      {provider}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                The LLM provider to use for text generation.
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="apiKey"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>LLM provider API key</FormLabel>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
               <FormDescription>
-                Used to generate responses from OpenAI directly from your
-                browser.
+                Used to request text generation from the selected LLM provider.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Model</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormDescription>
+                The model to use for text generation.
               </FormDescription>
               <FormMessage />
             </FormItem>

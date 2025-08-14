@@ -1,3 +1,4 @@
+import { ChatAnthropic } from '@langchain/anthropic'
 import { Embeddings } from '@langchain/core/embeddings'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
@@ -10,6 +11,7 @@ import {
 } from '@langchain/core/messages'
 import { Runnable, RunnableConfig } from '@langchain/core/runnables'
 import { DynamicStructuredTool } from '@langchain/core/tools'
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
 import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 import { ChatOpenAI } from '@langchain/openai'
@@ -90,19 +92,49 @@ export class ChatAgent {
     {
       tools,
       systemPrompt,
+      provider,
+      model,
       apiKey,
+      baseUrl,
     }: {
-      tools: DynamicStructuredTool[] | undefined
-      systemPrompt: string | undefined
-      apiKey: string | undefined
+      tools?: DynamicStructuredTool[]
+      systemPrompt?: string
+      provider?: string
+      model?: string
+      apiKey?: string
+      baseUrl?: string
     },
   ) {
-    this.llm = new ChatOpenAI({
-      apiKey: apiKey,
-      model: 'gpt-4o-mini',
-      streaming: true,
-      temperature: 0.0,
-    })
+    switch (provider) {
+      case 'openai':
+        this.llm = new ChatOpenAI({
+          apiKey: apiKey,
+          configuration: {
+            baseURL: baseUrl ?? undefined,
+          },
+          model: model,
+          streaming: true,
+          temperature: 0.0,
+        })
+        break
+      case 'anthropic':
+        this.llm = new ChatAnthropic({
+          anthropicApiUrl: baseUrl ?? undefined,
+          apiKey: apiKey,
+          model: model,
+          streaming: true,
+        })
+        break
+      case 'google':
+        this.llm = new ChatGoogleGenerativeAI({
+          apiKey: apiKey,
+          baseUrl: baseUrl ?? undefined,
+          model: model ?? 'gemini-2.5-flash-lite',
+        })
+        break
+      default:
+        throw new Error(`Unsupported provider: ${provider}`)
+    }
     if (tools && this.llm?.bindTools && this.tool_node) {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []
