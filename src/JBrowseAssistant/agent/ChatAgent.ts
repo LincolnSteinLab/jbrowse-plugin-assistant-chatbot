@@ -79,9 +79,8 @@ export class ChatAgent {
       }
     }
     const { systemPrompt, messages } = state
-    messages.unshift(new SystemMessage(systemPrompt))
     const model = this.llm_with_tools ?? this.llm
-    const responseMessage = await model.invoke(messages, config)
+    const responseMessage = await model.invoke([new SystemMessage(systemPrompt), ...messages], config)
     return {
       messages: [responseMessage],
     }
