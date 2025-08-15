@@ -5,7 +5,7 @@ import { z } from 'zod'
 const settingsLocalStorageKey = 'chatbot-settings'
 
 export const SettingsFormSchema = z.object({
-  apiKey: z.string().min(1, 'LLM provider API key is required'),
+  apiKey: z.string().optional(),
   baseUrl: z.string().optional(),
   model: z.string().min(1, 'Model name is required'),
   provider: z.enum(['openai', 'anthropic', 'google']),

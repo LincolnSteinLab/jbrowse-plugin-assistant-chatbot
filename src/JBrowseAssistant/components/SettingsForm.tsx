@@ -84,7 +84,8 @@ export const SettingsForm = observer(function ({
             <FormItem>
               <FormLabel>Alternate API URL</FormLabel>
               <FormDescription>
-                Optionally override the provider's API URL to a custom endpoint.
+                Optionally override the provider&apos;s API URL to a custom
+                endpoint.
               </FormDescription>
               <FormControl>
                 <Input {...field} />
@@ -100,7 +101,8 @@ export const SettingsForm = observer(function ({
             <FormItem>
               <FormLabel>LLM Provider API key</FormLabel>
               <FormDescription>
-                See the LLM provider's documentation for how to obtain an API key.
+                See your chosen LLM provider&apos;s documentation for how to
+                obtain an API key.
               </FormDescription>
               <FormControl>
                 <Input type="password" {...field} />
