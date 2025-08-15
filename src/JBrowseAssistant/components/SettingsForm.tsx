@@ -74,9 +74,22 @@ export const SettingsForm = observer(function ({
                   ))}
                 </SelectContent>
               </Select>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="baseUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alternate API URL</FormLabel>
               <FormDescription>
-                The LLM provider to use for text generation.
+                Optionally override the provider's API URL to a custom endpoint.
               </FormDescription>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -85,13 +98,13 @@ export const SettingsForm = observer(function ({
           name="apiKey"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>LLM provider API key</FormLabel>
+              <FormLabel>LLM Provider API key</FormLabel>
+              <FormDescription>
+                See the LLM provider's documentation for how to obtain an API key.
+              </FormDescription>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
-              <FormDescription>
-                Used to request text generation from the selected LLM provider.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -101,13 +114,13 @@ export const SettingsForm = observer(function ({
           name="model"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Model</FormLabel>
+              <FormLabel>Model ID</FormLabel>
+              <FormDescription>
+                Model to use for text generation.
+              </FormDescription>
               <FormControl>
                 <Input {...field} />
               </FormControl>
-              <FormDescription>
-                The model to use for text generation.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -118,12 +131,12 @@ export const SettingsForm = observer(function ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>System Prompt</FormLabel>
+              <FormDescription>
+                Outline instructions for the LLM agent.
+              </FormDescription>
               <FormControl>
                 <Textarea {...field} />
               </FormControl>
-              <FormDescription>
-                Used to set the context for the chat.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
