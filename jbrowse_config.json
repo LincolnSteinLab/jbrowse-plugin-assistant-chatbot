@@ -8,9 +8,7 @@
   "assemblies": [
     {
       "name": "hg38",
-      "aliases": [
-        "GRCh38"
-      ],
+      "aliases": ["GRCh38"],
       "sequence": {
         "type": "ReferenceSequenceTrack",
         "trackId": "P6R5xbRqRr",
@@ -43,32 +41,43 @@
   ],
   "tracks": [
     {
-      "type": "VariantTrack",
-      "trackId": "demo_vcf",
-      "name": "demo_vcf",
-      "assemblyNames": [
-        "hg38"
-      ],
-      "category": [
-        "Annotation"
-      ],
+      "type": "FeatureTrack",
+      "trackId": "ncbi_refseq",
+      "name": "NCBI RefSeq GFF",
+      "assemblyNames": ["hg38"],
       "adapter": {
-        "type": "VcfAdapter",
-        "vcfLocation": {
-          "locationType": "UriLocation",
-          "uri": "https://s3.amazonaws.com/jbrowse.org/genomes/hg19/skbr3/reads_lr_skbr3.fa_ngmlr-0.2.3_mapped.bam.sniffles1kb_auto_l8_s5_noalt.new.vcf"
-        }
-      },
-      "displays": [
-        {
-          "type": "ChordVariantDisplay",
-          "displayId": "demo_ch_v_disp",
-          "onChordClick": "jexl:openWidgetOnChordClick(feature, track, pluginManager)",
-          "renderer": {
-            "type": "StructuralVariantChordRenderer"
+        "type": "Gff3TabixAdapter",
+        "gffGzLocation": {
+          "uri": "https://s3.amazonaws.com/jbrowse.org/genomes/GRCh38/ncbi_refseq/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz",
+          "locationType": "UriLocation"
+        },
+        "index": {
+          "location": {
+            "uri": "https://s3.amazonaws.com/jbrowse.org/genomes/GRCh38/ncbi_refseq/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz.tbi",
+            "locationType": "UriLocation"
           }
         }
-      ]
+      }
+    }
+  ],
+  "aggregateTextSearchAdapters": [
+    {
+      "type": "TrixTextSearchAdapter",
+      "textSearchAdapterId": "hg38-index",
+      "ixFilePath": {
+        "uri": "trix/hg38.ix",
+        "locationType": "UriLocation"
+      },
+      "ixxFilePath": {
+        "uri": "trix/hg38.ixx",
+        "locationType": "UriLocation"
+      },
+      "metaFilePath": {
+        "uri": "trix/hg38_meta.json",
+        "locationType": "UriLocation"
+      },
+      "assemblyNames": ["hg38"]
     }
   ]
 }
+
