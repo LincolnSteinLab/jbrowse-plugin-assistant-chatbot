@@ -1,15 +1,8 @@
 import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
-import {
-  NavigateLinearGenomeViewTool,
-  SearchAndNavigateLGVTool,
-  ViewsTool,
-} from './NavigateLinearGenomeView'
 
-export {
-  JBrowseConfigTool,
-  JBrowseDocumentationTool,
-  NavigateLinearGenomeViewTool,
-  SearchAndNavigateLGVTool,
-  ViewsTool,
-}
+export * from './NavigateLGVTool'
+export * from './SearchAndNavigateLGVTool'
+export * from './ViewsTool'
+export * from './ToggleTracks'
+export { JBrowseConfigTool, JBrowseDocumentationTool }
