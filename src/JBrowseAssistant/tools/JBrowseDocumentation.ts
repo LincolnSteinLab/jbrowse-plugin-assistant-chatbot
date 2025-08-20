@@ -72,16 +72,16 @@ export const JBrowseDocumentationTool = createTool(
       }),
       func: async ({ query }) => {
         console.log(query)
-        const retriever = BM25Retriever.fromDocuments(
-          await fetchJBrowseDocuments(),
-          { k: 5 },
-        )
-        const results = await retriever.invoke(query)
-        const content: MessageContentComplex = { type: 'text' }
-        for (const [i, doc] of results.entries()) {
-          content[doc.metadata.source ?? i] = doc.pageContent
-        }
-        return content
+        // const retriever = BM25Retriever.fromDocuments(
+        //   await fetchJBrowseDocuments(),
+        //   { k: 5 },
+        // )
+        // const results = await retriever.invoke(query)
+        // const content: MessageContentComplex = { type: 'text' }
+        // for (const [i, doc] of results.entries()) {
+        //   content[doc.metadata.source ?? i] = doc.pageContent
+        // }
+        return ''
       },
     }),
 )

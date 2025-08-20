@@ -66,7 +66,7 @@ export const ChatbotWidget = observer(function ({
         tools: {
           jbrowseConfig: JBrowseConfigTool(jbrowse),
           jbrowseDocumentation: JBrowseDocumentationTool({}),
-          navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
+          // navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
           searchAndNavigateLGV: SearchAndNavigateLGVTool({
             assemblyManager,
             textSearchManager,

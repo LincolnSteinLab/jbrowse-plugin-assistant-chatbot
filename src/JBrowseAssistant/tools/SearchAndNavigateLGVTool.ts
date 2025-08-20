@@ -77,9 +77,9 @@ export const SearchAndNavigateLGVTool = createTool(
           }
           return null
         })
-        const resultStrs = (await Promise.all(results)).filter(r => r !== null)
-        console.log(resultStrs)
-        return resultStrs.join('\n')
+        // const resultStrs = (await Promise.all(results)).filter(r => r !== null)
+        // console.log(resultStrs)
+        return 'success;' //resultStrs.join('\n')
       },
     }),
 )
