@@ -1,3 +1,5 @@
+import packageJSON from './package.json'
+
 import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
@@ -53,6 +55,11 @@ configs.forEach(config => {
     }
     warn(warning)
   }
+  config.output.forEach(output => {
+    if (output.format === 'umd') {
+      output.name = `JBrowsePlugin${packageJSON['jbrowse-plugin'].name}`
+    }
+  })
   config.plugins.push(
     css({
       transform: postcssTransform,

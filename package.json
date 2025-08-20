@@ -32,31 +32,20 @@
     "clean": "rimraf dist",
     "start": "npm-run-all --sequential clean --parallel start:*",
     "start:watch": "rollup --config --bundleConfigAsCjs --watch --environment JB_NPM:false,NODE_ENV:development",
-    "start:server": "serve --cors --listen $npm_package_config_port .",
+    "start:server": "x-env serve --cors --listen \\$PLUGIN_PORT .",
     "prebuild": "npm-run-all clean",
     "build": "rollup --config --bundleConfigAsCjs",
     "browse": "npm-run-all jbrowse:*",
     "jbrowse:configure": "shx cp jbrowse_config.json .jbrowse/config.json",
-    "jbrowse:serve": "x-var serve --listen $npm_package_config_browse_port .jbrowse",
+    "jbrowse:serve": "x-env serve --listen \\$JBROWSE_PORT .jbrowse",
     "test": "jest",
-    "test:e2e": "x-var start-test \"npm-run-all --parallel start browse\" \"$npm_package_config_port|$npm_package_config_browse_port\" \"npm-run-all cypress:run\"",
-    "cypress:run": "x-var cypress run --headless --browser chrome --config baseUrl=http://localhost:$npm_package_config_browse_port",
-    "cypress:open": "x-var cypress open --config baseUrl=http://localhost:$npm_package_config_browse_port",
+    "test:e2e": "x-env start-test \"npm-run-all --parallel start browse\" \"\\$PLUGIN_PORT|\\$JBROWSE_PORT\" \"npm-run-all cypress:run\"",
+    "cypress:run": "x-env cypress run --headless --browser chrome --config baseUrl=http://localhost:\\$JBROWSE_PORT",
+    "cypress:open": "x-env cypress open --config baseUrl=http://localhost:\\$JBROWSE_PORT",
     "lint": "eslint --ext .js,.ts,.jsx,.tsx --fix src/",
     "prepublishOnly": "npm-run-all test",
     "prepack": "npm-run-all build",
     "postversion": "git push --follow-tags"
-  },
-  "config": {
-    "port": 9000,
-    "browse": {
-      "port": 8999
-    },
-    "jbrowse": {
-      "plugin": {
-        "name": "AssistantChatbot"
-      }
-    }
   },
   "devDependencies": {
     "@jbrowse/cli": "^3.4.0",
