@@ -19,6 +19,7 @@ import {
   JBrowseDocumentationTool,
   NavigateLinearGenomeViewTool,
   SearchAndNavigateLGVTool,
+  ToggleTracksTool,
   ViewsTool,
 } from '../tools'
 
@@ -72,6 +73,11 @@ export const ChatbotWidget = observer(function ({
             views,
           }),
           views: ViewsTool(views),
+          toggleTracks: ToggleTracksTool({
+            assemblyManager,
+            textSearchManager,
+            views,
+          }),
         },
         config: {
           apiKey: model.settingsForm.settings?.apiKey,
