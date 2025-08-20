@@ -74,7 +74,9 @@ export const ChatbotWidget = observer(function ({
           views: ViewsTool(views),
         },
         config: {
-          apiKey: model.settingsForm.settings?.openAIApiKey,
+          apiKey: model.settingsForm.settings?.apiKey,
+          baseUrl: model.settingsForm.settings?.baseUrl,
+          modelName: `${model.settingsForm.settings?.provider}/${model.settingsForm.settings?.model}`,
         },
       }),
     })

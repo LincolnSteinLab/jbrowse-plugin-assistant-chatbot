@@ -14,6 +14,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
 import {
@@ -49,17 +56,73 @@ export const SettingsForm = observer(function ({
       <form onSubmit={onSubmit} className="grid gap-2">
         <FormField
           control={form.control}
-          name="openAIApiKey"
+          name="provider"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>OpenAI API key</FormLabel>
+              <FormLabel>LLM Provider</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select provider..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {SettingsFormSchema.shape.provider.options.map(provider => (
+                    <SelectItem key={provider} value={provider}>
+                      {provider}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="baseUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alternate API URL</FormLabel>
+              <FormDescription>
+                Optionally override the provider&apos;s API URL to a custom
+                endpoint.
+              </FormDescription>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="apiKey"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>LLM Provider API key</FormLabel>
+              <FormDescription>
+                See your chosen LLM provider&apos;s documentation for how to
+                obtain an API key.
+              </FormDescription>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Model ID</FormLabel>
               <FormDescription>
-                Used to generate responses from OpenAI directly from your
-                browser.
+                Model to use for text generation.
               </FormDescription>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -70,12 +133,12 @@ export const SettingsForm = observer(function ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>System Prompt</FormLabel>
+              <FormDescription>
+                Outline instructions for the LLM agent.
+              </FormDescription>
               <FormControl>
                 <Textarea {...field} />
               </FormControl>
-              <FormDescription>
-                Used to set the context for the chat.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
