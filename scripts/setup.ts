@@ -54,11 +54,6 @@ function updatePackageJSON(
   // 1. Change "name" in the "jbrowse-plugin" and "config" fields to the name
   // of your project (e.g. "MyProject")
   packageJSON['jbrowse-plugin'].name = pluginName
-  if (!packageJSON.config) {
-    packageJSON.config = {}
-  }
-  // @ts-expect-error
-  packageJSON.config.jbrowse.plugin.name = pluginName
 
   // this overwrites package.json
   writeJSON('package.json', packageJSON)
