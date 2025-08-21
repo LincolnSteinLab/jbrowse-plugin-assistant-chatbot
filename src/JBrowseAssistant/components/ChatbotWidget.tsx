@@ -60,25 +60,34 @@ export const ChatbotWidget = observer(function ({
   // Register chat settings and tools as a context provider for the runtime
   useEffect(() => {
     return runtime.registerModelContextProvider({
-      getModelContext: () => ({
-        system: model.settingsForm.settings?.systemPrompt,
-        tools: {
-          jbrowseConfig: JBrowseConfigTool(jbrowse),
-          jbrowseDocumentation: JBrowseDocumentationTool({}),
-          navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
-          searchAndNavigateLGV: SearchAndNavigateLGVTool({
-            assemblyManager,
-            textSearchManager,
-            views,
-          }),
-          views: ViewsTool(views),
-        },
-        config: {
-          apiKey: model.settingsForm.settings?.apiKey,
-          baseUrl: model.settingsForm.settings?.baseUrl,
-          modelName: `${model.settingsForm.settings?.provider}/${model.settingsForm.settings?.model}`,
-        },
-      }),
+      getModelContext: () => {
+        const { provider, useProviderSystemPrompt, defaultSystemPrompt } =
+          model.settingsForm.settings
+        const providerSettings =
+          model.settingsForm.settings.providerSettings[provider]
+        const systemPrompt = useProviderSystemPrompt
+          ? (providerSettings?.systemPrompt ?? defaultSystemPrompt)
+          : defaultSystemPrompt
+        return {
+          system: systemPrompt,
+          tools: {
+            jbrowseConfig: JBrowseConfigTool(jbrowse),
+            jbrowseDocumentation: JBrowseDocumentationTool({}),
+            navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
+            searchAndNavigateLGV: SearchAndNavigateLGVTool({
+              assemblyManager,
+              textSearchManager,
+              views,
+            }),
+            views: ViewsTool(views),
+          },
+          config: {
+            apiKey: providerSettings?.apiKey,
+            baseUrl: providerSettings?.baseUrl,
+            modelName: `${provider}/${providerSettings?.model}`,
+          },
+        }
+      },
     })
   })
   return (
