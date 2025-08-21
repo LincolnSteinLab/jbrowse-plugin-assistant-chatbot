@@ -5,6 +5,7 @@ import {
   SearchAndNavigateLGVTool,
   ViewsTool,
 } from './NavigateLinearGenomeView'
+import { ToggleTracksTool } from './ToggleTracksTool'
 
 export {
   JBrowseConfigTool,
@@ -12,4 +13,5 @@ export {
   NavigateLinearGenomeViewTool,
   SearchAndNavigateLGVTool,
   ViewsTool,
+  ToggleTracksTool,
 }
