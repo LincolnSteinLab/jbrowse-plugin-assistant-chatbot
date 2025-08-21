@@ -51,7 +51,10 @@ export const SettingsForm = observer(function ({
   const provider = form.watch('provider')
   const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
   const onSubmit = withExceptionCapturing(
-    form.handleSubmit((s: Settings) => model.set(s)),
+    form.handleSubmit((s: Settings) => {
+      model.set(s)
+      form.reset(s)
+    }),
   )
   return (
     <Form {...form}>
@@ -182,7 +185,9 @@ export const SettingsForm = observer(function ({
             </FormItem>
           )}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit" disabled={!form.formState.isDirty}>
+          Save
+        </Button>
       </form>
     </Form>
   )
