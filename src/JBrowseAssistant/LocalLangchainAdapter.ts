@@ -63,7 +63,7 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
           return new HumanMessage(fields)
       }
     })
-    const providerModel = context.config?.modelName?.split('/', 1)
+    const providerModel = context.config?.modelName?.split('/', 2)
     const stream = this.chatAgent.stream(lc_messages, {
       tools: getLangchainTools((context.tools as Record<string, JBTool>) || {}),
       systemPrompt: context.system,

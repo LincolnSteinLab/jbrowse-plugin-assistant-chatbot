@@ -48,8 +48,13 @@ export const SettingsForm = observer(function ({
     resolver: zodResolver(SettingsFormSchema),
     defaultValues: model.settings,
   })
+  const provider = form.watch('provider')
+  const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
   const onSubmit = withExceptionCapturing(
-    form.handleSubmit((s: Settings) => model.set(s)),
+    form.handleSubmit((s: Settings) => {
+      model.set(s)
+      form.reset(s)
+    }),
   )
   return (
     <Form {...form}>
@@ -60,7 +65,7 @@ export const SettingsForm = observer(function ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>LLM Provider</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select provider..." />
@@ -78,8 +83,9 @@ export const SettingsForm = observer(function ({
           )}
         />
         <FormField
+          key={provider + '-baseUrl'}
           control={form.control}
-          name="baseUrl"
+          name={`providerSettings.${provider}.baseUrl`}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Alternate API URL</FormLabel>
@@ -88,15 +94,16 @@ export const SettingsForm = observer(function ({
                 endpoint.
               </FormDescription>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
+          key={provider + '-apiKey'}
           control={form.control}
-          name="apiKey"
+          name={`providerSettings.${provider}.apiKey`}
           render={({ field }) => (
             <FormItem>
               <FormLabel>LLM Provider API key</FormLabel>
@@ -105,15 +112,16 @@ export const SettingsForm = observer(function ({
                 obtain an API key.
               </FormDescription>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
+          key={provider + '-model'}
           control={form.control}
-          name="model"
+          name={`providerSettings.${provider}.model`}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Model ID</FormLabel>
@@ -121,7 +129,7 @@ export const SettingsForm = observer(function ({
                 Model to use for text generation.
               </FormDescription>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -129,7 +137,41 @@ export const SettingsForm = observer(function ({
         />
         <FormField
           control={form.control}
-          name="systemPrompt"
+          name="useProviderSystemPrompt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>System Prompt Mode</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={val => field.onChange(val === 'true')}
+                  value={String(field.value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={'false'}>Use default prompt</SelectItem>
+                    <SelectItem value={'true'}>
+                      Use provider-specific prompt
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          key={
+            useProviderSystemPrompt
+              ? provider + '-systemPrompt'
+              : 'defaultSystemPrompt'
+          }
+          control={form.control}
+          name={
+            useProviderSystemPrompt
+              ? `providerSettings.${provider}.systemPrompt`
+              : 'defaultSystemPrompt'
+          }
           render={({ field }) => (
             <FormItem>
               <FormLabel>System Prompt</FormLabel>
@@ -137,13 +179,15 @@ export const SettingsForm = observer(function ({
                 Outline instructions for the LLM agent.
               </FormDescription>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit" disabled={!form.formState.isDirty}>
+          Save
+        </Button>
       </form>
     </Form>
   )

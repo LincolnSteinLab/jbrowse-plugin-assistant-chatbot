@@ -14,6 +14,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools'
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
 import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
+import { ChatOllama } from '@langchain/ollama'
 import { ChatOpenAI } from '@langchain/openai'
 
 export interface EmbeddingsSpec {
@@ -125,6 +126,7 @@ export class ChatAgent {
           apiKey: apiKey,
           model: model,
           streaming: true,
+          temperature: 0.0,
         })
         break
       case 'google':
@@ -132,6 +134,16 @@ export class ChatAgent {
           apiKey: apiKey,
           baseUrl: baseUrl ?? undefined,
           model: model ?? 'gemini-2.5-flash-lite',
+          streaming: true,
+          temperature: 0.0,
+        })
+        break
+      case 'ollama':
+        this.llm = new ChatOllama({
+          baseUrl: baseUrl ?? undefined,
+          model: model,
+          streaming: true,
+          temperature: 0.0,
         })
         break
       default:
