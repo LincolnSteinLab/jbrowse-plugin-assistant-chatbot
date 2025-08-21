@@ -35,7 +35,7 @@ You are an expert in biological processes and an assistant for answering questio
   useProviderSystemPrompt: false,
   providerSettings: {
     openai: {
-      model: 'gpt-5-nano',
+      model: 'gpt-4o-mini',
     },
     anthropic: {
       model: 'claude-3-5-haiku-latest',
