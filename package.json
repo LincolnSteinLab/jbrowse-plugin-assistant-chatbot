@@ -45,7 +45,8 @@
     "lint": "eslint --ext .js,.ts,.jsx,.tsx --fix src/",
     "prepublishOnly": "npm-run-all test",
     "prepack": "npm-run-all build",
-    "postversion": "git push --follow-tags"
+    "postversion": "git push --follow-tags",
+    "develop": "npm-run-all --parallel start browse"
   },
   "devDependencies": {
     "@jbrowse/cli": "^3.4.0",
@@ -111,6 +112,7 @@
     "@langchain/core": "^0.3.27",
     "@langchain/google-genai": "^0.2.16",
     "@langchain/langgraph": "^0.2.39",
+    "@langchain/ollama": "^0.2.3",
     "@langchain/openai": "^0.4.2",
     "@langchain/textsplitters": "^0.1.0",
     "@mui/material": "^7.1.0",

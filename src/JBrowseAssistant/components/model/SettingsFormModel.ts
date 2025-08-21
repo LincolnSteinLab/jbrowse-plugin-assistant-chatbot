@@ -8,7 +8,7 @@ export const SettingsFormSchema = z.object({
   apiKey: z.string().optional(),
   baseUrl: z.string().optional(),
   model: z.string().min(1, 'Model name is required'),
-  provider: z.enum(['openai', 'anthropic', 'google']),
+  provider: z.enum(['openai', 'anthropic', 'google', 'ollama']),
   systemPrompt: z.string(),
 })
 export type Settings = z.infer<typeof SettingsFormSchema>
