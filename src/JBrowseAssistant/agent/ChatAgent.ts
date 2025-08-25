@@ -1,5 +1,4 @@
 import { ChatAnthropic } from '@langchain/anthropic'
-import { Embeddings } from '@langchain/core/embeddings'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
@@ -16,17 +15,6 @@ import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 import { ChatOllama } from '@langchain/ollama'
 import { ChatOpenAI } from '@langchain/openai'
-
-export interface EmbeddingsSpec {
-  embeddings: Embeddings
-  config_id: string
-}
-
-interface ConfigurableSpec {
-  embeddings_spec?: EmbeddingsSpec
-}
-
-export type RunConfig = RunnableConfig<ConfigurableSpec>
 
 const StateAnnotation = Annotation.Root({
   systemPrompt: Annotation<string>,
@@ -153,16 +141,12 @@ export class ChatAgent {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []
     }
-    const config: RunConfig = {
-      configurable: {},
-    }
     const stream = await this.graph!.stream(
       {
         systemPrompt: systemPrompt,
         messages: messages,
       },
       {
-        ...config,
         streamMode: 'messages',
       },
     )
