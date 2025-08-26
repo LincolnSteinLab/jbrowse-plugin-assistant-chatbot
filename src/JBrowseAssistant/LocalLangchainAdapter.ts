@@ -9,7 +9,6 @@ import {
   BaseMessage,
   BaseMessageFields,
   HumanMessage,
-  MessageContentText,
   SystemMessage,
 } from '@langchain/core/messages'
 
@@ -18,17 +17,6 @@ import { JBTool } from './tools/base'
 
 function getLangchainTools(tools: Record<string, JBTool>) {
   return Object.values(tools).map(tool => tool.execute({}))
-}
-
-function getMessageContentText(message: BaseMessage) {
-  if (typeof message.content === 'string') {
-    return message.content
-  } else {
-    return message.content
-      .filter(cnt => cnt.type === 'text' && cnt.text)
-      .map(cnt => (cnt as MessageContentText).text)
-      .join('')
-  }
 }
 
 /**
@@ -74,7 +62,7 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
     })
     let text = ''
     for await (const part of stream) {
-      text += getMessageContentText(part)
+      text += part.text
       yield {
         content: [{ type: 'text', text }],
       } as ChatModelRunResult
