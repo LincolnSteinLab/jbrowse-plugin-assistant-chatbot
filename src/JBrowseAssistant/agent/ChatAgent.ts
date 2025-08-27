@@ -2,10 +2,8 @@ import { ChatAnthropic } from '@langchain/anthropic'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
-  AIMessageChunk,
   BaseMessage,
   BaseMessageChunk,
-  isAIMessageChunk,
   SystemMessage,
 } from '@langchain/core/messages'
 import { Runnable, RunnableConfig } from '@langchain/core/runnables'
@@ -147,14 +145,15 @@ export class ChatAgent {
         messages: messages,
       },
       {
-        streamMode: 'messages',
+        streamMode: ['messages', 'updates'],
       },
     )
-    for await (const [message, _metadata] of stream) {
-      if (isAIMessageChunk(message as BaseMessageChunk)) {
-        yield message as AIMessageChunk
-      } else {
-        console.log(message, _metadata)
+    for await (const [streamMode, part] of stream) {
+      if (streamMode === 'messages') {
+        const [message] = part
+        yield message as BaseMessageChunk
+      } else if (streamMode === 'updates') {
+        yield part
       }
     }
   }

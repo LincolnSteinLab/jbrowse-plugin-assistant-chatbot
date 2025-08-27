@@ -3,12 +3,18 @@ import {
   ChatModelRunOptions,
   ChatModelRunResult,
   ThreadMessage,
+  ToolCallMessagePart,
 } from '@assistant-ui/react'
 import {
   AIMessage,
+  AIMessageChunk,
   BaseMessage,
   BaseMessageFields,
   HumanMessage,
+  isAIMessage,
+  isAIMessageChunk,
+  isBaseMessage,
+  isToolMessage,
   SystemMessage,
 } from '@langchain/core/messages'
 
@@ -32,14 +38,9 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
   async *run({ messages, context }: ChatModelRunOptions) {
     const lc_messages: BaseMessage[] = messages.map((tm: ThreadMessage) => {
       const fields: BaseMessageFields = {
-        content: tm.content.map(part => {
-          switch (part.type) {
-            case 'text':
-              return { type: 'text', text: part.text }
-            default:
-              throw new Error(`Unknown content part type: ${part.type}`)
-          }
-        }),
+        content: tm.content
+          .filter(part => part.type === 'text')
+          .map(part => ({ type: 'text', text: part.text })),
         id: tm.id,
       }
       switch (tm.role) {
@@ -61,12 +62,58 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
       baseUrl: context.config?.baseUrl,
     })
     let text = ''
+    let reasoning = ''
+    const tool_calls: Record<string, ToolCallMessagePart | undefined> = {}
     for await (const part of stream) {
-      text += part.text
+      if (isBaseMessage(part)) {
+        if (isAIMessageChunk(part)) {
+          text += part.text
+          reasoning +=
+            (part.additional_kwargs?.reasoning_content as string) ?? ''
+        } else if (isToolMessage(part)) {
+          tool_calls[part.tool_call_id] = {
+            type: 'tool-call',
+            toolCallId: part.tool_call_id,
+            toolName: part.name ?? 'UnnamedTool',
+            args: tool_calls?.[part.tool_call_id]?.args ?? {},
+            argsText: tool_calls?.[part.tool_call_id]?.argsText ?? '',
+            result: part.content,
+            isError: part.status === 'error',
+            artifact: part.artifact,
+          }
+        } else {
+          continue
+        }
+      } else if (part.agent) {
+        for (const message of part.agent?.messages ?? []) {
+          if (isAIMessage(message)) {
+            message.tool_calls
+              ?.filter(tool_call => tool_call.id)
+              .forEach((tool_call, i) => {
+                tool_calls[tool_call.id!] = {
+                  type: 'tool-call',
+                  toolCallId: tool_call.id!,
+                  toolName: tool_call.name,
+                  args: tool_call.args,
+                  argsText:
+                    (message as AIMessageChunk).tool_call_chunks?.[i].args ??
+                    JSON.stringify(tool_call.args),
+                }
+              })
+          }
+        }
+      } else {
+        continue
+      }
       yield {
-        content: [{ type: 'text', text }],
+        content: [
+          ...(reasoning && [{ type: 'reasoning', text: reasoning }]),
+          ...Object.values(tool_calls),
+          { type: 'text', text },
+        ],
       } as ChatModelRunResult
     }
+    console.log(tool_calls)
     return
   }
 }
