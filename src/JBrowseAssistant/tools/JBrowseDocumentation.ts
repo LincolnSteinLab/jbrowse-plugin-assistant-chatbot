@@ -70,7 +70,6 @@ export const JBrowseDocumentationTool = createTool({
   factory_fn:
     () =>
     async ({ query }) => {
-      console.log(query)
       const retriever = BM25Retriever.fromDocuments(
         await fetchJBrowseDocuments(),
         { k: 5 },

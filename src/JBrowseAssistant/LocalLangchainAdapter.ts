@@ -115,7 +115,6 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
         ],
       } as ChatModelRunResult
     }
-    console.log(tool_calls)
     return
   }
 }
