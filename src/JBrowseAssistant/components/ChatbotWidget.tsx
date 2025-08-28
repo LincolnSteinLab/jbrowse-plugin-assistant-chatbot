@@ -19,6 +19,7 @@ import {
   JBrowseDocumentationTool,
   NavigateLinearGenomeViewTool,
   SearchAndNavigateLGVTool,
+  ToggleTracksTool,
   ViewsTool,
 } from '../tools'
 
@@ -67,6 +68,7 @@ export const ChatbotWidget = observer(function ({
       textSearchManager,
       views,
     }),
+    toggletracks: ToggleTracksTool(views),
     views: ViewsTool(views),
   }
   // Register chat settings and tools as a context provider for the runtime
