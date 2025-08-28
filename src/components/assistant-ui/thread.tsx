@@ -96,12 +96,12 @@ const ThreadWelcomeSuggestions: FC = () => {
       </ThreadPrimitive.Suggestion>
       <ThreadPrimitive.Suggestion
         className="hover:bg-muted/80 flex max-w-sm grow basis-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors ease-in"
-        prompt="This is an interesting prompt for the user."
+        prompt="Take me to BRCA1"
         method="replace"
         autoSend
       >
         <span className="line-clamp-2 text-ellipsis text-sm font-semibold">
-          This is an interesting prompt for the user.
+          Take me to BRCA1
         </span>
       </ThreadPrimitive.Suggestion>
     </div>

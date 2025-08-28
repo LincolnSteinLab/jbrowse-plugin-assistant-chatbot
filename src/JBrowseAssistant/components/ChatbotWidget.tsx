@@ -57,6 +57,18 @@ export const ChatbotWidget = observer(function ({
   // Setup assistant-ui runtime
   const adapter = new LocalLangchainAdapter()
   const runtime = useLocalRuntime(adapter)
+  // Setup tools
+  const tools = {
+    jbrowseConfig: JBrowseConfigTool(jbrowse),
+    jbrowseDocumentation: JBrowseDocumentationTool({}),
+    navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
+    searchAndNavigateLGV: SearchAndNavigateLGVTool({
+      assemblyManager,
+      textSearchManager,
+      views,
+    }),
+    views: ViewsTool(views),
+  }
   // Register chat settings and tools as a context provider for the runtime
   useEffect(() => {
     return runtime.registerModelContextProvider({
@@ -70,17 +82,9 @@ export const ChatbotWidget = observer(function ({
           : defaultSystemPrompt
         return {
           system: systemPrompt,
-          tools: {
-            jbrowseConfig: JBrowseConfigTool(jbrowse),
-            jbrowseDocumentation: JBrowseDocumentationTool({}),
-            navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
-            searchAndNavigateLGV: SearchAndNavigateLGVTool({
-              assemblyManager,
-              textSearchManager,
-              views,
-            }),
-            views: ViewsTool(views),
-          },
+          tools: Object.fromEntries(
+            Object.entries(tools).map(([k, v]) => [k, v.tool]),
+          ),
           config: {
             apiKey: providerSettings?.apiKey,
             baseUrl: providerSettings?.baseUrl,
@@ -123,6 +127,12 @@ export const ChatbotWidget = observer(function ({
             </TabsContent>
           </div>
         </Tabs>
+        {Object.entries(tools)
+          .filter(([, v]) => v.ui)
+          .map(([k, v]) => {
+            const ToolUI = v.ui!
+            return <ToolUI key={k} />
+          })}
       </AssistantRuntimeProvider>
     </ThemeProvider>
   )

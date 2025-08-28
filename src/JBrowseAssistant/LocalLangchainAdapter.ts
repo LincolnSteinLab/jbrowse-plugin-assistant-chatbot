@@ -21,7 +21,7 @@ import {
 import { ChatAgent } from './agent/ChatAgent'
 import { JBTool } from './tools/base'
 
-function getLangchainTools(tools: Record<string, JBTool>) {
+function getLangchainTools(tools: Record<string, JBTool['tool']>) {
   return Object.values(tools).map(tool => tool.execute({}))
 }
 
@@ -54,7 +54,9 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
     })
     const providerModel = context.config?.modelName?.split('/', 2)
     const stream = this.chatAgent.stream(lc_messages, {
-      tools: getLangchainTools((context.tools as Record<string, JBTool>) || {}),
+      tools: getLangchainTools(
+        (context.tools as Record<string, JBTool['tool']>) || {},
+      ),
       systemPrompt: context.system,
       provider: providerModel?.[0],
       model: providerModel?.[1],
@@ -96,7 +98,7 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
                   toolName: tool_call.name,
                   args: tool_call.args,
                   argsText:
-                    (message as AIMessageChunk).tool_call_chunks?.[i].args ??
+                    (message as AIMessageChunk)?.tool_call_chunks?.[i].args ??
                     JSON.stringify(tool_call.args),
                 }
               })
