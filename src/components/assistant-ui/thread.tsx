@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import React, { type FC } from 'react'
 
+import { ReasoningMessagePart } from '@/components/assistant-ui/custom/ReasoningMessagePart'
 import { MarkdownText } from '@/components/assistant-ui/markdown-text'
 import { ToolFallback } from '@/components/assistant-ui/tool-fallback'
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button'
@@ -201,7 +202,11 @@ const AssistantMessage: FC = () => {
     <MessagePrimitive.Root className="grid grid-cols-[auto_auto_1fr] grid-rows-[auto_1fr] relative w-full max-w-[var(--thread-max-width)] py-4">
       <div className="text-foreground max-w-[calc(var(--thread-max-width)*0.8)] wrap-anywhere leading-7 col-span-2 col-start-2 row-start-1 my-1.5">
         <MessagePrimitive.Parts
-          components={{ Text: MarkdownText, tools: { Fallback: ToolFallback } }}
+          components={{
+            Reasoning: ReasoningMessagePart,
+            Text: MarkdownText,
+            tools: { Fallback: ToolFallback },
+          }}
         />
       </div>
       <AssistantActionBar />
