@@ -35,8 +35,10 @@ const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-t-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white">
-      <span className="lowercase [&>span]:text-xs">{language}</span>
+    <div className="aui-code-header-root mt-4 flex items-center justify-between gap-4 rounded-t-lg bg-muted-foreground/15 px-4 py-2 text-sm font-semibold text-foreground dark:bg-muted-foreground/20">
+      <span className="aui-code-header-language lowercase [&>span]:text-xs">
+        {language}
+      </span>
       <TooltipIconButton tooltip="Copy" onClick={onCopy}>
         {!isCopied && <CopyIcon />}
         {isCopied && <CheckIcon />}
@@ -73,94 +75,100 @@ const defaultComponents = memoizeMarkdownComponents({
   h1: ({ className, ...props }) => (
     <h1 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
-        'mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0',
+        'aui-md-h1 mb-8 scroll-m-20 text-4xl font-extrabold tracking-tight last:mb-0',
         className,
       )}
       {...props}
-    ></h1>
+    />
   ),
   h2: ({ className, ...props }) => (
     <h2 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
-        'mb-4 mt-8 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 last:mb-0',
+        'aui-md-h2 mt-8 mb-4 scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    ></h2>
+    />
   ),
   h3: ({ className, ...props }) => (
     <h3 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
-        'mb-4 mt-6 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0 last:mb-0',
+        'aui-md-h3 mt-6 mb-4 scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    ></h3>
+    />
   ),
   h4: ({ className, ...props }) => (
     <h4 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
-        'mb-4 mt-6 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0',
+        'aui-md-h4 mt-6 mb-4 scroll-m-20 text-xl font-semibold tracking-tight first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    ></h4>
+    />
   ),
   h5: ({ className, ...props }) => (
     <h5 // eslint-disable-line jsx-a11y/heading-has-content
       className={cn(
-        'my-4 text-lg font-semibold first:mt-0 last:mb-0',
+        'aui-md-h5 my-4 text-lg font-semibold first:mt-0 last:mb-0',
         className,
       )}
       {...props}
-    ></h5>
+    />
   ),
   h6: ({ className, ...props }) => (
     <h6 // eslint-disable-line jsx-a11y/heading-has-content
-      className={cn('my-4 font-semibold first:mt-0 last:mb-0', className)}
+      className={cn(
+        'aui-md-h6 my-4 font-semibold first:mt-0 last:mb-0',
+        className,
+      )}
       {...props}
-    ></h6>
+    />
   ),
   p: ({ className, ...props }) => (
     <p
-      className={cn('mb-5 mt-5 leading-7 first:mt-0 last:mb-0', className)}
+      className={cn(
+        'aui-md-p mt-5 mb-5 leading-7 first:mt-0 last:mb-0',
+        className,
+      )}
       {...props}
     />
   ),
   a: ({ className, ...props }) => (
     <a // eslint-disable-line jsx-a11y/anchor-has-content
       className={cn(
-        'text-primary font-medium underline underline-offset-4',
+        'aui-md-a font-medium text-primary underline underline-offset-4',
         className,
       )}
       {...props}
-    ></a>
+    />
   ),
   blockquote: ({ className, ...props }) => (
     <blockquote
-      className={cn('border-l-2 pl-6 italic', className)}
+      className={cn('aui-md-blockquote border-l-2 pl-6 italic', className)}
       {...props}
     />
   ),
   ul: ({ className, ...props }) => (
     <ul
-      className={cn('my-5 ml-6 list-disc [&>li]:mt-2', className)}
+      className={cn('aui-md-ul my-5 ml-6 list-disc [&>li]:mt-2', className)}
       {...props}
     />
   ),
   ol: ({ className, ...props }) => (
     <ol
-      className={cn('my-5 ml-6 list-decimal [&>li]:mt-2', className)}
+      className={cn('aui-md-ol my-5 ml-6 list-decimal [&>li]:mt-2', className)}
       {...props}
     />
   ),
   hr: ({ className, ...props }) => (
-    <hr className={cn('my-5 border-b', className)} {...props} />
+    <hr className={cn('aui-md-hr my-5 border-b', className)} {...props} />
   ),
   table: ({ className, ...props }) => (
     <table
       className={cn(
-        'my-5 w-full border-separate border-spacing-0 overflow-y-auto',
+        'aui-md-table my-5 w-full border-separate border-spacing-0 overflow-y-auto',
         className,
       )}
       {...props}
@@ -169,7 +177,7 @@ const defaultComponents = memoizeMarkdownComponents({
   th: ({ className, ...props }) => (
     <th
       className={cn(
-        'bg-muted px-4 py-2 text-left font-bold first:rounded-tl-lg last:rounded-tr-lg [&[align=center]]:text-center [&[align=right]]:text-right',
+        'aui-md-th bg-muted px-4 py-2 text-left font-bold first:rounded-tl-lg last:rounded-tr-lg [&[align=center]]:text-center [&[align=right]]:text-right',
         className,
       )}
       {...props}
@@ -178,7 +186,7 @@ const defaultComponents = memoizeMarkdownComponents({
   td: ({ className, ...props }) => (
     <td
       className={cn(
-        'border-b border-l px-4 py-2 text-left last:border-r [&[align=center]]:text-center [&[align=right]]:text-right',
+        'aui-md-td border-b border-l px-4 py-2 text-left last:border-r [&[align=center]]:text-center [&[align=right]]:text-right',
         className,
       )}
       {...props}
@@ -187,7 +195,7 @@ const defaultComponents = memoizeMarkdownComponents({
   tr: ({ className, ...props }) => (
     <tr
       className={cn(
-        'm-0 border-b p-0 first:border-t [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg',
+        'aui-md-tr m-0 border-b p-0 first:border-t [&:last-child>td:first-child]:rounded-bl-lg [&:last-child>td:last-child]:rounded-br-lg',
         className,
       )}
       {...props}
@@ -195,14 +203,14 @@ const defaultComponents = memoizeMarkdownComponents({
   ),
   sup: ({ className, ...props }) => (
     <sup
-      className={cn('[&>a]:text-xs [&>a]:no-underline', className)}
+      className={cn('aui-md-sup [&>a]:text-xs [&>a]:no-underline', className)}
       {...props}
     />
   ),
   pre: ({ className, ...props }) => (
     <pre
       className={cn(
-        'overflow-x-auto rounded-b-lg bg-black p-4 text-white',
+        'aui-md-pre overflow-x-auto !rounded-t-none rounded-b-lg bg-black p-4 text-white',
         className,
       )}
       {...props}
@@ -213,7 +221,8 @@ const defaultComponents = memoizeMarkdownComponents({
     return (
       <code
         className={cn(
-          !isCodeBlock && 'bg-muted rounded border font-semibold',
+          !isCodeBlock &&
+            'aui-md-inline-code rounded border bg-muted font-semibold',
           className,
         )}
         {...props}
