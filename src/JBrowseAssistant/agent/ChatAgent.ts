@@ -1,6 +1,3 @@
-import { ChatAnthropic } from '@langchain/anthropic'
-import { Embeddings } from '@langchain/core/embeddings'
-import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
   AIMessage,
   AIMessageChunk,
@@ -11,22 +8,11 @@ import {
 } from '@langchain/core/messages'
 import { Runnable, RunnableConfig } from '@langchain/core/runnables'
 import { DynamicStructuredTool } from '@langchain/core/tools'
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
 import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
-import { ChatOllama } from '@langchain/ollama'
-import { ChatOpenAI } from '@langchain/openai'
 
-export interface EmbeddingsSpec {
-  embeddings: Embeddings
-  config_id: string
-}
-
-interface ConfigurableSpec {
-  embeddings_spec?: EmbeddingsSpec
-}
-
-export type RunConfig = RunnableConfig<ConfigurableSpec>
+import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
+import { ChatModel, ChatModelConfig } from './ChatModel'
 
 const StateAnnotation = Annotation.Root({
   systemPrompt: Annotation<string>,
@@ -35,13 +21,13 @@ const StateAnnotation = Annotation.Root({
   }),
 })
 
-export class ChatAgent {
-  private llm?: BaseChatModel
+export class ChatAgent extends ChatModel {
   private llm_with_tools?: Runnable
   private graph?: ReturnType<typeof this.createWorkflow>
   private tool_node?: ToolNode
 
   constructor() {
+    super()
     this.graph = this.createWorkflow()
   }
 
@@ -99,62 +85,18 @@ export class ChatAgent {
       model,
       apiKey,
       baseUrl,
+      abortSignal,
     }: {
       tools?: DynamicStructuredTool[]
       systemPrompt?: string
-      provider?: string
-      model?: string
-      apiKey?: string
-      baseUrl?: string
-    },
+      abortSignal?: AbortSignal
+    } & ChatModelConfig,
   ) {
-    switch (provider) {
-      case 'openai':
-        this.llm = new ChatOpenAI({
-          apiKey: apiKey,
-          configuration: {
-            baseURL: baseUrl ?? undefined,
-          },
-          model: model,
-          streaming: true,
-          temperature: 0.0,
-        })
-        break
-      case 'anthropic':
-        this.llm = new ChatAnthropic({
-          anthropicApiUrl: baseUrl ?? undefined,
-          apiKey: apiKey,
-          model: model,
-          streaming: true,
-          temperature: 0.0,
-        })
-        break
-      case 'google':
-        this.llm = new ChatGoogleGenerativeAI({
-          apiKey: apiKey,
-          baseUrl: baseUrl ?? undefined,
-          model: model ?? 'gemini-2.5-flash-lite',
-          streaming: true,
-          temperature: 0.0,
-        })
-        break
-      case 'ollama':
-        this.llm = new ChatOllama({
-          baseUrl: baseUrl ?? undefined,
-          model: model,
-          streaming: true,
-          temperature: 0.0,
-        })
-        break
-      default:
-        throw new Error(`Unsupported provider: ${provider}`)
-    }
+    this.resetParser()
+    this.setupChatModel({ provider, model, apiKey, baseUrl })
     if (tools && this.llm?.bindTools && this.tool_node) {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []
-    }
-    const config: RunConfig = {
-      configurable: {},
     }
     const stream = await this.graph!.stream(
       {
@@ -162,16 +104,25 @@ export class ChatAgent {
         messages: messages,
       },
       {
-        ...config,
-        streamMode: 'messages',
+        callbacks: [new ChatLLMCallbackHandler()],
+        signal: abortSignal,
+        streamMode: ['messages', 'updates'],
       },
     )
-    for await (const [message, _metadata] of stream) {
-      if (isAIMessageChunk(message as BaseMessageChunk)) {
-        yield message as AIMessageChunk
-      } else {
-        console.log(message, _metadata)
+    for await (const [streamMode, part] of stream) {
+      if (streamMode === 'messages') {
+        let [message] = part
+        if (isAIMessageChunk(message as BaseMessageChunk)) {
+          message = this.parseResponse(message as AIMessageChunk)
+        }
+        yield message as BaseMessageChunk
+      } else if (streamMode === 'updates') {
+        yield part
       }
+    }
+    const finalChunk = this.finalParsedChunk()
+    if (finalChunk) {
+      yield finalChunk
     }
   }
 }
