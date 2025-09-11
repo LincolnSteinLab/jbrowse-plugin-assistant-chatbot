@@ -16,6 +16,8 @@ import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 import { ChatOllama } from '@langchain/ollama'
 import { ChatOpenAI } from '@langchain/openai'
 
+import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
+
 const THINK_START = '<think>'
 const THINK_END = '</think>'
 
@@ -211,6 +213,7 @@ export class ChatAgent {
       model,
       apiKey,
       baseUrl,
+      abortSignal,
     }: {
       tools?: DynamicStructuredTool[]
       systemPrompt?: string
@@ -218,6 +221,7 @@ export class ChatAgent {
       model?: string
       apiKey?: string
       baseUrl?: string
+      abortSignal?: AbortSignal
     },
   ) {
     this.resetParser()
@@ -273,6 +277,8 @@ export class ChatAgent {
         messages: messages,
       },
       {
+        callbacks: [new ChatLLMCallbackHandler()],
+        signal: abortSignal,
         streamMode: ['messages', 'updates'],
       },
     )
