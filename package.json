@@ -97,7 +97,8 @@
       "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
-    }
+    },
+    "fsevents": "2.3.2"
   },
   "peerDependencies": {
     "@jbrowse/core": "^3.0.0"
