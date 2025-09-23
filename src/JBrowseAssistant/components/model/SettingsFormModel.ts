@@ -2,6 +2,8 @@ import { localStorageGetItem, localStorageSetItem } from '@jbrowse/core/util'
 import { Instance, types } from 'mobx-state-tree'
 import { z } from 'zod'
 
+import { ChatModelProviders } from '@/JBrowseAssistant/agent/ChatModel'
+
 const settingsLocalStorageKey = 'chatbot-settings'
 
 const ProviderSettingsSchema = z
@@ -14,7 +16,7 @@ const ProviderSettingsSchema = z
   .optional()
 
 export const SettingsFormSchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'google', 'ollama']),
+  provider: z.enum(ChatModelProviders),
   providerSettings: z.object({
     openai: ProviderSettingsSchema,
     anthropic: ProviderSettingsSchema,

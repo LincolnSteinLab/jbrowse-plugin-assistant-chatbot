@@ -19,6 +19,7 @@ import {
 } from '@langchain/core/messages'
 
 import { ChatAgent } from './agent/ChatAgent'
+import { ChatModelProvider } from './agent/ChatModel'
 import { JBTool } from './tools/base'
 
 function getLangchainMessages(
@@ -58,7 +59,7 @@ async function* streamAgentResponse({
       (context.tools as Record<string, JBTool['tool']>) || {},
     ),
     systemPrompt: context.system,
-    provider: providerModel?.[0],
+    provider: providerModel?.[0] as ChatModelProvider,
     model: providerModel?.[1],
     apiKey: context.config?.apiKey,
     baseUrl: context.config?.baseUrl,
