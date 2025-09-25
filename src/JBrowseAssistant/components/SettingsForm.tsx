@@ -81,6 +81,7 @@ export const SettingsForm = observer(function ({
   const [providerModels, setProviderModels] = useState<
     Record<string, ChatModelInfo>
   >({})
+  const [modelSearchValue, setModelSearchValue] = useState<string>('')
   useEffect(() => {
     let cancelled = false
     getAvailableModels({ provider, baseUrl, apiKey })
@@ -212,9 +213,49 @@ export const SettingsForm = observer(function ({
                       <CommandInput
                         placeholder="Search models..."
                         className="h-9"
+                        onValueChange={val => setModelSearchValue(val.trim())}
                       />
                       <CommandList>
                         <CommandEmpty>No models found.</CommandEmpty>
+                        {!modelSearchValue || modelSearchValue in providerModels ? null : (
+                          <CommandGroup>
+                            <CommandItem
+                              value={modelSearchValue}
+                              data-value={modelSearchValue}
+                              key={provider + '-input-' + modelSearchValue}
+                              onSelect={() => {
+                                form.setValue(
+                                  `providerSettings.${provider}.model`,
+                                  modelSearchValue,
+                                )
+                                setActiveModelInfo(
+                                  providerModels[modelSearchValue] ?? null,
+                                )
+                              }}
+                              onMouseEnter={() =>
+                                setActiveModelInfo(
+                                  providerModels[modelSearchValue] ?? null,
+                                )
+                              }
+                              onFocus={() =>
+                                setActiveModelInfo(
+                                  providerModels[modelSearchValue] ?? null,
+                                )
+                              }
+                              className="flex items-center gap-1"
+                            >
+                              <Check
+                                className={cn(
+                                  'h-4 w-4',
+                                  modelSearchValue === field.value
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
+                                )}
+                              />
+                              <span className="truncate">{modelSearchValue}</span>
+                            </CommandItem>
+                          </CommandGroup>
+                        )}
                         <CommandGroup heading={provider}>
                           {Object.entries(providerModels).map(([id, info]) => (
                             <CommandItem
