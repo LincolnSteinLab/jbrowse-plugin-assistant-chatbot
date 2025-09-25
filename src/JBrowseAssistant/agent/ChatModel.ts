@@ -94,26 +94,38 @@ export async function getAvailableModels({
       })
       const openai_model_pages = await openai_client.models.list()
       const openai_models = await Array.fromAsync(openai_model_pages)
-      console.log(openai_models)
       return Object.fromEntries(
-        openai_models.map(model => [model.id, { id: model.id }]),
+        openai_models
+          .filter(model => /^((chat)?gpt|o[0-9]+)/.exec(model.id))
+          .map(model => [
+            model.id,
+            {
+              id: model.id,
+              description: `Created ${new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long' }).format(new Date(model.created * 1000))}`,
+            },
+          ]),
       )
     case 'anthropic':
       const anthropic_client = new Anthropic({
         apiKey,
         baseURL: baseUrl,
+        dangerouslyAllowBrowser: true,
       })
       const anthropic_model_pages = await anthropic_client.models.list()
       const anthropic_models = await Array.fromAsync(anthropic_model_pages)
-      console.log(anthropic_models)
       return Object.fromEntries(
-        anthropic_models.map(model => [model.id, { id: model.id }]),
+        anthropic_models.map(model => [
+          model.id,
+          {
+            id: model.id,
+            description: `Created ${model.created_at}`,
+          },
+        ]),
       )
     case 'google':
       const google_client = new GoogleGenAI({ apiKey })
       const google_model_pages = await google_client.models.list()
       const google_models = await Array.fromAsync(google_model_pages)
-      console.log(google_models)
       return Object.fromEntries(
         google_models
           .filter(
@@ -129,9 +141,14 @@ export async function getAvailableModels({
     case 'ollama':
       const ollama_client = new Ollama({ host: baseUrl })
       const ollama_models = (await ollama_client.list()).models
-      console.log(ollama_models)
       return Object.fromEntries(
-        ollama_models.map(model => [model.name, { id: model.name }]),
+        ollama_models.map(model => [
+          model.name,
+          {
+            id: model.name,
+            description: `Modified ${new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(model.modified_at))}`,
+          },
+        ]),
       )
   }
 }

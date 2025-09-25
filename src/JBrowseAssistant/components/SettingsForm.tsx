@@ -187,10 +187,7 @@ export const SettingsForm = observer(function ({
                         !field.value && 'text-muted-foreground',
                       )}
                     >
-                      {field.value ||
-                        (providerModels.length
-                          ? 'Select model'
-                          : 'No models (check credentials)')}
+                      {field.value || 'Select a model...'}
                       <ChevronsUpDown className="text-muted-foreground opacity-50" />
                     </Button>
                   </FormControl>
@@ -216,7 +213,7 @@ export const SettingsForm = observer(function ({
                         className="h-9"
                       />
                       <CommandList>
-                        <CommandEmpty>No model found.</CommandEmpty>
+                        <CommandEmpty>No models found.</CommandEmpty>
                         <CommandGroup heading={provider}>
                           {Object.entries(providerModels).map(([id, info]) => (
                             <CommandItem
@@ -267,7 +264,7 @@ export const SettingsForm = observer(function ({
                         </div>
                       ) : (
                         <div className="text-muted-foreground">
-                          No models loaded. Verify provider/API key.
+                          No models fetched. Verify provider/API key.
                         </div>
                       )}
                     </div>
