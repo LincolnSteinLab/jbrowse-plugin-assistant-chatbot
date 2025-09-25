@@ -59,11 +59,14 @@ async function* streamAgentResponse({
       (context.tools as Record<string, JBTool['tool']>) || {},
     ),
     systemPrompt: context.system,
-    provider: providerModel?.[0] as ChatModelProvider,
-    model: providerModel?.[1],
-    apiKey: context.config?.apiKey,
-    baseUrl: context.config?.baseUrl,
     abortSignal,
+    chatModelConfig: {
+      provider: providerModel?.[0] as ChatModelProvider,
+      model: providerModel?.[1],
+      apiKey: context.config?.apiKey,
+      baseUrl: context.config?.baseUrl,
+      temperature: context.callSettings?.temperature,
+    },
   })
   let text = ''
   let reasoning = ''

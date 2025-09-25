@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
@@ -321,6 +322,32 @@ export const SettingsForm = observer(function ({
               </FormDescription>
               <FormControl>
                 <Textarea {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          key={provider + '-temperature'}
+          control={form.control}
+          name={`providerSettings.${provider}.temperature`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Temperature</FormLabel>
+              <FormControl>
+                <div className="flex items-center">
+                  <Slider
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[field.value ?? 0]}
+                    onValueChange={val => field.onChange(val[0])}
+                    className="flex-1 py-2"
+                  />
+                  <div className="w-10 text-right text-sm tabular-nums">
+                    {field.value ?? 0}%
+                  </div>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

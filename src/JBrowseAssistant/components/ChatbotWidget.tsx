@@ -87,6 +87,9 @@ export const ChatbotWidget = observer(function ({
           tools: Object.fromEntries(
             Object.entries(tools).map(([k, v]) => [k, v.tool]),
           ),
+          callSettings: {
+            temperature: providerSettings?.temperature,
+          },
           config: {
             apiKey: providerSettings?.apiKey,
             baseUrl: providerSettings?.baseUrl,

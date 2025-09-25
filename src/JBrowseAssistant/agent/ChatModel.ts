@@ -27,15 +27,23 @@ export interface ChatModelConfig {
   model?: string
   apiKey?: string
   baseUrl?: string
+  temperature?: number
 }
 
 export class ChatModel extends ResponseParser {
   protected llm?: BaseChatModel
 
-  setupChatModel = ({ provider, model, apiKey, baseUrl }: ChatModelConfig) => {
+  setupChatModel = ({
+    provider,
+    model,
+    apiKey,
+    baseUrl,
+    temperature,
+  }: ChatModelConfig) => {
     if (!provider) {
       throw new Error('Missing chat model provider')
     }
+    temperature = (temperature ?? 0) / 100 // scale 0-100 to 0-1
     switch (provider) {
       case 'openai':
         this.llm = new ChatOpenAI({
@@ -45,7 +53,7 @@ export class ChatModel extends ResponseParser {
           },
           model: model,
           streaming: true,
-          temperature: 0.0,
+          temperature: temperature * 2,
         })
         break
       case 'anthropic':
@@ -54,7 +62,7 @@ export class ChatModel extends ResponseParser {
           apiKey: apiKey,
           model: model,
           streaming: true,
-          temperature: 0.0,
+          temperature,
         })
         break
       case 'google':
@@ -63,7 +71,7 @@ export class ChatModel extends ResponseParser {
           baseUrl: baseUrl ?? undefined,
           model: model ?? 'gemini-2.5-flash-lite',
           streaming: true,
-          temperature: 0.0,
+          temperature: temperature * 2,
         })
         break
       case 'ollama':
@@ -71,7 +79,7 @@ export class ChatModel extends ResponseParser {
           baseUrl: baseUrl ?? undefined,
           model: model,
           streaming: true,
-          temperature: 0.0,
+          temperature: temperature * 2,
         })
         this.enableReasoningParsing()
         break

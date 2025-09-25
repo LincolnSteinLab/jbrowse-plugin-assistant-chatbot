@@ -12,6 +12,7 @@ const ProviderSettingsSchema = z
     baseUrl: z.string().optional(),
     model: z.string().min(1, 'Model name is required'),
     systemPrompt: z.string().optional(),
+    temperature: z.number().min(0).max(100).optional(),
   })
   .optional()
 
