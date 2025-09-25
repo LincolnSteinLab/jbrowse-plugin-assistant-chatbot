@@ -213,11 +213,13 @@ export const SettingsForm = observer(function ({
                       <CommandInput
                         placeholder="Search models..."
                         className="h-9"
+                        value={modelSearchValue}
                         onValueChange={val => setModelSearchValue(val.trim())}
                       />
                       <CommandList>
                         <CommandEmpty>No models found.</CommandEmpty>
-                        {!modelSearchValue || modelSearchValue in providerModels ? null : (
+                        {!modelSearchValue ||
+                        modelSearchValue in providerModels ? null : (
                           <CommandGroup>
                             <CommandItem
                               value={modelSearchValue}
@@ -252,7 +254,9 @@ export const SettingsForm = observer(function ({
                                     : 'opacity-0',
                                 )}
                               />
-                              <span className="truncate">{modelSearchValue}</span>
+                              <span className="truncate">
+                                {modelSearchValue}
+                              </span>
                             </CommandItem>
                           </CommandGroup>
                         )}
