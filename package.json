@@ -53,6 +53,7 @@
     "@jbrowse/core": "^3.4.0",
     "@jbrowse/development-tools": "^2.2.1",
     "@jbrowse/plugin-linear-genome-view": "^3.6.4",
+    "@rollup/plugin-alias": "^5.1.1",
     "@schemastore/package": "^0.0.10",
     "@tailwindcss/postcss": "^4.1.6",
     "@testing-library/jest-dom": "^6.1.5",
@@ -104,6 +105,9 @@
     "@jbrowse/core": "^3.0.0"
   },
   "dependencies": {
+    "@adorsys-gis/web-auth": "^1.2.0",
+    "@adorsys-gis/web-auth-logger": "^1.2.0",
+    "@adorsys-gis/web-auth-storage": "^1.2.0",
     "@anthropic-ai/sdk": "^0.56.0",
     "@assistant-ui/react": "^0.10.49",
     "@assistant-ui/react-markdown": "^0.10.9",

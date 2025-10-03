@@ -15,6 +15,7 @@ const ProviderSettingsSchema = z
     temperature: z.number().min(0).max(100).optional(),
   })
   .optional()
+type ProviderSettings = z.infer<typeof ProviderSettingsSchema>
 
 export const SettingsFormSchema = z.object({
   provider: z.enum(ChatModelProviders),
@@ -53,6 +54,21 @@ You are an expert in biological processes and an assistant for answering questio
   },
 }
 
+function sanitizeForPersistence(s: Settings): Settings {
+  const scrub = (ps?: ProviderSettings) =>
+    ps ? { ...ps, apiKey: undefined } : ps
+  return {
+    ...s,
+    providerSettings: ChatModelProviders.reduce(
+      (acc, provider) => {
+        acc[provider] = scrub(s.providerSettings?.[provider])
+        return acc
+      },
+      {} as Settings['providerSettings'],
+    ),
+  }
+}
+
 export const SettingsFormModel = types
   .model({
     settings: types.optional(types.frozen<Settings>(), () => {
@@ -64,7 +80,10 @@ export const SettingsFormModel = types
   })
   .actions(self => ({
     set(settings: Settings) {
-      localStorageSetItem(settingsLocalStorageKey, JSON.stringify(settings))
+      localStorageSetItem(
+        settingsLocalStorageKey,
+        JSON.stringify(sanitizeForPersistence(settings)),
+      )
       self.settings = settings
     },
     clear() {

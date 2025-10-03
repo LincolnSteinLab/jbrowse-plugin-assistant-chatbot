@@ -7,6 +7,8 @@ import { ChatOllama } from '@langchain/ollama'
 import { ChatOpenAI, OpenAIClient } from '@langchain/openai'
 import { Ollama } from 'ollama/dist/browser'
 
+import { WebAuthVault } from '@/lib/vault'
+
 import { ResponseParser } from './ResponseParser'
 
 export const ChatModelProviders = [
@@ -85,6 +87,10 @@ export class ChatModel extends ResponseParser {
         break
     }
   }
+}
+
+export async function getProviderApiKeyOnDemand(provider: ChatModelProvider) {
+  return await WebAuthVault.getSecret(provider)
 }
 
 export async function getAvailableModels({

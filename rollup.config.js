@@ -3,6 +3,7 @@ import packageJSON from './package.json'
 import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
+import alias from '@rollup/plugin-alias'
 import css from 'rollup-plugin-import-css'
 
 function postcssTransform(code) {
@@ -60,6 +61,14 @@ configs.forEach(config => {
       output.name = `JBrowsePlugin${packageJSON['jbrowse-plugin'].name}`
     }
   })
+  const polyfillIndex = config.plugins.findIndex(
+    plugin => plugin.name === 'polyfill-node'
+  )
+  if (polyfillIndex >= 0) {
+    config.plugins.splice(polyfillIndex, 0, alias({
+      entries: [{ find: /^node:(console|path)/, replacement: '$1' }],
+    }))
+  }
   config.plugins.push(
     css({
       transform: postcssTransform,

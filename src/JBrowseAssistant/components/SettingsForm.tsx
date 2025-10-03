@@ -38,9 +38,11 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { WebAuthVault } from '@/lib/vault'
 
 import { ChatModelInfo, getAvailableModels } from '../agent/ChatModel'
 
+import { ApiKeyManager } from './ApiKeyManager'
 import {
   ISettingsFormModel,
   Settings,
@@ -75,7 +77,6 @@ export const SettingsForm = observer(function ({
   // watch all dynamic fields
   const provider = form.watch('provider')
   const baseUrl = form.watch(`providerSettings.${provider}.baseUrl`)
-  const apiKey = form.watch(`providerSettings.${provider}.apiKey`)
   const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
   // fetch list of available models from provider
   const [providerModels, setProviderModels] = useState<
@@ -84,8 +85,10 @@ export const SettingsForm = observer(function ({
   const [modelSearchValue, setModelSearchValue] = useState<string>('')
   useEffect(() => {
     let cancelled = false
-    getAvailableModels({ provider, baseUrl, apiKey })
-      .then(models => {
+    WebAuthVault.getSecret(provider)
+      .then(async apiKey => {
+        if (cancelled) return
+        const models = await getAvailableModels({ provider, baseUrl, apiKey })
         if (!cancelled) setProviderModels(models)
       })
       .catch(error => {
@@ -95,7 +98,7 @@ export const SettingsForm = observer(function ({
     return () => {
       cancelled = true
     }
-  }, [provider, baseUrl, apiKey])
+  }, [provider, baseUrl])
   // manage active model for displaying description
   const selectedModelId = form.watch(`providerSettings.${provider}.model`)
   const [activeModelInfo, setActiveModelInfo] = useState<ChatModelInfo | null>(
@@ -155,15 +158,14 @@ export const SettingsForm = observer(function ({
           key={provider + '-apiKey'}
           control={form.control}
           name={`providerSettings.${provider}.apiKey`}
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>LLM Provider API key</FormLabel>
               <FormDescription>
-                See provider documentation for how to obtain an API key.
+                Stored locally, encrypted with a passkey. You will verify when
+                needed.
               </FormDescription>
-              <FormControl>
-                <Input type="password" {...field} value={field.value ?? ''} />
-              </FormControl>
+              <ApiKeyManager provider={provider} />
               <FormMessage />
             </FormItem>
           )}
