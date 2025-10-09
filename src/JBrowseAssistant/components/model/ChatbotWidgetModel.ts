@@ -11,6 +11,10 @@ export const ChatWidgetModel = types
   .model({
     id: ElementId,
     type: types.literal('ChatbotWidget'),
+    currentTab: types.optional(
+      types.enumeration(['chat', 'threads', 'settings']),
+      'chat',
+    ),
     settingsForm: types.optional(SettingsFormModel, () =>
       SettingsFormModel.create(),
     ),
@@ -23,9 +27,12 @@ export const ChatWidgetModel = types
       return !!self.settingsForm.settings
     },
   }))
-  .actions(() => {
+  .actions(self => {
     const adapter = new LocalLangchainAdapter()
     return {
+      updateTab(tab: string) {
+        self.currentTab = tab
+      },
       useLocalRuntime() {
         return useLocalRuntime(adapter)
       },

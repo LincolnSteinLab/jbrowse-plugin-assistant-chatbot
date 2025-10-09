@@ -79,8 +79,7 @@ export const SettingsForm = observer(function ({
       .then(models => {
         if (!cancelled) setProviderModels(models)
       })
-      .catch(error => {
-        console.error('Error fetching available models', error)
+      .catch(() => {
         if (!cancelled) setProviderModels({})
       })
     return () => {

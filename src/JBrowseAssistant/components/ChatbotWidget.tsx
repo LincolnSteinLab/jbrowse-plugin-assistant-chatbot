@@ -102,11 +102,13 @@ export const ChatbotWidget = observer(function ({
       },
     })
   })
+  const updateTab = (tab: string) => model.updateTab(tab)
   return (
     <ThemeProvider theme={theme}>
       <AssistantRuntimeProvider runtime={runtime}>
         <Tabs
-          defaultValue="chat"
+          defaultValue={model.currentTab}
+          onValueChange={updateTab}
           className="absolute gap-0 top-[48px] bottom-0 w-full max-w-full overflow-hidden"
         >
           <div className="flex items-center p-2">
