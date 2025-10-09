@@ -2,8 +2,8 @@ import { localStorageGetItem, localStorageSetItem } from '@jbrowse/core/util'
 import {
   decryptWithDetail,
   DetailedDecryptResult,
+  encrypt,
   encryptWithDetail,
-  encryptWithKey,
   generateSalt,
   importKey,
 } from '@metamask/browser-passworder'
@@ -14,7 +14,6 @@ export class SecretsVault<T extends Record<string, JSONType>> {
   #vault?: DetailedDecryptResult // private cache
 
   constructor(name: string) {
-    console.log('Creating vault', name)
     this.name = name
   }
 
@@ -41,9 +40,13 @@ export class SecretsVault<T extends Record<string, JSONType>> {
    **/
   async #initialize(password: string): Promise<void> {
     if (this.#vault) return
-    if (localStorageGetItem(this.name)) return
+    const vaultStr = localStorageGetItem(this.name)
+    if (vaultStr) {
+      this.#vault = await decryptWithDetail(password, vaultStr)
+      return
+    }
     const salt = generateSalt()
-    const { vault, exportedKeyString } = await encryptWithDetail(password, {})
+    const { vault, exportedKeyString } = await encryptWithDetail(password, {}, salt)
     localStorageSetItem(this.name, vault)
     this.#vault = {
       vault: {},
@@ -64,14 +67,12 @@ export class SecretsVault<T extends Record<string, JSONType>> {
     const vaultStr = localStorageGetItem(this.name)
     if (!vaultStr) return {} as T
     if (!password) throw new Error('Missing password')
-    console.log(password, vaultStr)
     this.#vault = await decryptWithDetail(password, vaultStr)
     return this.#vault.vault as T
   }
 
   async #loadOne(key: keyof T, password?: string): Promise<T[keyof T]> {
     const vault = await this.#load(password)
-    console.log(this.#vault, vault)
     return vault[key]
   }
 
@@ -86,10 +87,7 @@ export class SecretsVault<T extends Record<string, JSONType>> {
       await this.#initialize(password) // sets #vault
     }
     const key = await importKey(this.#vault!.exportedKeyString)
-    //const vaultStr = await encrypt('', this.#vault!.vault, key, this.#vault!.salt)
-    const payload = await encryptWithKey(key, this.#vault!.vault)
-    payload.salt = this.#vault!.salt
-    const vaultStr = JSON.stringify(payload)
+    const vaultStr = await encrypt('', this.#vault!.vault, key, this.#vault!.salt)
     localStorageSetItem(this.name, vaultStr)
   }
 
@@ -138,7 +136,6 @@ export class SecretsVault<T extends Record<string, JSONType>> {
   }
 
   public async get(key: keyof T, password?: string): Promise<T[keyof T]> {
-    console.log(password)
     return await this.#loadOne(key, password)
   }
 
@@ -147,9 +144,7 @@ export class SecretsVault<T extends Record<string, JSONType>> {
     value: T[keyof T],
     password?: string,
   ): Promise<void> {
-    console.log(password)
     await this.#saveOne(key, value, password)
-    console.log(this.#vault)
   }
 
   public async changePassword(
