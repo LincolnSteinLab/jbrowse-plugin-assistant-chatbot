@@ -46,7 +46,11 @@ export class SecretsVault<T extends Record<string, JSONType>> {
       return
     }
     const salt = generateSalt()
-    const { vault, exportedKeyString } = await encryptWithDetail(password, {}, salt)
+    const { vault, exportedKeyString } = await encryptWithDetail(
+      password,
+      {},
+      salt,
+    )
     localStorageSetItem(this.name, vault)
     this.#vault = {
       vault: {},
@@ -87,7 +91,12 @@ export class SecretsVault<T extends Record<string, JSONType>> {
       await this.#initialize(password) // sets #vault
     }
     const key = await importKey(this.#vault!.exportedKeyString)
-    const vaultStr = await encrypt('', this.#vault!.vault, key, this.#vault!.salt)
+    const vaultStr = await encrypt(
+      '',
+      this.#vault!.vault,
+      key,
+      this.#vault!.salt,
+    )
     localStorageSetItem(this.name, vaultStr)
   }
 

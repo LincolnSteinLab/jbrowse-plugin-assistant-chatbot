@@ -1,10 +1,11 @@
+import { useLocalRuntime } from '@assistant-ui/react'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { Instance, types } from 'mobx-state-tree'
 
+import { LocalLangchainAdapter } from '@/JBrowseAssistant/LocalLangchainAdapter'
+
 import { ApiKeyVaultModel } from './ApiKeyVaultModel'
 import { SettingsFormModel } from './SettingsFormModel'
-import { LocalLangchainAdapter } from '@/JBrowseAssistant/LocalLangchainAdapter'
-import { useLocalRuntime } from '@assistant-ui/react'
 
 export const ChatWidgetModel = types
   .model({
@@ -27,7 +28,7 @@ export const ChatWidgetModel = types
     return {
       useLocalRuntime() {
         return useLocalRuntime(adapter)
-      }
+      },
     }
   })
 

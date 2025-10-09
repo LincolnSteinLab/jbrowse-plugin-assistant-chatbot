@@ -1,5 +1,6 @@
-import { createTool, EmptySchema } from "./base";
-import { ChatModelProvider } from "../agent/ChatModel";
+import { ChatModelProvider } from '../agent/ChatModel'
+
+import { createTool, EmptySchema } from './base'
 
 export const ApiKeyVaultTool = createTool({
   name: 'ApiKeyVault',
@@ -13,5 +14,6 @@ export const ApiKeyVaultTool = createTool({
       provider: ChatModelProvider
       getApiKey: (provider: ChatModelProvider) => Promise<string | undefined>
     }) =>
-    async ({}) => await getApiKey(provider)
+    async ({}) =>
+      await getApiKey(provider),
 })

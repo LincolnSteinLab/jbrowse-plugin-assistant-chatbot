@@ -50,7 +50,7 @@ export const SettingsForm = observer(function ({
 }: {
   model: IChatWidgetModel
 }) {
-  const { settingsForm } = model
+  const { settingsForm, apiKeyVault } = model
   const form = useForm<Settings>({
     resolver: zodResolver(SettingsFormSchema),
     defaultValues: settingsForm.settings,
@@ -73,7 +73,7 @@ export const SettingsForm = observer(function ({
   useEffect(() => {
     let cancelled = false
     getAvailableModels({ provider, baseUrl }, ({}) => {
-      if (model.apiKeyVault.exists(provider)) return model.apiKeyVault.get(provider)
+      if (apiKeyVault.exists(provider)) return apiKeyVault.get(provider)
       return new Promise(resolve => resolve(undefined))
     })
       .then(models => {
@@ -86,7 +86,7 @@ export const SettingsForm = observer(function ({
     return () => {
       cancelled = true
     }
-  }, [provider, baseUrl])
+  }, [provider, baseUrl, apiKeyVault])
   // manage active model for displaying description
   const selectedModelId = form.watch(`providerSettings.${provider}.model`)
   const [activeModelInfo, setActiveModelInfo] = useState<ChatModelInfo | null>(

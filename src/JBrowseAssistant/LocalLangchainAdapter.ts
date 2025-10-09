@@ -54,12 +54,15 @@ async function* streamAgentResponse({
 }: ChatModelRunOptions) {
   const chatAgent = new ChatAgent()
   const providerModel = context.config?.modelName?.split('/', 2)
-  const { apiKeyVault, ...tools } = context.tools as Record<string, JBTool['tool']> & { apiKeyVault: JBTool['tool'] }
-  const getApiKey = apiKeyVault.execute({}).func as ({}) => Promise<string | undefined>
+  const { apiKeyVault, ...tools } = context.tools as Record<
+    string,
+    JBTool['tool']
+  > & { apiKeyVault: JBTool['tool'] }
+  const getApiKey = apiKeyVault.execute({}).func as ({}) => Promise<
+    string | undefined
+  >
   const stream = chatAgent.stream(getLangchainMessages(messages), {
-    tools: getLangchainTools(
-      (tools as Record<string, JBTool['tool']>) || {},
-    ),
+    tools: getLangchainTools((tools as Record<string, JBTool['tool']>) || {}),
     systemPrompt: context.system,
     abortSignal,
     chatModelConfig: {
