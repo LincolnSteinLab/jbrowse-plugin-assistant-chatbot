@@ -54,19 +54,21 @@ async function* streamAgentResponse({
 }: ChatModelRunOptions) {
   const chatAgent = new ChatAgent()
   const providerModel = context.config?.modelName?.split('/', 2)
+  const { apiKeyVault, ...tools } = context.tools as Record<string, JBTool['tool']> & { apiKeyVault: JBTool['tool'] }
+  const getApiKey = apiKeyVault.execute({}).func as ({}) => Promise<string | undefined>
   const stream = chatAgent.stream(getLangchainMessages(messages), {
     tools: getLangchainTools(
-      (context.tools as Record<string, JBTool['tool']>) || {},
+      (tools as Record<string, JBTool['tool']>) || {},
     ),
     systemPrompt: context.system,
     abortSignal,
     chatModelConfig: {
       provider: providerModel?.[0] as ChatModelProvider,
       model: providerModel?.[1],
-      apiKey: context.config?.apiKey,
       baseUrl: context.config?.baseUrl,
       temperature: context.callSettings?.temperature,
     },
+    getApiKey,
   })
   let text = ''
   let reasoning = ''

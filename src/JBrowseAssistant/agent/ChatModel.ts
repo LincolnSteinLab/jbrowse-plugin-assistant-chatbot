@@ -25,7 +25,6 @@ export interface ChatModelInfo {
 export interface ChatModelConfig {
   provider?: ChatModelProvider
   model?: string
-  apiKey?: string
   baseUrl?: string
   temperature?: number
 }
@@ -33,13 +32,12 @@ export interface ChatModelConfig {
 export class ChatModel extends ResponseParser {
   protected llm?: BaseChatModel
 
-  setupChatModel = ({
+  async setupChatModel({
     provider,
     model,
-    apiKey,
     baseUrl,
     temperature,
-  }: ChatModelConfig) => {
+  }: ChatModelConfig, getApiKey: ({}) => Promise<string | undefined>) {
     if (!provider) {
       throw new Error('Missing chat model provider')
     }
@@ -47,7 +45,7 @@ export class ChatModel extends ResponseParser {
     switch (provider) {
       case 'openai':
         this.llm = new ChatOpenAI({
-          apiKey: apiKey,
+          apiKey: await getApiKey({}),
           configuration: {
             baseURL: baseUrl ?? undefined,
           },
@@ -59,7 +57,7 @@ export class ChatModel extends ResponseParser {
       case 'anthropic':
         this.llm = new ChatAnthropic({
           anthropicApiUrl: baseUrl ?? undefined,
-          apiKey: apiKey,
+          apiKey: await getApiKey({}),
           model: model,
           streaming: true,
           temperature,
@@ -67,7 +65,7 @@ export class ChatModel extends ResponseParser {
         break
       case 'google':
         this.llm = new ChatGoogleGenerativeAI({
-          apiKey: apiKey,
+          apiKey: await getApiKey({}),
           baseUrl: baseUrl ?? undefined,
           model: model ?? 'gemini-2.5-flash-lite',
           streaming: true,
@@ -90,13 +88,12 @@ export class ChatModel extends ResponseParser {
 export async function getAvailableModels({
   provider,
   baseUrl,
-  apiKey,
-}: ChatModelConfig): Promise<Record<string, ChatModelInfo>> {
+}: ChatModelConfig, getApiKey: ({}) => Promise<string | undefined>): Promise<Record<string, ChatModelInfo>> {
   if (!provider) return {}
   switch (provider) {
     case 'openai':
       const openai_client = new OpenAIClient({
-        apiKey,
+        apiKey: await getApiKey({}),
         baseURL: baseUrl,
         dangerouslyAllowBrowser: true,
       })
@@ -115,7 +112,7 @@ export async function getAvailableModels({
       )
     case 'anthropic':
       const anthropic_client = new Anthropic({
-        apiKey,
+        apiKey: await getApiKey({}),
         baseURL: baseUrl,
         dangerouslyAllowBrowser: true,
       })
@@ -131,7 +128,7 @@ export async function getAvailableModels({
         ]),
       )
     case 'google':
-      const google_client = new GoogleGenAI({ apiKey })
+      const google_client = new GoogleGenAI({ apiKey: await getApiKey({}), })
       const google_model_pages = await google_client.models.list()
       const google_models = await Array.fromAsync(google_model_pages)
       return Object.fromEntries(

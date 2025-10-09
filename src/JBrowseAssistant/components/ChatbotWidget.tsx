@@ -1,7 +1,7 @@
 // @ts-expect-error : Handled by rollup-plugin-import-css
 import styles from '../../styles/globals.css'
 
-import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react'
+import { AssistantRuntimeProvider } from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
 import { getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
@@ -13,8 +13,8 @@ import { ThreadList } from '@/components/assistant-ui/thread-list'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
 import {
+  ApiKeyVaultTool,
   JBrowseConfigTool,
   JBrowseDocumentationTool,
   NavigateLinearGenomeViewTool,
@@ -23,6 +23,7 @@ import {
   ViewsTool,
 } from '../tools'
 
+import { ApiKeyVaultAuthPrompt } from './ApiKeyVault'
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
 
@@ -55,11 +56,14 @@ export const ChatbotWidget = observer(function ({
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
   const theme = createTheme(themeOptions)
-  // Setup assistant-ui runtime
-  const adapter = new LocalLangchainAdapter()
-  const runtime = useLocalRuntime(adapter)
+  // Setup assistant-ui runtime with LocalLangchainAdapter
+  const runtime = model.useLocalRuntime()
   // Setup tools
   const tools = {
+    apiKeyVault: ApiKeyVaultTool({
+      provider: model.settingsForm.settings.provider,
+      getApiKey: model.apiKeyVault.get,
+    }),
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
     navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
@@ -91,7 +95,6 @@ export const ChatbotWidget = observer(function ({
             temperature: providerSettings?.temperature,
           },
           config: {
-            apiKey: providerSettings?.apiKey,
             baseUrl: providerSettings?.baseUrl,
             modelName: `${provider}/${providerSettings?.model}`,
           },
@@ -128,10 +131,11 @@ export const ChatbotWidget = observer(function ({
               value="settings"
               className="absolute inset-0 p-2 overflow-y-scroll"
             >
-              <SettingsForm model={model.settingsForm} />
+              <SettingsForm model={model} />
             </TabsContent>
           </div>
         </Tabs>
+        <ApiKeyVaultAuthPrompt model={model.apiKeyVault} />
         {Object.entries(tools)
           .filter(([, v]) => v.ui)
           .map(([k, v]) => {

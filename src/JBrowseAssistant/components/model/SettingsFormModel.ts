@@ -8,7 +8,6 @@ const settingsLocalStorageKey = 'chatbot-settings'
 
 const ProviderSettingsSchema = z
   .object({
-    apiKey: z.string().optional(),
     baseUrl: z.string().optional(),
     model: z.string().min(1, 'Model name is required'),
     systemPrompt: z.string().optional(),

@@ -118,6 +118,7 @@
     "@langchain/ollama": "^0.2.3",
     "@langchain/openai": "^0.6.9",
     "@langchain/textsplitters": "^0.1.0",
+    "@metamask/browser-passworder": "^6.0.0",
     "@mui/material": "^7.1.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",

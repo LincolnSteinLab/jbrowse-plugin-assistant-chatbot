@@ -37,45 +37,33 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
+import { cn, withExceptionCapturing } from '@/lib/utils'
 
 import { ChatModelInfo, getAvailableModels } from '../agent/ChatModel'
 
-import {
-  ISettingsFormModel,
-  Settings,
-  SettingsFormSchema,
-} from './model/SettingsFormModel'
-
-function withExceptionCapturing<S, T extends unknown[]>(
-  fn: (...rest: T) => Promise<S>,
-) {
-  return (...args: T) => {
-    fn(...args).catch(error => {
-      console.error('Unexpected error', error)
-    })
-  }
-}
+import { ApiKeyVault } from './ApiKeyVault'
+import { IChatWidgetModel } from './model/ChatbotWidgetModel'
+import { Settings, SettingsFormSchema } from './model/SettingsFormModel'
 
 export const SettingsForm = observer(function ({
   model,
 }: {
-  model: ISettingsFormModel
+  model: IChatWidgetModel
 }) {
+  const { settingsForm } = model
   const form = useForm<Settings>({
     resolver: zodResolver(SettingsFormSchema),
-    defaultValues: model.settings,
+    defaultValues: settingsForm.settings,
   })
   const onSubmit = withExceptionCapturing(
     form.handleSubmit((s: Settings) => {
-      model.set(s)
+      settingsForm.set(s)
       form.reset(s)
     }),
   )
   // watch all dynamic fields
   const provider = form.watch('provider')
   const baseUrl = form.watch(`providerSettings.${provider}.baseUrl`)
-  const apiKey = form.watch(`providerSettings.${provider}.apiKey`)
   const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
   // fetch list of available models from provider
   const [providerModels, setProviderModels] = useState<
@@ -84,7 +72,10 @@ export const SettingsForm = observer(function ({
   const [modelSearchValue, setModelSearchValue] = useState<string>('')
   useEffect(() => {
     let cancelled = false
-    getAvailableModels({ provider, baseUrl, apiKey })
+    getAvailableModels({ provider, baseUrl }, ({}) => {
+      if (model.apiKeyVault.exists(provider)) return model.apiKeyVault.get(provider)
+      return new Promise(resolve => resolve(undefined))
+    })
       .then(models => {
         if (!cancelled) setProviderModels(models)
       })
@@ -95,7 +86,7 @@ export const SettingsForm = observer(function ({
     return () => {
       cancelled = true
     }
-  }, [provider, baseUrl, apiKey])
+  }, [provider, baseUrl])
   // manage active model for displaying description
   const selectedModelId = form.watch(`providerSettings.${provider}.model`)
   const [activeModelInfo, setActiveModelInfo] = useState<ChatModelInfo | null>(
@@ -151,23 +142,7 @@ export const SettingsForm = observer(function ({
             </FormItem>
           )}
         />
-        <FormField
-          key={provider + '-apiKey'}
-          control={form.control}
-          name={`providerSettings.${provider}.apiKey`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>LLM Provider API key</FormLabel>
-              <FormDescription>
-                See provider documentation for how to obtain an API key.
-              </FormDescription>
-              <FormControl>
-                <Input type="password" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <ApiKeyVault model={model} />
         <FormField
           key={provider + '-model'}
           control={form.control}
