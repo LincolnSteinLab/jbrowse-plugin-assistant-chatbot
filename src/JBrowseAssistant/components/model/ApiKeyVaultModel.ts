@@ -15,17 +15,19 @@ export const ApiKeyVaultModel = types
   .extend(self => {
     const apiKeyVault = new SecretsVault<ApiKeyVault>(vaultLocalStorageKey)
     let setPasswordFromPrompt: (password: string) => void = () => {}
+    let cancelPasswordPrompt: () => void = () => {}
     const promptPassword = flow(function* promptPassword() {
       self.isAuthenticating = true
-      const password = (yield new Promise<string>(resolve => {
+      const password = (yield new Promise<string>((resolve, reject) => {
         setPasswordFromPrompt = resolve
+        cancelPasswordPrompt = () => reject(new Error('cancelled'))
       })) as string
       self.isAuthenticating = false
       return password
     })
     return {
       views: {
-        get status() {
+        status() {
           return apiKeyVault.status()
         },
         exists(provider: ChatModelProvider) {
@@ -63,6 +65,7 @@ export const ApiKeyVaultModel = types
         },
         closePasswordPrompt() {
           self.isAuthenticating = false
+          cancelPasswordPrompt()
         },
       },
     }

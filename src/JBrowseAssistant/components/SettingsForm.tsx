@@ -106,7 +106,7 @@ export const SettingsForm = observer(function ({
           name="provider"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>LLM Provider</FormLabel>
+              <FormLabel>Language Model API</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -130,10 +130,7 @@ export const SettingsForm = observer(function ({
           name={`providerSettings.${provider}.baseUrl`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Alternate API URL</FormLabel>
-              <FormDescription>
-                Optionally override to a custom API endpoint.
-              </FormDescription>
+              <FormLabel>Alternate API Endpoint</FormLabel>
               <FormControl>
                 <Input {...field} value={field.value ?? ''} />
               </FormControl>
@@ -300,7 +297,7 @@ export const SettingsForm = observer(function ({
           name="useProviderSystemPrompt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>System Prompt Mode</FormLabel>
+              <FormLabel>Prompt Mode</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={val => field.onChange(val === 'true')}
@@ -335,7 +332,7 @@ export const SettingsForm = observer(function ({
           }
           render={({ field }) => (
             <FormItem>
-              <FormLabel>System Prompt</FormLabel>
+              <FormLabel>Prompt</FormLabel>
               <FormDescription>
                 Outline instructions for the LLM agent.
               </FormDescription>

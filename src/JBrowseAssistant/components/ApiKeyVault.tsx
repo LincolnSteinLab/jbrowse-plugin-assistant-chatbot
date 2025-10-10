@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  KeyIcon,
   LockKeyholeIcon,
   RotateCcwKeyIcon,
+  ShredderIcon,
   UnlockKeyholeIcon,
   UserLockIcon,
 } from 'lucide-react'
@@ -34,6 +36,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '@/components/ui/input-group'
+import { Label } from '@/components/ui/label'
 import { withExceptionCapturing } from '@/lib/utils'
 
 import {
@@ -51,40 +54,62 @@ export const ApiKeyVault = observer(function ({
   const { apiKeyVault, settingsForm } = model
   const provider = settingsForm.settings.provider
   const [apiKey, setApiKey] = useState('')
+  const [vaultStatus, setVaultStatus] = useState(apiKeyVault.status())
+  const [isKeyAvailable, setIsKeyAvailable] = useState(
+    apiKeyVault.exists(provider),
+  )
   const saveKey = () => {
-    apiKeyVault.set(provider, apiKey).catch(console.error)
+    apiKeyVault
+      .set(provider, apiKey)
+      .then(() => {
+        setApiKey('')
+        setVaultStatus(apiKeyVault.status())
+        setIsKeyAvailable(apiKeyVault.exists(provider))
+      })
+      .catch(error => {
+        if (error instanceof Error && error.message === 'cancelled') {
+          setVaultStatus(apiKeyVault.status())
+        } else {
+          console.error(error)
+        }
+      })
   }
   return (
-    <InputGroup>
-      <InputGroupInput
-        type="password"
-        aria-label="API key"
-        value={apiKey}
-        onChange={e => setApiKey(e.target.value)}
-        placeholder={
-          apiKeyVault.exists(provider)
-            ? 'Modify saved key...'
-            : apiKeyVault.status === 'locked'
-              ? 'Set API key... (vault is locked)'
-              : 'Add API key...'
-        }
-      />
-      <InputGroupAddon align="inline-end">
-        <InputGroupButton
-          aria-label="Save API key"
-          title="Save API key"
-          onClick={saveKey}
-          type="button"
-        >
-          Save
-          {apiKeyVault.status === 'locked' ? (
-            <LockKeyholeIcon />
-          ) : (
-            <UnlockKeyholeIcon />
-          )}
-        </InputGroupButton>
-      </InputGroupAddon>
-    </InputGroup>
+    <FormItem>
+      <Label>API Key</Label>
+      <InputGroup>
+        <InputGroupInput
+          type="password"
+          aria-label="API key"
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
+          placeholder={
+            isKeyAvailable
+              ? 'Modify saved key...'
+              : vaultStatus === 'locked'
+                ? 'Set API key... (vault is locked)'
+                : 'Add API key...'
+          }
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            aria-label="Save API key"
+            title="Save API key"
+            onClick={saveKey}
+            type="button"
+          >
+            Save
+            {isKeyAvailable ? (
+              <RotateCcwKeyIcon />
+            ) : vaultStatus === 'locked' ? (
+              <LockKeyholeIcon />
+            ) : (
+              <KeyIcon />
+            )}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </FormItem>
   )
 })
 
@@ -93,16 +118,19 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
 }: {
   model: IApiKeyVaultModel
 }) {
-  const status = model.status
+  const [vaultStatus, setVaultStatus] = useState(model.status())
   const form = useForm<ApiKeyVaultAuth>({
     resolver: zodResolver(ApiKeyVaultAuthPromptSchema),
     defaultValues: { password: '' },
   })
   const clearVault = () => {
     model.clear()
+    model.closePasswordPrompt()
+    form.reset()
   }
   const onOpenChange = (open: boolean) => {
     if (!open) model.closePasswordPrompt()
+    setVaultStatus(model.status())
   }
   const onSubmit = withExceptionCapturing(
     form.handleSubmit(({ password }: ApiKeyVaultAuth) => {
@@ -118,18 +146,22 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
             <DialogHeader>
               <DialogTitle>API Key Vault</DialogTitle>
               <DialogDescription>
-                We encrypt your API keys locally in your browser using a
-                password you provide. The password is never stored or
-                transmitted. API keys are only shared with their associated LLM
-                provider. Please ensure that you trust all loaded plugins and
-                3rd party scripts in this JBrowse session before proceeding.
+                We encrypt API keys in your browser using a password you
+                provide.
+                <br />
+                Your chosen password is never stored or transmitted.
+                <br />
+                API keys are only shared with their associated LLM provider.
+                <br />
+                Please ensure that you trust all loaded plugins and 3rd party
+                scripts in this JBrowse session before proceeding.
               </DialogDescription>
             </DialogHeader>
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="my-3">
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
@@ -143,19 +175,20 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
               )}
             />
             <DialogFooter>
+              <Button variant="destructive" onClick={clearVault}>
+                Destroy Vault
+                <ShredderIcon />
+              </Button>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button variant="destructive" onClick={clearVault}>
-                Clear All
-              </Button>
               <Button type="submit">
-                {status === 'locked' ? (
+                {vaultStatus === 'locked' ? (
                   <>
                     Unlock
                     <UnlockKeyholeIcon />
                   </>
-                ) : status === 'unset' ? (
+                ) : vaultStatus === 'unset' ? (
                   <>
                     Create
                     <UserLockIcon />
@@ -163,7 +196,7 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
                 ) : (
                   <>
                     Authenticate
-                    <RotateCcwKeyIcon />
+                    <LockKeyholeIcon />
                   </>
                 )}
               </Button>
