@@ -169,6 +169,11 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
                       type="password"
                       {...field}
                       value={field.value || ''}
+                      autoComplete={
+                        vaultStatus === 'unset'
+                          ? 'new-password'
+                          : 'current-password'
+                      }
                     />
                   </FormControl>
                   <FormMessage />
