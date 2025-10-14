@@ -134,7 +134,7 @@ async function* streamAgentResponse({
 /**
  * LocalLangchainAdapter bridges Assistant UI with LangChain.js
  */
-export class LocalLangchainAdapter implements ChatModelAdapter {
+export const LocalLangchainAdapter: ChatModelAdapter = {
   async *run(options: ChatModelRunOptions) {
     try {
       yield* streamAgentResponse(options)
@@ -175,5 +175,5 @@ export class LocalLangchainAdapter implements ChatModelAdapter {
     yield {
       status: { type: 'complete', reason: 'stop' },
     } as ChatModelRunResult
-  }
+  },
 }

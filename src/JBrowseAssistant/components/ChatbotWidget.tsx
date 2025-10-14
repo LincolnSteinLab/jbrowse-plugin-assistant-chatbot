@@ -1,7 +1,7 @@
 // @ts-expect-error : Handled by rollup-plugin-import-css
 import styles from '../../styles/globals.css'
 
-import { AssistantRuntimeProvider } from '@assistant-ui/react'
+import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
 import { getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
@@ -13,6 +13,7 @@ import { ThreadList } from '@/components/assistant-ui/thread-list'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
 import {
   ApiKeyVaultTool,
   JBrowseConfigTool,
@@ -57,7 +58,7 @@ export const ChatbotWidget = observer(function ({
   themeOptions.cssVariables = true
   const theme = createTheme(themeOptions)
   // Setup assistant-ui runtime with LocalLangchainAdapter
-  const runtime = model.useLocalRuntime()
+  const runtime = useLocalRuntime(LocalLangchainAdapter)
   // Setup tools
   const tools = {
     apiKeyVault: ApiKeyVaultTool({

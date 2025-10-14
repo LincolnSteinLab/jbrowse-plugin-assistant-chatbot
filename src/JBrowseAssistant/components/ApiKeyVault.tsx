@@ -97,6 +97,7 @@ export const ApiKeyVault = observer(function ({
             title="Save API key"
             onClick={saveKey}
             type="button"
+            variant="default"
           >
             Save
             {isKeyAvailable ? (
