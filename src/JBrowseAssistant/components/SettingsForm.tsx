@@ -23,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Popover,
   PopoverContent,
@@ -293,17 +294,21 @@ export const SettingsForm = observer(function ({
           )}
         />
         <FormField
+          key="useProviderSystemPrompt"
           control={form.control}
           name="useProviderSystemPrompt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Prompt Mode</FormLabel>
+              <FormLabel htmlFor="useProviderSystemPrompt-select">
+                Prompt Mode
+              </FormLabel>
               <FormControl>
                 <Select
+                  {...field}
                   onValueChange={val => field.onChange(val === 'true')}
                   value={String(field.value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="useProviderSystemPrompt-select">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -349,10 +354,14 @@ export const SettingsForm = observer(function ({
           name={`providerSettings.${provider}.temperature`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Temperature</FormLabel>
+              <Label id={`providerSettings.${provider}.temperature-label`}>
+                Temperature
+              </Label>
               <FormControl>
                 <div className="flex items-center">
                   <Slider
+                    {...field}
+                    aria-labelledby={`providerSettings.${provider}.temperature-label`}
                     min={0}
                     max={100}
                     step={1}

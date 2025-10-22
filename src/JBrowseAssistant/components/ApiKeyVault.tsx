@@ -81,6 +81,7 @@ export const ApiKeyVault = observer(function ({
         <InputGroupInput
           type="password"
           aria-label="API key"
+          autoComplete="new-password"
           value={apiKey}
           onChange={e => setApiKey(e.target.value)}
           placeholder={
@@ -127,11 +128,12 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
   const clearVault = () => {
     model.clear()
     model.closePasswordPrompt()
+    setVaultStatus(model.status())
     form.reset()
   }
   const onOpenChange = (open: boolean) => {
-    if (!open) model.closePasswordPrompt()
     setVaultStatus(model.status())
+    if (!open) model.closePasswordPrompt()
   }
   const onSubmit = withExceptionCapturing(
     form.handleSubmit(({ password }: ApiKeyVaultAuth) => {
@@ -158,6 +160,14 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
                 scripts in this JBrowse session before proceeding.
               </DialogDescription>
             </DialogHeader>
+            <input
+              id="username"
+              name="username"
+              autoComplete="username"
+              type="text"
+              defaultValue="JBrowse Assistant API Key Vault"
+              className="hidden"
+            />
             <FormField
               control={form.control}
               name="password"
