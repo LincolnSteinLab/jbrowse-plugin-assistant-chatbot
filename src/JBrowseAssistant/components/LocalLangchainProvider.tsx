@@ -1,17 +1,18 @@
 import {
+  AssistantRuntime,
   AssistantRuntimeProvider,
   ChatModelRunOptions,
   ChatModelRunResult,
   RuntimeAdapterProvider,
+  TextMessagePart,
   ThreadHistoryAdapter,
-  useLocalThreadRuntime,
+  ThreadMessage,
   useThreadListItem,
 } from '@assistant-ui/react'
 import {
   RemoteThreadListAdapter,
   RemoteThreadMetadata,
 } from '@assistant-ui/react/dist/runtimes/remote-thread-list/types'
-import { useRemoteThreadListRuntime } from '@assistant-ui/react/dist/runtimes/remote-thread-list/useRemoteThreadListRuntime'
 import {
   ExportedMessageRepository,
   ExportedMessageRepositoryItem,
@@ -66,11 +67,11 @@ async function putThreadMetadata<K extends keyof RemoteThreadMetadata>(
     ...thread.metadata,
     [metaKey]: metaValue,
   }
-  await tx.store.put(thread, remoteId)
+  await tx.store.put(thread)
   await tx.done
 }
 
-const browserThreadListAdapter: RemoteThreadListAdapter = {
+export const browserThreadListAdapter: RemoteThreadListAdapter = {
   async list() {
     const db = await openThreadListDB()
     const tx = db.transaction('threads')
@@ -83,17 +84,13 @@ const browserThreadListAdapter: RemoteThreadListAdapter = {
   },
   async initialize(threadId: string) {
     const db = await openThreadListDB()
-    await db.add(
-      'threads',
-      {
-        metadata: {
-          status: 'regular',
-          remoteId: threadId,
-        },
-        headId: undefined,
+    await db.add('threads', {
+      metadata: {
+        status: 'regular',
+        remoteId: threadId,
       },
-      threadId,
-    )
+      headId: undefined,
+    })
     return { remoteId: threadId, externalId: undefined }
   },
   async rename(remoteId: string, newTitle: string) {
@@ -117,10 +114,16 @@ const browserThreadListAdapter: RemoteThreadListAdapter = {
     }
     await tx.done
   },
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async generateTitle(remoteId: string) {
+  async generateTitle(remoteId: string, messages: readonly ThreadMessage[]) {
+    // TODO: generate titles
+    const newTitle = (messages?.[0].content?.[0] as TextMessagePart)?.text ?? ''
+    // Persist the new title
+    await this.rename(remoteId, newTitle)
+    // Return stream so the UI updates
     return createAssistantStream(controller => {
-      controller.appendText(remoteId) // TODO: generate titles
+      controller.appendText(
+        (messages?.[0].content?.[0] as TextMessagePart)?.text ?? remoteId,
+      )
       controller.close()
     })
   },
@@ -159,7 +162,7 @@ const browserThreadListAdapter: RemoteThreadListAdapter = {
             threadId: remoteId,
             item,
           })
-          await threadsStore.put(thread, remoteId)
+          await threadsStore.put(thread)
           await tx.done
         },
         async *resume(options: ChatModelRunOptions) {
@@ -185,13 +188,8 @@ const browserThreadListAdapter: RemoteThreadListAdapter = {
 
 export function LocalLangchainProvider({
   children,
-}: Readonly<{ children: ReactNode }>) {
-  const runtime = useRemoteThreadListRuntime({
-    runtimeHook: function LocalLangchainRuntime() {
-      return useLocalThreadRuntime(LocalLangchainAdapter, {})
-    },
-    adapter: browserThreadListAdapter,
-  })
+  runtime,
+}: Readonly<{ children: ReactNode; runtime: AssistantRuntime }>) {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       {children}

@@ -1,7 +1,10 @@
 // @ts-expect-error : Handled by rollup-plugin-import-css
 import styles from '../../styles/globals.css'
 
-import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react'
+import {
+  unstable_useRemoteThreadListRuntime,
+  useLocalThreadRuntime,
+} from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
 import { getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
@@ -25,6 +28,10 @@ import {
 } from '../tools'
 
 import { ApiKeyVaultAuthPrompt } from './ApiKeyVault'
+import {
+  browserThreadListAdapter,
+  LocalLangchainProvider,
+} from './LocalLangchainProvider'
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
 
@@ -58,7 +65,12 @@ export const ChatbotWidget = observer(function ({
   themeOptions.cssVariables = true
   const theme = createTheme(themeOptions)
   // Setup assistant-ui runtime with LocalLangchainAdapter
-  const runtime = useLocalRuntime(LocalLangchainAdapter)
+  const runtime = unstable_useRemoteThreadListRuntime({
+    runtimeHook: function LocalLangchainRuntime() {
+      return useLocalThreadRuntime(LocalLangchainAdapter, {})
+    },
+    adapter: browserThreadListAdapter,
+  })
   // Setup tools
   const tools = {
     apiKeyVault: ApiKeyVaultTool({
@@ -106,7 +118,7 @@ export const ChatbotWidget = observer(function ({
   const updateTab = (tab: string) => model.updateTab(tab)
   return (
     <ThemeProvider theme={theme}>
-      <AssistantRuntimeProvider runtime={runtime}>
+      <LocalLangchainProvider runtime={runtime}>
         <Tabs
           defaultValue={model.currentTab}
           onValueChange={updateTab}
@@ -145,7 +157,7 @@ export const ChatbotWidget = observer(function ({
             const ToolUI = v.ui!
             return <ToolUI key={k} />
           })}
-      </AssistantRuntimeProvider>
+      </LocalLangchainProvider>
     </ThemeProvider>
   )
 })
