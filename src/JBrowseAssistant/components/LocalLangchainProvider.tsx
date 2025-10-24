@@ -3,6 +3,7 @@ import {
   AssistantRuntimeProvider,
   ChatModelRunOptions,
   ChatModelRunResult,
+  ExportedMessageRepository,
   RuntimeAdapterProvider,
   TextMessagePart,
   ThreadHistoryAdapter,
@@ -12,11 +13,8 @@ import {
 import {
   RemoteThreadListAdapter,
   RemoteThreadMetadata,
-} from '@assistant-ui/react/dist/runtimes/remote-thread-list/types'
-import {
-  ExportedMessageRepository,
-  ExportedMessageRepositoryItem,
-} from '@assistant-ui/react/dist/runtimes/utils/MessageRepository'
+} from '@assistant-ui/react/dist/legacy-runtime/runtime-cores/remote-thread-list/types'
+import { ExportedMessageRepositoryItem } from '@assistant-ui/react/dist/legacy-runtime/runtime-cores/utils/MessageRepository'
 import { createAssistantStream } from 'assistant-stream'
 import { DBSchema, openDB } from 'idb'
 import React, { PropsWithChildren, ReactNode, useMemo } from 'react'
@@ -32,9 +30,9 @@ interface ThreadListDB extends DBSchema {
     }
   }
   messages: {
-    key: number
+    key: string
     value: {
-      threadId: string
+      threadId?: string
       item: ExportedMessageRepositoryItem
     }
     indexes: {
@@ -135,35 +133,66 @@ export const browserThreadListAdapter: RemoteThreadListAdapter = {
         async load() {
           if (!remoteId) return { messages: [] }
           const db = await openThreadListDB()
-          const tx = db.transaction(['threads', 'messages'])
+          const tx = db.transaction(['threads', 'messages'], 'readwrite')
           // Get headId from thread (last active message)
           const headId = (await tx.objectStore('threads').get(remoteId))?.headId
           // Get all thread messages
-          const messages = (
-            await tx.objectStore('messages').index('thread').getAll(remoteId)
-          ).map(({ item }) => item)
+          const messagesById = Object.fromEntries(
+            (
+              await tx.objectStore('messages').index('thread').getAll(remoteId)
+            ).map(({ item }) => [item.message.id, item]),
+          )
+          // Identify any missing parent messages
+          const missingParents = Object.values(messagesById)
+            .filter(({ parentId }) =>
+              parentId ? !(parentId in messagesById) : false,
+            )
+            .map(({ parentId }) => parentId) as string[]
+          // Fetch any missing parent messages (undefined threadId)
+          for (const parentId of missingParents) {
+            const message = await tx.objectStore('messages').get(parentId)
+            if (message) {
+              messagesById[message.item.message.id] = message.item
+              // Add threadId to DB entry
+              await tx.objectStore('messages').put({
+                threadId: remoteId,
+                item: message.item,
+              })
+            }
+          }
           await tx.done
+          // Sort messages by createdAt to avoid error during tree construction
+          const messages = Object.values(messagesById).sort(
+            (a, b) =>
+              a.message.createdAt.getTime() - b.message.createdAt.getTime(),
+          )
           return {
             headId,
             messages,
           }
         },
         async append(item: ExportedMessageRepositoryItem) {
-          if (!remoteId) return
           const db = await openThreadListDB()
-          const tx = db.transaction(['threads', 'messages'], 'readwrite')
-          // Update thread headId with new message.id
-          const threadsStore = tx.objectStore('threads')
-          const thread = await threadsStore.get(remoteId)
-          if (!thread) return
-          thread.headId = item.message.id
-          // Add to messages store
-          await tx.objectStore('messages').add({
-            threadId: remoteId,
-            item,
-          })
-          await threadsStore.put(thread)
-          await tx.done
+          if (remoteId) {
+            const tx = db.transaction(['threads', 'messages'], 'readwrite')
+            // Update thread headId with new message.id
+            const threadsStore = tx.objectStore('threads')
+            const thread = await threadsStore.get(remoteId)
+            if (!thread) return
+            thread.headId = item.message.id
+            // Add to messages store
+            await tx.objectStore('messages').add({
+              threadId: remoteId,
+              item,
+            })
+            await threadsStore.put(thread)
+            await tx.done
+          } else {
+            // If threadId isn't available, it'll be found later during load()
+            await db.add('messages', {
+              item,
+            })
+          }
         },
         async *resume(options: ChatModelRunOptions) {
           const { messages } = options
