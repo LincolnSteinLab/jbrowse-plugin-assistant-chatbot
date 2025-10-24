@@ -8,7 +8,7 @@ import {
   UserLockIcon,
 } from 'lucide-react'
 import { observer } from 'mobx-react'
-import React, { useState } from 'react'
+import React, { KeyboardEventHandler, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
@@ -74,6 +74,9 @@ export const ApiKeyVault = observer(function ({
         }
       })
   }
+  const apiKeyEnterKey: KeyboardEventHandler<HTMLInputElement> = e => {
+    if (e.key === 'Enter') saveKey()
+  }
   return (
     <FormItem>
       <Label>API Key</Label>
@@ -84,6 +87,7 @@ export const ApiKeyVault = observer(function ({
           autoComplete="new-password"
           value={apiKey}
           onChange={e => setApiKey(e.target.value)}
+          onKeyDown={apiKeyEnterKey}
           placeholder={
             isKeyAvailable
               ? 'Modify saved key...'
@@ -141,6 +145,9 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
       form.reset()
     }),
   )
+  const passwordEnterKey: KeyboardEventHandler<HTMLInputElement> = e => {
+    if (e.key === 'Enter') onSubmit(e)
+  }
   return (
     <Dialog open={model.isAuthenticating} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -184,6 +191,7 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
                           ? 'new-password'
                           : 'current-password'
                       }
+                      onKeyDown={passwordEnterKey}
                     />
                   </FormControl>
                   <FormMessage />
