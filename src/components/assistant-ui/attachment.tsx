@@ -4,7 +4,8 @@ import {
   AttachmentPrimitive,
   ComposerPrimitive,
   MessagePrimitive,
-  useAttachment,
+  useAssistantState,
+  useAssistantApi,
 } from '@assistant-ui/react'
 import { XIcon, PlusIcon, FileText } from 'lucide-react'
 import Image from 'next/image'
@@ -47,11 +48,11 @@ const useFileSrc = (file: File | undefined) => {
 }
 
 const useAttachmentSrc = () => {
-  const { file, src } = useAttachment(
-    useShallow((a): { file?: File; src?: string } => {
-      if (a.type !== 'image') return {}
-      if (a.file) return { file: a.file }
-      const src = a.content?.find(c => c.type === 'image')?.image
+  const { file, src } = useAssistantState(
+    useShallow(({ attachment }): { file?: File; src?: string } => {
+      if (attachment.type !== 'image') return {}
+      if (attachment.file) return { file: attachment.file }
+      const src = attachment.content?.find(c => c.type === 'image')?.image
       if (!src) return {}
       return { src }
     }),
@@ -109,7 +110,9 @@ const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
 }
 
 const AttachmentThumb: FC = () => {
-  const isImage = useAttachment(a => a.type === 'image')
+  const isImage = useAssistantState(
+    ({ attachment }) => attachment.type === 'image',
+  )
   const src = useAttachmentSrc()
 
   return (
@@ -127,10 +130,14 @@ const AttachmentThumb: FC = () => {
 }
 
 const AttachmentUI: FC = () => {
-  const isComposer = useAttachment(a => a.source !== 'message')
-  const isImage = useAttachment(a => a.type === 'image')
-  const typeLabel = useAttachment(a => {
-    const type = a.type
+  const api = useAssistantApi()
+  const isComposer = api.attachment.source === 'composer'
+
+  const isImage = useAssistantState(
+    ({ attachment }) => attachment.type === 'image',
+  )
+  const typeLabel = useAssistantState(({ attachment }) => {
+    const type = attachment.type
     switch (type) {
       case 'image':
         return 'Image'
@@ -139,7 +146,7 @@ const AttachmentUI: FC = () => {
       case 'file':
         return 'File'
       default:
-        throw new Error(`Unknown attachment type: ${a.type}`)
+        throw new Error(`Unknown attachment type: ${attachment.type}`)
     }
   })
 

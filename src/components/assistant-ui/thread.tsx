@@ -39,13 +39,15 @@ export const Thread: FC = () => {
     <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion="user">
         <ThreadPrimitive.Root
-          className="aui-root * border-border outline-ring/50 aui-thread-root @container flex h-full flex-col bg-background"
+          className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
           style={{
             ['--thread-max-width' as string]: 'infinity',
           }}
         >
           <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4">
-            <ThreadWelcome />
+            <ThreadPrimitive.If empty>
+              <ThreadWelcome />
+            </ThreadPrimitive.If>
 
             <ThreadPrimitive.Messages
               components={{
@@ -54,7 +56,11 @@ export const Thread: FC = () => {
                 AssistantMessage,
               }}
             />
-            <div className="aui-thread-viewport-spacer min-h-4 grow" />
+
+            <ThreadPrimitive.If empty={false}>
+              <div className="aui-thread-viewport-spacer min-h-4 grow" />
+            </ThreadPrimitive.If>
+
             <Composer />
           </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
@@ -79,37 +85,36 @@ const ThreadScrollToBottom: FC = () => {
 
 const ThreadWelcome: FC = () => {
   return (
-    <ThreadPrimitive.Empty>
-      <div className="aui-thread-welcome-root mx-auto mb-16 flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
-        <div className="aui-thread-welcome-center flex w-full flex-grow flex-col items-center justify-center">
-          <div className="aui-thread-welcome-message flex size-full flex-col justify-center px-8 md:mt-20">
-            <m.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
-            >
-              Hello there!
-            </m.div>
-            <m.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ delay: 0.1 }}
-              className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
-            >
-              How can I help you today?
-            </m.div>
-          </div>
+    <div className="aui-thread-welcome-root mx-auto my-auto flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
+      <div className="aui-thread-welcome-center flex w-full flex-grow flex-col items-center justify-center">
+        <div className="aui-thread-welcome-message flex size-full flex-col justify-center px-8">
+          <m.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
+          >
+            Hello there!
+          </m.div>
+          <m.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ delay: 0.1 }}
+            className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
+          >
+            How can I help you today?
+          </m.div>
         </div>
       </div>
-    </ThreadPrimitive.Empty>
+      <ThreadSuggestions />
+    </div>
   )
 }
 
-const ThreadWelcomeSuggestions: FC = () => {
+const ThreadSuggestions: FC = () => {
   return (
-    <div className="aui-thread-welcome-suggestions grid w-full gap-2 @md:grid-cols-2">
+    <div className="aui-thread-welcome-suggestions grid w-full gap-2 pb-4 @md:grid-cols-2">
       {[
         {
           title: 'How do I use JBrowse?',
@@ -132,8 +137,7 @@ const ThreadWelcomeSuggestions: FC = () => {
         >
           <ThreadPrimitive.Suggestion
             prompt={suggestedAction.action}
-            method="replace"
-            autoSend
+            send
             asChild
           >
             <Button
@@ -159,9 +163,6 @@ const Composer: FC = () => {
   return (
     <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
       <ThreadScrollToBottom />
-      <ThreadPrimitive.Empty>
-        <ThreadWelcomeSuggestions />
-      </ThreadPrimitive.Empty>
       <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col rounded-3xl border border-border bg-muted px-1 pt-2 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)] dark:border-muted-foreground/15">
         <ComposerAttachments />
         <ComposerPrimitive.Input
@@ -227,10 +228,8 @@ const MessageError: FC = () => {
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root asChild>
-      <m.div
-        className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] py-4 last:mb-24"
-        initial={{ y: 5, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+      <div
+        className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] animate-in py-4 duration-150 ease-out fade-in slide-in-from-bottom-1 last:mb-24"
         data-role="assistant"
       >
         <div className="aui-assistant-message-content mx-2 leading-7 break-words text-foreground">
@@ -248,7 +247,7 @@ const AssistantMessage: FC = () => {
           <BranchPicker />
           <AssistantActionBar />
         </div>
-      </m.div>
+      </div>
     </MessagePrimitive.Root>
   )
 }
@@ -283,10 +282,8 @@ const AssistantActionBar: FC = () => {
 const UserMessage: FC = () => {
   return (
     <MessagePrimitive.Root asChild>
-      <m.div
-        className="aui-user-message-root mx-auto grid w-full max-w-[var(--thread-max-width)] auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 px-2 py-4 first:mt-3 last:mb-5 [&:where(>*)]:col-start-2"
-        initial={{ y: 5, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+      <div
+        className="aui-user-message-root mx-auto grid w-full max-w-[var(--thread-max-width)] animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 px-2 py-4 duration-150 ease-out fade-in slide-in-from-bottom-1 first:mt-3 last:mb-5 [&:where(>*)]:col-start-2"
         data-role="user"
       >
         <UserMessageAttachments />
@@ -301,7 +298,7 @@ const UserMessage: FC = () => {
         </div>
 
         <BranchPicker className="aui-user-branch-picker col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
-      </m.div>
+      </div>
     </MessagePrimitive.Root>
   )
 }
