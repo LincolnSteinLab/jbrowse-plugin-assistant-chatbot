@@ -83,17 +83,15 @@ export class ChatAgent extends ChatModel {
       systemPrompt,
       abortSignal,
       chatModelConfig,
-      getApiKey,
     }: {
       tools?: DynamicStructuredTool[]
       systemPrompt?: string
       abortSignal?: AbortSignal
       chatModelConfig: ChatModelConfig
-      getApiKey: ({}) => Promise<string | undefined>
     },
   ) {
     this.resetParser()
-    await this.setupChatModel(chatModelConfig, getApiKey)
+    await this.setupChatModel(chatModelConfig)
     if (tools && this.llm?.bindTools && this.tool_node) {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []

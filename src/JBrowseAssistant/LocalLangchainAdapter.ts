@@ -70,8 +70,8 @@ async function* streamAgentResponse({
       model: providerModel?.[1],
       baseUrl: context.config?.baseUrl,
       temperature: context.callSettings?.temperature,
+      getApiKey,
     },
-    getApiKey,
   })
   let text = ''
   let reasoning = ''

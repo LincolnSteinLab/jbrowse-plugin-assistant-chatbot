@@ -27,15 +27,19 @@ export interface ChatModelConfig {
   model?: string
   baseUrl?: string
   temperature?: number
+  getApiKey: ({}) => Promise<string | undefined>
 }
 
 export class ChatModel extends ResponseParser {
   protected llm?: BaseChatModel
 
-  async setupChatModel(
-    { provider, model, baseUrl, temperature }: ChatModelConfig,
-    getApiKey: ({}) => Promise<string | undefined>,
-  ) {
+  async setupChatModel({
+    provider,
+    model,
+    baseUrl,
+    temperature,
+    getApiKey,
+  }: ChatModelConfig) {
     if (!provider) {
       throw new Error('Missing chat model provider')
     }
@@ -83,10 +87,11 @@ export class ChatModel extends ResponseParser {
   }
 }
 
-export async function getAvailableModels(
-  { provider, baseUrl }: ChatModelConfig,
-  getApiKey: ({}) => Promise<string | undefined>,
-): Promise<Record<string, ChatModelInfo>> {
+export async function getAvailableModels({
+  provider,
+  baseUrl,
+  getApiKey,
+}: ChatModelConfig): Promise<Record<string, ChatModelInfo>> {
   if (!provider) return {}
   switch (provider) {
     case 'openai':

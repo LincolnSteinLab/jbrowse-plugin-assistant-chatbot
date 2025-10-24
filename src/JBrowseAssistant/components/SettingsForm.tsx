@@ -73,9 +73,13 @@ export const SettingsForm = observer(function ({
   const [modelSearchValue, setModelSearchValue] = useState<string>('')
   useEffect(() => {
     let cancelled = false
-    getAvailableModels({ provider, baseUrl }, ({}) => {
-      if (apiKeyVault.exists(provider)) return apiKeyVault.get(provider)
-      return new Promise(resolve => resolve(undefined))
+    getAvailableModels({
+      provider,
+      baseUrl,
+      getApiKey: ({}) => {
+        if (apiKeyVault.exists(provider)) return apiKeyVault.get(provider)
+        return new Promise(resolve => resolve(undefined))
+      },
     })
       .then(models => {
         if (!cancelled) setProviderModels(models)
