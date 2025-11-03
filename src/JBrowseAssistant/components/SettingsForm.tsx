@@ -74,10 +74,14 @@ export const SettingsForm = observer(function ({
     Record<string, ChatModelInfo>
   >({})
   const [isFetchingModels, setIsFetchingModels] = useState<boolean>(false)
-  const getApiKey = useCallback(({}: {}) => {
-    if (apiKeyVault.exists(provider)) return apiKeyVault.get(provider)
-    return Promise.resolve(undefined)
-  }, [provider, apiKeyVault, apiKeyExists])
+  const getApiKey = useCallback(
+    ({}: object) => {
+      if (apiKeyExists ?? apiKeyVault.exists(provider))
+        return apiKeyVault.get(provider)
+      return Promise.resolve(undefined)
+    },
+    [provider, apiKeyVault, apiKeyExists],
+  )
   const getModels = useCallback(() => {
     let isCancelled = false
     setProviderModels({})
