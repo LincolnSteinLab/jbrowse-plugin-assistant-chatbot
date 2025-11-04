@@ -2,7 +2,10 @@ import { localStorageGetItem, localStorageSetItem } from '@jbrowse/core/util'
 import { Instance, types } from 'mobx-state-tree'
 import { z } from 'zod'
 
-import { ChatModelProvider, ChatModelProviders } from '@/JBrowseAssistant/agent/ChatModel'
+import {
+  ChatModelProvider,
+  ChatModelProviders,
+} from '@/JBrowseAssistant/agent/ChatModel'
 
 const settingsLocalStorageKey = 'chatbot-settings'
 
@@ -71,7 +74,10 @@ export const SettingsFormModel = types
         ...self.settings,
         provider,
       }
-      localStorageSetItem(settingsLocalStorageKey, JSON.stringify(self.settings))
+      localStorageSetItem(
+        settingsLocalStorageKey,
+        JSON.stringify(self.settings),
+      )
     },
     clear() {
       localStorageSetItem(settingsLocalStorageKey, '')

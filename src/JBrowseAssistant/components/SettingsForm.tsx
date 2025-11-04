@@ -68,11 +68,9 @@ export const SettingsForm = observer(function ({
   // sync provider change without saving
   useEffect(() => {
     settingsForm.setProvider(provider)
-  }, [provider])
+  }, [provider, settingsForm])
   // api key availability state
-  const [apiKeyExists, setApiKeyExists] = useState(
-    apiKeyVault.exists(provider),
-  )
+  const [apiKeyExists, setApiKeyExists] = useState(apiKeyVault.exists(provider))
   // model list fetching utilities
   const [providerModels, setProviderModels] = useState<
     Record<string, ChatModelInfo>
