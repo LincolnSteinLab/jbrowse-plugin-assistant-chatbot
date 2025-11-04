@@ -108,8 +108,8 @@ export const ApiKeyVault = observer(function ({
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton
-            aria-label="Save API key"
-            title="Save API key"
+            aria-label="Save/Unlock API key"
+            title="Save/Unlock API key"
             onClick={saveKey}
             type="button"
             variant="default"

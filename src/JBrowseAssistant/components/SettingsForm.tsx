@@ -65,15 +65,19 @@ export const SettingsForm = observer(function ({
   const baseUrl = form.watch(`providerSettings.${provider}.baseUrl`)
   const modelId = form.watch(`providerSettings.${provider}.model`)
   const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
-  // api key state
-  const [apiKeyExists, setApiKeyExists] = useState<boolean>(
+  // sync provider change without saving
+  useEffect(() => {
+    settingsForm.setProvider(provider)
+  }, [provider])
+  // api key availability state
+  const [apiKeyExists, setApiKeyExists] = useState(
     apiKeyVault.exists(provider),
   )
-  // fetching model list
+  // model list fetching utilities
   const [providerModels, setProviderModels] = useState<
     Record<string, ChatModelInfo>
   >({})
-  const [isFetchingModels, setIsFetchingModels] = useState<boolean>(false)
+  const [isFetchingModels, setIsFetchingModels] = useState(false)
   const getApiKey = useCallback(
     ({}: object) => {
       if (apiKeyExists ?? apiKeyVault.exists(provider))
@@ -155,6 +159,7 @@ export const SettingsForm = observer(function ({
           )}
         />
         <Controller
+          key={provider + '-baseUrl'}
           name={`providerSettings.${provider}.baseUrl`}
           control={form.control}
           render={({ field, fieldState }) => (
@@ -178,6 +183,7 @@ export const SettingsForm = observer(function ({
           setApiKeyExists={setApiKeyExists}
         />
         <Controller
+          key={provider + '-model'}
           name={`providerSettings.${provider}.model`}
           control={form.control}
           render={({ field, fieldState }) => (
@@ -369,6 +375,11 @@ export const SettingsForm = observer(function ({
           )}
         />
         <Controller
+          key={
+            useProviderSystemPrompt
+              ? provider + '-systemPrompt'
+              : 'defaultSystemPrompt'
+          }
           name={
             useProviderSystemPrompt
               ? `providerSettings.${provider}.systemPrompt`
