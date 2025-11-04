@@ -8,8 +8,13 @@ import {
   UserLockIcon,
 } from 'lucide-react'
 import { observer } from 'mobx-react'
-import React, { KeyboardEventHandler, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import React, {
+  Dispatch,
+  KeyboardEventHandler,
+  SetStateAction,
+  useState,
+} from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -21,14 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
   InputGroup,
@@ -39,6 +37,8 @@ import {
 import { Label } from '@/components/ui/label'
 import { withExceptionCapturing } from '@/lib/utils'
 
+import { ChatModelProvider } from '../agent/ChatModel'
+
 import {
   ApiKeyVaultAuth,
   ApiKeyVaultAuthPromptSchema,
@@ -48,48 +48,58 @@ import { IChatWidgetModel } from './model/ChatbotWidgetModel'
 
 export const ApiKeyVault = observer(function ({
   model,
+  provider,
+  apiKeyExists,
+  setApiKeyExists,
 }: {
   model: IChatWidgetModel
+  provider: ChatModelProvider
+  apiKeyExists: boolean
+  setApiKeyExists: Dispatch<SetStateAction<boolean>>
 }) {
-  const { apiKeyVault, settingsForm } = model
-  const provider = settingsForm.settings.provider
+  console.log(provider)
+  const { apiKeyVault } = model
   const [apiKey, setApiKey] = useState('')
   const [vaultStatus, setVaultStatus] = useState(apiKeyVault.status())
-  const [isKeyAvailable, setIsKeyAvailable] = useState(
-    apiKeyVault.exists(provider),
-  )
   const saveKey = () => {
-    apiKeyVault
-      .set(provider, apiKey)
-      .then(() => {
+    let vaultPromise: Promise<void>
+    if (vaultStatus === 'locked') {
+      vaultPromise = apiKeyVault.get(provider).then(() => {
+        setVaultStatus(apiKeyVault.status())
+        setApiKeyExists(apiKeyVault.exists(provider))
+      })
+    } else {
+      vaultPromise = apiKeyVault.set(provider, apiKey).then(() => {
         setApiKey('')
         setVaultStatus(apiKeyVault.status())
-        setIsKeyAvailable(apiKeyVault.exists(provider))
+        setApiKeyExists(apiKeyVault.exists(provider))
       })
-      .catch(error => {
-        if (error instanceof Error && error.message === 'cancelled') {
-          setVaultStatus(apiKeyVault.status())
-        } else {
-          console.error(error)
-        }
-      })
+    }
+    vaultPromise.catch(error => {
+      if (error instanceof Error && error.message === 'cancelled') {
+        setVaultStatus(apiKeyVault.status())
+      } else {
+        console.error(error)
+      }
+    })
   }
   const apiKeyEnterKey: KeyboardEventHandler<HTMLInputElement> = e => {
     if (e.key === 'Enter') saveKey()
   }
   return (
-    <FormItem>
-      <Label>API Key</Label>
+    <Field>
+      <Label htmlFor={`apiKey-${provider}`}>API Key</Label>
       <InputGroup>
         <InputGroupInput
           type="password"
           aria-label="API key"
           autoComplete="new-password"
+          id={`apiKey-${provider}`}
           value={apiKey}
           onChange={e => setApiKey(e.target.value)}
           onKeyDown={apiKeyEnterKey}
           placeholder={
-            isKeyAvailable
+            apiKeyExists
               ? 'Modify saved key...'
               : vaultStatus === 'locked'
                 ? 'Set API key... (vault is locked)'
@@ -98,24 +108,32 @@ export const ApiKeyVault = observer(function ({
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton
-            aria-label="Save API key"
-            title="Save API key"
+            aria-label="Save/Unlock API key"
+            title="Save/Unlock API key"
             onClick={saveKey}
             type="button"
             variant="default"
           >
-            Save
-            {isKeyAvailable ? (
-              <RotateCcwKeyIcon />
+            {apiKeyExists ? (
+              <>
+                Save
+                <RotateCcwKeyIcon />
+              </>
             ) : vaultStatus === 'locked' ? (
-              <LockKeyholeIcon />
+              <>
+                Unlock
+                <LockKeyholeIcon />
+              </>
             ) : (
-              <KeyIcon />
+              <>
+                Save
+                <KeyIcon />
+              </>
             )}
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-    </FormItem>
+    </Field>
   )
 })
 
@@ -151,82 +169,78 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
   return (
     <Dialog open={model.isAuthenticating} onOpenChange={onOpenChange}>
       <DialogContent>
-        <Form {...form}>
-          <form onSubmit={onSubmit}>
-            <DialogHeader>
-              <DialogTitle>API Key Vault</DialogTitle>
-              <DialogDescription>
-                We encrypt API keys in your browser using a password you
-                provide.
-                <br />
-                Your chosen password is never stored or transmitted.
-                <br />
-                API keys are only shared with their associated LLM provider.
-                <br />
-                Please ensure that you trust all loaded plugins and 3rd party
-                scripts in this JBrowse session before proceeding.
-              </DialogDescription>
-            </DialogHeader>
-            <input
-              id="username"
-              name="username"
-              autoComplete="username"
-              type="text"
-              defaultValue="JBrowse Assistant API Key Vault"
-              className="hidden"
-            />
-            <FormField
-              control={form.control}
+        <form onSubmit={onSubmit}>
+          <DialogHeader>
+            <DialogTitle>API Key Vault</DialogTitle>
+            <DialogDescription>
+              We encrypt API keys in your browser using a password you provide.
+              <br />
+              Your chosen password is never stored or transmitted.
+              <br />
+              API keys are only shared with their associated LLM provider.
+              <br />
+              Please ensure that you trust all loaded plugins and 3rd party
+              scripts in this JBrowse session before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <input
+            id="username"
+            name="username"
+            autoComplete="username"
+            type="text"
+            defaultValue="JBrowse Assistant API Key Vault"
+            className="hidden"
+          />
+          <FieldGroup className="my-3">
+            <Controller
               name="password"
-              render={({ field }) => (
-                <FormItem className="my-3">
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      {...field}
-                      value={field.value || ''}
-                      autoComplete={
-                        vaultStatus === 'unset'
-                          ? 'new-password'
-                          : 'current-password'
-                      }
-                      onKeyDown={passwordEnterKey}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                    autoComplete={
+                      vaultStatus === 'unset'
+                        ? 'new-password'
+                        : 'current-password'
+                    }
+                    onKeyDown={passwordEnterKey}
+                  />
+                </Field>
               )}
             />
-            <DialogFooter>
-              <Button variant="destructive" onClick={clearVault}>
-                Destroy Vault
-                <ShredderIcon />
-              </Button>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">
-                {vaultStatus === 'locked' ? (
-                  <>
-                    Unlock
-                    <UnlockKeyholeIcon />
-                  </>
-                ) : vaultStatus === 'unset' ? (
-                  <>
-                    Create
-                    <UserLockIcon />
-                  </>
-                ) : (
-                  <>
-                    Authenticate
-                    <LockKeyholeIcon />
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </FieldGroup>
+          <DialogFooter>
+            <Button variant="destructive" onClick={clearVault}>
+              Destroy Vault
+              <ShredderIcon />
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">
+              {vaultStatus === 'locked' ? (
+                <>
+                  Unlock
+                  <UnlockKeyholeIcon />
+                </>
+              ) : vaultStatus === 'unset' ? (
+                <>
+                  Create
+                  <UserLockIcon />
+                </>
+              ) : (
+                <>
+                  Authenticate
+                  <LockKeyholeIcon />
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

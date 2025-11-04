@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { CommandItem } from 'cmdk'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { observer } from 'mobx-react'
-import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -14,16 +14,14 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Popover,
   PopoverContent,
@@ -65,60 +63,91 @@ export const SettingsForm = observer(function ({
   // watch all dynamic fields
   const provider = form.watch('provider')
   const baseUrl = form.watch(`providerSettings.${provider}.baseUrl`)
+  const modelId = form.watch(`providerSettings.${provider}.model`)
   const useProviderSystemPrompt = form.watch('useProviderSystemPrompt')
-  // fetch list of available models from provider
+  // sync provider change without saving
+  useEffect(() => {
+    settingsForm.setProvider(provider)
+  }, [provider])
+  // api key availability state
+  const [apiKeyExists, setApiKeyExists] = useState(
+    apiKeyVault.exists(provider),
+  )
+  // model list fetching utilities
   const [providerModels, setProviderModels] = useState<
     Record<string, ChatModelInfo>
   >({})
-  const [modelSearchValue, setModelSearchValue] = useState<string>('')
-  useEffect(() => {
-    let cancelled = false
+  const [isFetchingModels, setIsFetchingModels] = useState(false)
+  const getApiKey = useCallback(
+    ({}: object) => {
+      if (apiKeyExists ?? apiKeyVault.exists(provider))
+        return apiKeyVault.get(provider)
+      return Promise.resolve(undefined)
+    },
+    [provider, apiKeyVault, apiKeyExists],
+  )
+  const getModels = useCallback(() => {
+    let isCancelled = false
+    setProviderModels({})
+    setIsFetchingModels(true)
     getAvailableModels({
       provider,
       baseUrl,
-      getApiKey: ({}) => {
-        if (apiKeyVault.exists(provider)) return apiKeyVault.get(provider)
-        return new Promise(resolve => resolve(undefined))
-      },
+      getApiKey,
     })
       .then(models => {
-        if (!cancelled) setProviderModels(models)
+        if (!isCancelled) setProviderModels(models)
       })
-      .catch(() => {
-        if (!cancelled) setProviderModels({})
+      .catch(error => {
+        if (!isCancelled) console.error('Error fetching model list:', error)
+      })
+      .finally(() => {
+        setIsFetchingModels(false)
+        setApiKeyExists(apiKeyVault.exists(provider))
       })
     return () => {
-      cancelled = true
+      isCancelled = true
     }
-  }, [provider, baseUrl, apiKeyVault])
-  // manage active model for displaying description
-  const selectedModelId = form.watch(`providerSettings.${provider}.model`)
+  }, [provider, baseUrl, getApiKey, apiKeyVault])
+  useEffect(getModels, [getModels])
+  // model info state for combobox
+  const [modelSearchValue, setModelSearchValue] = useState<string>('')
   const [activeModelInfo, setActiveModelInfo] = useState<ChatModelInfo | null>(
     null,
   )
   useEffect(() => {
     setActiveModelInfo(
-      providerModels[selectedModelId] ??
+      providerModels[modelId] ??
         providerModels[Object.keys(providerModels)[0]] ??
         null,
     )
-  }, [selectedModelId, providerModels])
+  }, [modelId, providerModels])
   return (
-    <Form {...form}>
-      <form onSubmit={onSubmit} className="grid gap-2">
-        <FormField
-          control={form.control}
+    <form onSubmit={onSubmit} className="grid gap-2">
+      <FieldGroup>
+        <Controller
           name="provider"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Language Model API</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select provider..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldContent>
+                <FieldLabel htmlFor={field.name}>Language Model API</FieldLabel>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </FieldContent>
+              <Select
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                >
+                  <SelectValue placeholder="Select provider..." />
+                </SelectTrigger>
+                <SelectContent position="item-aligned">
                   {SettingsFormSchema.shape.provider.options.map(p => (
                     <SelectItem key={p} value={p}>
                       {p}
@@ -126,49 +155,59 @@ export const SettingsForm = observer(function ({
                   ))}
                 </SelectContent>
               </Select>
-            </FormItem>
+            </Field>
           )}
         />
-        <FormField
+        <Controller
           key={provider + '-baseUrl'}
-          control={form.control}
           name={`providerSettings.${provider}.baseUrl`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Alternate API Endpoint</FormLabel>
-              <FormControl>
-                <Input {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>
+                Alternate API Endpoint
+              </FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-        <ApiKeyVault model={model} />
-        <FormField
+        <ApiKeyVault
+          model={model}
+          provider={provider}
+          apiKeyExists={apiKeyExists}
+          setApiKeyExists={setApiKeyExists}
+        />
+        <Controller
           key={provider + '-model'}
-          control={form.control}
           name={`providerSettings.${provider}.model`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Model ID</FormLabel>
-              <FormDescription>
-                Model to use for agentic text generation.
-              </FormDescription>
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldContent>
+                <FieldLabel htmlFor={field.name}>Model ID</FieldLabel>
+                <FieldDescription>
+                  Model to use for agentic text generation.
+                </FieldDescription>
+              </FieldContent>
               <Popover>
                 <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        'justify-between',
-                        !field.value && 'text-muted-foreground',
-                      )}
-                    >
-                      {field.value || 'Select a model...'}
-                      <ChevronsUpDown className="text-muted-foreground opacity-50" />
-                    </Button>
-                  </FormControl>
+                  <Button
+                    id={field.name}
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      'justify-between',
+                      !field.value && 'text-muted-foreground',
+                    )}
+                  >
+                    {field.value || 'Select a model...'}
+                    <ChevronsUpDown className="text-muted-foreground opacity-50" />
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[560px] p-0">
                   <div className="grid grid-cols-2">
@@ -284,108 +323,105 @@ export const SettingsForm = observer(function ({
                         <div className="text-muted-foreground">
                           Hover or navigate to a model to see details.
                         </div>
-                      ) : (
+                      ) : isFetchingModels ? (
+                        <div className="text-muted-foreground">
+                          Fetching models...
+                        </div>
+                      ) : apiKeyExists ? (
                         <div className="text-muted-foreground">
                           No models fetched. Verify provider/API key.
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">
+                          No models fetched. You may need to Unlock the API Key
+                          Vault (above).
                         </div>
                       )}
                     </div>
                   </div>
                 </PopoverContent>
               </Popover>
-              <FormMessage />
-            </FormItem>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-        <FormField
-          key="useProviderSystemPrompt"
-          control={form.control}
+        <Controller
           name="useProviderSystemPrompt"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="useProviderSystemPrompt-select">
-                Prompt Mode
-              </FormLabel>
-              <FormControl>
-                <Select
-                  {...field}
-                  onValueChange={val => field.onChange(val === 'true')}
-                  value={String(field.value)}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldContent>
+                <FieldLabel htmlFor={field.name}>Prompt Mode</FieldLabel>
+              </FieldContent>
+              <Select
+                name={field.name}
+                value={String(field.value)}
+                onValueChange={val => field.onChange(val === 'true')}
+              >
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
                 >
-                  <SelectTrigger id="useProviderSystemPrompt-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={'false'}>Use default prompt</SelectItem>
-                    <SelectItem value={'true'}>
-                      Use provider-specific prompt
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="item-aligned">
+                  <SelectItem value={'false'}>Use default prompt</SelectItem>
+                  <SelectItem value={'true'}>
+                    Use provider-specific prompt
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           )}
         />
-        <FormField
+        <Controller
           key={
             useProviderSystemPrompt
               ? provider + '-systemPrompt'
               : 'defaultSystemPrompt'
           }
-          control={form.control}
           name={
             useProviderSystemPrompt
               ? `providerSettings.${provider}.systemPrompt`
               : 'defaultSystemPrompt'
           }
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Prompt</FormLabel>
-              <FormDescription>
-                Outline instructions for the LLM agent.
-              </FormDescription>
-              <FormControl>
-                <Textarea {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          key={provider + '-temperature'}
           control={form.control}
-          name={`providerSettings.${provider}.temperature`}
-          render={({ field }) => (
-            <FormItem>
-              <Label id={`providerSettings.${provider}.temperature-label`}>
-                Temperature
-              </Label>
-              <FormControl>
-                <div className="flex items-center">
-                  <Slider
-                    {...field}
-                    aria-labelledby={`providerSettings.${provider}.temperature-label`}
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[field.value ?? 0]}
-                    onValueChange={val => field.onChange(val[0])}
-                    className="flex-1 py-2"
-                  />
-                  <div className="w-10 text-right text-sm tabular-nums">
-                    {field.value ?? 0}%
-                  </div>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Prompt</FieldLabel>
+              <Textarea
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-        <Button type="submit" disabled={!form.formState.isDirty}>
-          Save
-        </Button>
-      </form>
-    </Form>
+        <Controller
+          name={`providerSettings.${provider}.temperature`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Temperature</FieldLabel>
+              <FieldDescription>{field.value ?? 0}%</FieldDescription>
+              <Slider
+                value={[field.value ?? 0]}
+                onValueChange={val => field.onChange(val[0])}
+                max={100}
+                step={1}
+                className="flex-1 py-2"
+                aria-label="Temperature"
+              />
+            </Field>
+          )}
+        />
+        <Field>
+          <Button type="submit" disabled={!form.formState.isDirty}>
+            Save
+          </Button>
+        </Field>
+      </FieldGroup>
+    </form>
   )
 })
