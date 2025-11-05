@@ -10,21 +10,26 @@ import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export const ThreadList: FC = () => {
+export const ThreadList: FC<{ openThreadTab: () => void }> = ({
+  openThreadTab,
+}) => {
   return (
     <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex flex-col items-stretch gap-1.5">
-      <ThreadListNew />
-      <ThreadListItems />
+      <ThreadListNew openThreadTab={openThreadTab} />
+      <ThreadListItems openThreadTab={openThreadTab} />
     </ThreadListPrimitive.Root>
   )
 }
 
-const ThreadListNew: FC = () => {
+const ThreadListNew: FC<{ openThreadTab: () => void }> = ({
+  openThreadTab,
+}) => {
   return (
     <ThreadListPrimitive.New asChild>
       <Button
         className="aui-thread-list-new flex items-center justify-start gap-1 rounded-lg px-2.5 py-2 text-start hover:bg-muted data-active:bg-muted"
         variant="ghost"
+        onClick={openThreadTab}
       >
         <PlusIcon />
         New Thread
@@ -33,13 +38,16 @@ const ThreadListNew: FC = () => {
   )
 }
 
-const ThreadListItems: FC = () => {
+const ThreadListItems: FC<{ openThreadTab: () => void }> = ({
+  openThreadTab,
+}) => {
   const isLoading = useAssistantState(({ threads }) => threads.isLoading)
 
   if (isLoading) {
     return <ThreadListSkeleton />
   }
 
+  const ThreadListItem = ThreadListItemFn(openThreadTab)
   return <ThreadListPrimitive.Items components={{ ThreadListItem }} />
 }
 
@@ -61,16 +69,20 @@ const ThreadListSkeleton: FC = () => {
   )
 }
 
-const ThreadListItem: FC = () => {
-  return (
-    <ThreadListItemPrimitive.Root className="aui-thread-list-item flex items-center gap-2 rounded-lg transition-all hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-active:bg-muted">
-      <ThreadListItemPrimitive.Trigger className="aui-thread-list-item-trigger flex-grow px-3 py-2 text-start">
-        <ThreadListItemTitle />
-      </ThreadListItemPrimitive.Trigger>
-      <ThreadListItemArchive />
-    </ThreadListItemPrimitive.Root>
-  )
-}
+const ThreadListItemFn: (openThreadTab: () => void) => FC = openThreadTab =>
+  function ThreadListItem() {
+    return (
+      <ThreadListItemPrimitive.Root className="aui-thread-list-item flex items-center gap-2 rounded-lg transition-all hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-active:bg-muted">
+        <ThreadListItemPrimitive.Trigger
+          className="aui-thread-list-item-trigger flex-grow px-3 py-2 text-start"
+          onClick={openThreadTab}
+        >
+          <ThreadListItemTitle />
+        </ThreadListItemPrimitive.Trigger>
+        <ThreadListItemArchive />
+      </ThreadListItemPrimitive.Root>
+    )
+  }
 
 const ThreadListItemTitle: FC = () => {
   return (

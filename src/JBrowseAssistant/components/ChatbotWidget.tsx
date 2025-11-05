@@ -116,11 +116,12 @@ export const ChatbotWidget = observer(function ({
     })
   })
   const updateTab = (tab: string) => model.updateTab(tab)
+  const openThreadTab = () => model.updateTab('chat')
   return (
     <ThemeProvider theme={theme}>
       <LocalLangchainProvider runtime={runtime}>
         <Tabs
-          defaultValue={model.currentTab}
+          value={model.currentTab}
           onValueChange={updateTab}
           className="absolute gap-0 top-[48px] bottom-0 w-full max-w-full overflow-hidden"
         >
@@ -140,7 +141,7 @@ export const ChatbotWidget = observer(function ({
               value="threads"
               className="absolute inset-0 p-2 overflow-y-scroll"
             >
-              <ThreadList />
+              <ThreadList openThreadTab={openThreadTab} />
             </TabsContent>
             <TabsContent
               value="settings"
