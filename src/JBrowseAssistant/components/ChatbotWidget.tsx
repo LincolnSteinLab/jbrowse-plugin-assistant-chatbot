@@ -1,7 +1,10 @@
 // @ts-expect-error : Handled by rollup-plugin-import-css
 import styles from '../../styles/globals.css'
 
-import { AssistantRuntimeProvider, useLocalRuntime } from '@assistant-ui/react'
+import {
+  unstable_useRemoteThreadListRuntime,
+  useLocalThreadRuntime,
+} from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
 import { getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
@@ -15,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
 import {
+  ApiKeyVaultTool,
   JBrowseConfigTool,
   JBrowseDocumentationTool,
   NavigateLinearGenomeViewTool,
@@ -23,6 +27,11 @@ import {
   ViewsTool,
 } from '../tools'
 
+import { ApiKeyVaultAuthPrompt } from './ApiKeyVault'
+import {
+  browserThreadListAdapter,
+  LocalLangchainProvider,
+} from './LocalLangchainProvider'
 import { SettingsForm } from './SettingsForm'
 import { IChatWidgetModel } from './model/ChatbotWidgetModel'
 
@@ -55,11 +64,19 @@ export const ChatbotWidget = observer(function ({
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
   const theme = createTheme(themeOptions)
-  // Setup assistant-ui runtime
-  const adapter = new LocalLangchainAdapter()
-  const runtime = useLocalRuntime(adapter)
+  // Setup assistant-ui runtime with LocalLangchainAdapter
+  const runtime = unstable_useRemoteThreadListRuntime({
+    runtimeHook: function LocalLangchainRuntime() {
+      return useLocalThreadRuntime(LocalLangchainAdapter, {})
+    },
+    adapter: browserThreadListAdapter,
+  })
   // Setup tools
   const tools = {
+    apiKeyVault: ApiKeyVaultTool({
+      provider: model.settingsForm.settings.provider,
+      getApiKey: model.apiKeyVault.get,
+    }),
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
     navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
@@ -91,7 +108,6 @@ export const ChatbotWidget = observer(function ({
             temperature: providerSettings?.temperature,
           },
           config: {
-            apiKey: providerSettings?.apiKey,
             baseUrl: providerSettings?.baseUrl,
             modelName: `${provider}/${providerSettings?.model}`,
           },
@@ -99,11 +115,14 @@ export const ChatbotWidget = observer(function ({
       },
     })
   })
+  const updateTab = (tab: string) => model.updateTab(tab)
+  const openThreadTab = () => model.updateTab('chat')
   return (
     <ThemeProvider theme={theme}>
-      <AssistantRuntimeProvider runtime={runtime}>
+      <LocalLangchainProvider runtime={runtime}>
         <Tabs
-          defaultValue="chat"
+          value={model.currentTab}
+          onValueChange={updateTab}
           className="absolute gap-0 top-[48px] bottom-0 w-full max-w-full overflow-hidden"
         >
           <div className="flex items-center p-2">
@@ -122,23 +141,24 @@ export const ChatbotWidget = observer(function ({
               value="threads"
               className="absolute inset-0 p-2 overflow-y-scroll"
             >
-              <ThreadList />
+              <ThreadList openThreadTab={openThreadTab} />
             </TabsContent>
             <TabsContent
               value="settings"
               className="absolute inset-0 p-2 overflow-y-scroll"
             >
-              <SettingsForm model={model.settingsForm} />
+              <SettingsForm model={model} />
             </TabsContent>
           </div>
         </Tabs>
+        <ApiKeyVaultAuthPrompt model={model.apiKeyVault} />
         {Object.entries(tools)
           .filter(([, v]) => v.ui)
           .map(([k, v]) => {
             const ToolUI = v.ui!
             return <ToolUI key={k} />
           })}
-      </AssistantRuntimeProvider>
+      </LocalLangchainProvider>
     </ThemeProvider>
   )
 })

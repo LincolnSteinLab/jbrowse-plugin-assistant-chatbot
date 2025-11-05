@@ -1,0 +1,227 @@
+import {
+  AssistantRuntime,
+  AssistantRuntimeProvider,
+  ChatModelRunOptions,
+  ChatModelRunResult,
+  ExportedMessageRepository,
+  RuntimeAdapterProvider,
+  TextMessagePart,
+  ThreadHistoryAdapter,
+  ThreadMessage,
+  useThreadListItem,
+} from '@assistant-ui/react'
+import {
+  RemoteThreadListAdapter,
+  RemoteThreadMetadata,
+} from '@assistant-ui/react/dist/legacy-runtime/runtime-cores/remote-thread-list/types'
+import { ExportedMessageRepositoryItem } from '@assistant-ui/react/dist/legacy-runtime/runtime-cores/utils/MessageRepository'
+import { createAssistantStream } from 'assistant-stream'
+import { DBSchema, openDB } from 'idb'
+import React, { PropsWithChildren, ReactNode, useMemo } from 'react'
+
+import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
+
+interface ThreadListDB extends DBSchema {
+  threads: {
+    key: string
+    value: {
+      metadata: RemoteThreadMetadata
+      headId: ExportedMessageRepository['headId']
+    }
+  }
+  messages: {
+    key: string
+    value: {
+      threadId?: string
+      item: ExportedMessageRepositoryItem
+    }
+    indexes: {
+      thread: string
+    }
+  }
+}
+
+async function openThreadListDB() {
+  return await openDB<ThreadListDB>('chatbot-threads', 1, {
+    upgrade(db) {
+      db.createObjectStore('threads', { keyPath: 'metadata.remoteId' })
+      db.createObjectStore('messages', {
+        keyPath: 'item.message.id',
+      }).createIndex('thread', 'threadId')
+    },
+  })
+}
+
+async function putThreadMetadata<K extends keyof RemoteThreadMetadata>(
+  remoteId: string,
+  metaKey: K,
+  metaValue: RemoteThreadMetadata[K],
+) {
+  const db = await openThreadListDB()
+  const tx = db.transaction('threads', 'readwrite')
+  const thread = await tx.store.get(remoteId)
+  if (!thread) return
+  thread.metadata = {
+    ...thread.metadata,
+    [metaKey]: metaValue,
+  }
+  await tx.store.put(thread)
+  await tx.done
+}
+
+export const browserThreadListAdapter: RemoteThreadListAdapter = {
+  async list() {
+    const db = await openThreadListDB()
+    const tx = db.transaction('threads')
+    const threads: RemoteThreadMetadata[] = []
+    for await (const cursor of tx.store) {
+      threads.push(cursor.value.metadata)
+    }
+    await tx.done
+    return { threads }
+  },
+  async initialize(threadId: string) {
+    const db = await openThreadListDB()
+    await db.add('threads', {
+      metadata: {
+        status: 'regular',
+        remoteId: threadId,
+      },
+      headId: undefined,
+    })
+    return { remoteId: threadId, externalId: undefined }
+  },
+  async rename(remoteId: string, newTitle: string) {
+    await putThreadMetadata(remoteId, 'title', newTitle)
+  },
+  async archive(remoteId: string) {
+    await putThreadMetadata(remoteId, 'status', 'archived')
+  },
+  async unarchive(remoteId: string) {
+    await putThreadMetadata(remoteId, 'status', 'regular')
+  },
+  async delete(remoteId: string) {
+    const db = await openThreadListDB()
+    const tx = db.transaction(['threads', 'messages'], 'readwrite')
+    await tx.objectStore('threads').delete(remoteId)
+    for await (const cursor of tx
+      .objectStore('messages')
+      .index('thread')
+      .iterate(remoteId)) {
+      await cursor.delete()
+    }
+    await tx.done
+  },
+  async generateTitle(remoteId: string, messages: readonly ThreadMessage[]) {
+    // TODO: generate titles
+    const newTitle = (messages?.[0].content?.[0] as TextMessagePart)?.text ?? ''
+    // Persist the new title
+    await this.rename(remoteId, newTitle)
+    // Return stream so the UI updates
+    return createAssistantStream(controller => {
+      controller.appendText(
+        (messages?.[0].content?.[0] as TextMessagePart)?.text ?? remoteId,
+      )
+      controller.close()
+    })
+  },
+  unstable_Provider: function Provider({ children }: PropsWithChildren) {
+    const threadListItem = useThreadListItem()
+    const { remoteId } = threadListItem
+    const history = useMemo<ThreadHistoryAdapter>(
+      () => ({
+        async load() {
+          if (!remoteId) return { messages: [] }
+          const db = await openThreadListDB()
+          const tx = db.transaction(['threads', 'messages'], 'readwrite')
+          // Get headId from thread (last active message)
+          const headId = (await tx.objectStore('threads').get(remoteId))?.headId
+          // Get all thread messages
+          const messagesById = Object.fromEntries(
+            (
+              await tx.objectStore('messages').index('thread').getAll(remoteId)
+            ).map(({ item }) => [item.message.id, item]),
+          )
+          // Identify any missing parent messages
+          const missingParents = Object.values(messagesById)
+            .filter(({ parentId }) =>
+              parentId ? !(parentId in messagesById) : false,
+            )
+            .map(({ parentId }) => parentId) as string[]
+          // Fetch any missing parent messages (undefined threadId)
+          for (const parentId of missingParents) {
+            const message = await tx.objectStore('messages').get(parentId)
+            if (message) {
+              messagesById[message.item.message.id] = message.item
+              // Add threadId to DB entry
+              await tx.objectStore('messages').put({
+                threadId: remoteId,
+                item: message.item,
+              })
+            }
+          }
+          await tx.done
+          // Sort messages by createdAt to avoid error during tree construction
+          const messages = Object.values(messagesById).sort(
+            (a, b) =>
+              a.message.createdAt.getTime() - b.message.createdAt.getTime(),
+          )
+          return {
+            headId,
+            messages,
+          }
+        },
+        async append(item: ExportedMessageRepositoryItem) {
+          const db = await openThreadListDB()
+          if (remoteId) {
+            const tx = db.transaction(['threads', 'messages'], 'readwrite')
+            // Update thread headId with new message.id
+            const threadsStore = tx.objectStore('threads')
+            const thread = await threadsStore.get(remoteId)
+            if (!thread) return
+            thread.headId = item.message.id
+            // Add to messages store
+            await tx.objectStore('messages').add({
+              threadId: remoteId,
+              item,
+            })
+            await threadsStore.put(thread)
+            await tx.done
+          } else {
+            // If threadId isn't available, it'll be found later during load()
+            await db.add('messages', {
+              item,
+            })
+          }
+        },
+        async *resume(options: ChatModelRunOptions) {
+          const { messages } = options
+          if (messages[messages.length - 1].role === 'user') {
+            yield* LocalLangchainAdapter.run(options) as AsyncGenerator<
+              ChatModelRunResult,
+              void
+            >
+          }
+        },
+      }),
+      [remoteId],
+    )
+    const adapters = useMemo(() => ({ history }), [history])
+    return (
+      <RuntimeAdapterProvider adapters={adapters}>
+        {children}
+      </RuntimeAdapterProvider>
+    )
+  },
+}
+
+export function LocalLangchainProvider({
+  children,
+  runtime,
+}: Readonly<{ children: ReactNode; runtime: AssistantRuntime }>) {
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      {children}
+    </AssistantRuntimeProvider>
+  )
+}

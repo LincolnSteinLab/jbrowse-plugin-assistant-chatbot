@@ -1,17 +1,9 @@
-import { JBrowseConfigTool } from './JBrowseConfig'
-import { JBrowseDocumentationTool } from './JBrowseDocumentation'
-import {
+export { ApiKeyVaultTool } from './ApiKeyVault'
+export { JBrowseConfigTool } from './JBrowseConfig'
+export { JBrowseDocumentationTool } from './JBrowseDocumentation'
+export {
   NavigateLinearGenomeViewTool,
   SearchAndNavigateLGVTool,
   ViewsTool,
 } from './NavigateLinearGenomeView'
-import { ToggleTracksTool } from './ToggleTracksTool'
-
-export {
-  JBrowseConfigTool,
-  JBrowseDocumentationTool,
-  NavigateLinearGenomeViewTool,
-  SearchAndNavigateLGVTool,
-  ViewsTool,
-  ToggleTracksTool,
-}
+export { ToggleTracksTool } from './ToggleTracksTool'

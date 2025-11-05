@@ -91,7 +91,7 @@ export class ChatAgent extends ChatModel {
     },
   ) {
     this.resetParser()
-    this.setupChatModel(chatModelConfig)
+    await this.setupChatModel(chatModelConfig)
     if (tools && this.llm?.bindTools && this.tool_node) {
       this.llm_with_tools = this.llm.bindTools(tools)
       this.tool_node.tools = tools ?? []
