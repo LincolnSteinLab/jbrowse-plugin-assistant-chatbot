@@ -1,3 +1,4 @@
+import BaseResult from '@jbrowse/core/TextSearch/BaseResults'
 import {
   AbstractViewModel,
   AssemblyManager,
@@ -24,6 +25,23 @@ export const ViewsTool = createTool({
       JSON.stringify(views, null, '\t'),
 })
 
+const assemblyNotFoundMessage =
+  'assembly not found, the LinearGenomeView may not be initialized yet'
+
+interface NavSuccess {
+  result: 'success'
+  locString: string
+  assembly: string
+  searchResult?: BaseResult
+}
+
+interface NavFailure {
+  result: string
+  searchResults?: BaseResult[]
+}
+
+type NavResult = NavSuccess | NavFailure
+
 export const SearchAndNavigateLGVTool = createTool({
   name: 'SearchAndNavigateLGV',
   description:
@@ -49,16 +67,30 @@ export const SearchAndNavigateLGVTool = createTool({
       const lgviews: LinearGenomeViewModel[] = views.filter(
         view => view.type === 'LinearGenomeView',
       ) as LinearGenomeViewModel[]
-      const results: Promise<string | null>[] = lgviews.map(async lgview => {
-        const assembly = await assemblyManager.waitForAssembly(
-          lgview.assemblyNames[0],
-        )
-        if (!assembly) {
-          return null
+      if (lgviews.length === 0)
+        return { result: 'no Linear Genome Views are open' }
+      const resultPromises: Promise<NavResult>[] = lgviews.map(async lgview => {
+        let assemblyName: string
+        let assembly: Awaited<ReturnType<AssemblyManager['waitForAssembly']>>
+        if (lgview.assemblyNames[0]) {
+          assemblyName = lgview.assemblyNames[0]
+          assembly = await assemblyManager.waitForAssembly(assemblyName)
+          if (!assembly) return { result: assemblyNotFoundMessage }
+        } else {
+          // TODO: handle assembly selection when missing
+          assemblyName = 'hg38'
+          assembly = await assemblyManager.waitForAssembly(assemblyName)
+          if (!assembly) return { result: assemblyNotFoundMessage }
+          lgview.setDisplayedRegions(assembly.regions ?? [])
         }
         const allRefs = assembly?.allRefNamesWithLowerCase ?? []
         if (input.split(' ').every(entry => checkRef(entry, allRefs))) {
           await lgview.navToLocString(input, assembly.name)
+          return {
+            result: 'success',
+            locString: input,
+            assembly: assembly.name,
+          }
         } else {
           const searchScope = lgview.searchScope(assembly.name)
           const results = await fetchResults({
@@ -70,43 +102,33 @@ export const SearchAndNavigateLGVTool = createTool({
             assembly,
           })
           if (results.length > 1) {
-            return JSON.stringify(results, null, '\t')
+            return {
+              result: 'too many matches',
+              searchResults: results,
+            }
           } else if (results.length === 1) {
             await navToOption({
               option: results[0],
               model: lgview,
               assemblyName: assembly.name,
             })
+            return {
+              result: 'success',
+              locString: results[0].locString,
+              assembly: assembly.name,
+              searchResult: results[0],
+            }
           } else {
             await lgview.navToLocString(input, assembly.name)
+            return {
+              result: 'success',
+              locString: input,
+              assembly: assembly.name,
+            }
           }
         }
-        return null
       })
-      const resultStrs = (await Promise.all(results)).filter(r => r !== null)
-      return resultStrs.join('\n')
-    },
-})
-
-export const NavigateLinearGenomeViewTool = createTool({
-  name: 'NavigateLinearGenomeView',
-  description: 'Moves and zooms a linear genome view to a specific location',
-  schema: z.object({
-    locString: z
-      .string()
-      .describe(
-        'locstring - e.g. "chr1:1-100", "chr1:1-100 chr2:1-100", "chr 1 100"',
-      ),
-  }),
-  factory_fn:
-    (views: AbstractViewModel[]) =>
-    async ({ locString }) => {
-      const lgviews: LinearGenomeViewModel[] = views.filter(
-        view => view.type === 'LinearGenomeView',
-      ) as LinearGenomeViewModel[]
-      const results: Promise<void>[] = lgviews.map(lgview =>
-        lgview.navToLocString(locString, lgview.assemblyNames[0]),
-      )
-      await Promise.all(results)
+      const results = await Promise.all(resultPromises)
+      return JSON.stringify(results, null, '\t')
     },
 })
