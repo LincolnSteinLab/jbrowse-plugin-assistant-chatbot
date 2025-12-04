@@ -11,6 +11,8 @@ import { DynamicStructuredTool } from '@langchain/core/tools'
 import { ToolNode } from '@langchain/langgraph/prebuilt'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 
+import { InterruptPart } from '../tools/base'
+
 import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
 import { ChatModel, ChatModelConfig } from './ChatModel'
 
@@ -103,8 +105,9 @@ export class ChatAgent extends ChatModel {
       },
       {
         callbacks: [new ChatLLMCallbackHandler()],
+        configurable: { thread_id: '1' },
         signal: abortSignal,
-        streamMode: ['messages', 'updates'],
+        streamMode: ['messages', 'updates', 'custom'],
       },
     )
     for await (const [streamMode, part] of stream) {
@@ -116,6 +119,8 @@ export class ChatAgent extends ChatModel {
         yield message as BaseMessageChunk
       } else if (streamMode === 'updates') {
         yield part
+      } else if (streamMode === 'custom') {
+        yield part as InterruptPart
       }
     }
     const finalChunk = this.finalParsedChunk()
