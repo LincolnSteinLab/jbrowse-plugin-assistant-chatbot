@@ -57,7 +57,6 @@ export const ApiKeyVault = observer(function ({
   apiKeyExists: boolean
   setApiKeyExists: Dispatch<SetStateAction<boolean>>
 }) {
-  console.log(provider)
   const { apiKeyVault } = model
   const [apiKey, setApiKey] = useState('')
   const [vaultStatus, setVaultStatus] = useState(apiKeyVault.status())
@@ -201,6 +200,7 @@ export const ApiKeyVaultAuthPrompt = observer(function ({
                   <Input
                     {...field}
                     id={field.name}
+                    type="password"
                     aria-invalid={fieldState.invalid}
                     autoComplete={
                       vaultStatus === 'unset'

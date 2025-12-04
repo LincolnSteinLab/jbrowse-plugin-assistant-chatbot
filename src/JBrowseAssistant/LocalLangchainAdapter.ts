@@ -2,6 +2,7 @@ import {
   ChatModelAdapter,
   ChatModelRunOptions,
   ChatModelRunResult,
+  MessageStatus,
   ThreadMessage,
   ToolCallMessagePart,
 } from '@assistant-ui/react'
@@ -43,8 +44,24 @@ function getLangchainMessages(
   })
 }
 
-function getLangchainTools(tools: Record<string, JBTool['tool']>) {
-  return Object.values(tools).map(tool => tool.execute({}))
+async function getLangchainTools(
+  tools: Record<string, JBTool['tool']>,
+  abortSignal: AbortSignal,
+) {
+  return Promise.all(
+    Object.values(tools)
+      .filter(tool => tool.execute)
+      .map(tool =>
+        tool.execute!(
+          {},
+          {
+            toolCallId: '',
+            abortSignal,
+            human: () => Promise.resolve(undefined),
+          },
+        ),
+      ),
+  )
 }
 
 async function* streamAgentResponse({
@@ -58,11 +75,20 @@ async function* streamAgentResponse({
     string,
     JBTool['tool']
   > & { apiKeyVault: JBTool['tool'] }
-  const getApiKey = apiKeyVault.execute({}).func as ({}) => Promise<
-    string | undefined
-  >
+  const getApiKey = (
+    await Promise.resolve(
+      apiKeyVault.execute!(
+        {},
+        {
+          toolCallId: '',
+          abortSignal,
+          human: () => Promise.resolve(undefined),
+        },
+      ),
+    )
+  ).func as ({}) => Promise<string | undefined>
   const stream = chatAgent.stream(getLangchainMessages(messages), {
-    tools: getLangchainTools((tools as Record<string, JBTool['tool']>) || {}),
+    tools: await getLangchainTools(tools, abortSignal),
     systemPrompt: context.system,
     abortSignal,
     chatModelConfig: {
@@ -75,8 +101,9 @@ async function* streamAgentResponse({
   })
   let text = ''
   let reasoning = ''
-  const tool_calls: Record<string, ToolCallMessagePart | undefined> = {}
+  const tool_calls: Record<string, ToolCallMessagePart> = {}
   for await (const part of stream) {
+    let status: MessageStatus = { type: 'running' }
     if (isBaseMessage(part)) {
       if (isAIMessageChunk(part)) {
         // Collect agent response and reasoning text
@@ -97,7 +124,7 @@ async function* streamAgentResponse({
       } else {
         continue
       }
-    } else if (part.agent) {
+    } else if ('agent' in part) {
       for (const message of part.agent?.messages ?? []) {
         if (isAIMessage(message)) {
           // Collect initial tool call info from completed AIMessage
@@ -116,6 +143,12 @@ async function* streamAgentResponse({
             })
         }
       }
+    } else if ('interrupt' in part) {
+      tool_calls[part.interrupt.toolCallId] = {
+        ...tool_calls[part.interrupt.toolCallId],
+        interrupt: { type: 'human', payload: part.interrupt.payload },
+      }
+      status = { type: 'requires-action', reason: 'interrupt' }
     } else {
       continue
     }
@@ -125,7 +158,7 @@ async function* streamAgentResponse({
         ...Object.values(tool_calls),
         { type: 'text', text },
       ],
-      status: { type: 'running' },
+      status,
     } as ChatModelRunResult
   }
   return

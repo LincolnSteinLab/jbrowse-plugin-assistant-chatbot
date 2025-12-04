@@ -6,7 +6,7 @@ import {
   useLocalThreadRuntime,
 } from '@assistant-ui/react'
 import { defaultThemes } from '@jbrowse/core/ui'
-import { getSession } from '@jbrowse/core/util'
+import { getEnv, getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { observer } from 'mobx-react'
 import React, { useEffect } from 'react'
@@ -21,7 +21,7 @@ import {
   ApiKeyVaultTool,
   JBrowseConfigTool,
   JBrowseDocumentationTool,
-  NavigateLinearGenomeViewTool,
+  OpenViewTool,
   SearchAndNavigateLGVTool,
   ToggleTracksTool,
   ViewsTool,
@@ -52,6 +52,7 @@ export const ChatbotWidget = observer(function ({
 }: {
   model: IChatWidgetModel
 }) {
+  const session = getSession(model)
   const {
     allThemes,
     assemblyManager,
@@ -59,7 +60,8 @@ export const ChatbotWidget = observer(function ({
     textSearchManager,
     themeName = 'default',
     views,
-  } = getSession(model)
+  } = session
+  const { pluginManager } = getEnv(model)
   // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
   themeOptions.cssVariables = true
@@ -79,7 +81,10 @@ export const ChatbotWidget = observer(function ({
     }),
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
-    navigateLinearGenomeView: NavigateLinearGenomeViewTool(views),
+    openView: OpenViewTool({
+      addView: session.addView.bind(session),
+      viewTypes: pluginManager.getViewElements(),
+    }),
     searchAndNavigateLGV: SearchAndNavigateLGVTool({
       assemblyManager,
       textSearchManager,
