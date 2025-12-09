@@ -99,7 +99,8 @@
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
     },
-    "fsevents": "2.3.2"
+    "fsevents": "2.3.2",
+    "zod": "3.25.67"
   },
   "peerDependencies": {
     "@jbrowse/core": "^3.0.0"
@@ -119,6 +120,8 @@
     "@langchain/ollama": "^0.2.3",
     "@langchain/openai": "^0.6.9",
     "@langchain/textsplitters": "^0.1.0",
+    "@mcp-b/global": "^1.2.1",
+    "@mcp-b/react-webmcp": "^0.2.3",
     "@metamask/browser-passworder": "^6.0.0",
     "@mui/material": "^7.1.0",
     "@radix-ui/react-avatar": "^1.1.10",

@@ -6,18 +6,18 @@ import {
 } from '@assistant-ui/react'
 import { CallbackManagerForToolRun } from '@langchain/core/callbacks/manager'
 import {
-  ToolInputSchemaBase,
   ToolInputSchemaInputType,
   ToolInputSchemaOutputType,
   ToolRunnableConfig,
 } from '@langchain/core/dist/tools/types'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { LangGraphRunnableConfig } from '@langchain/langgraph'
+import { useWebMCP } from '@mcp-b/react-webmcp'
 import {
   Tool,
   ToolExecutionContext,
 } from 'assistant-stream/dist/core/tool/tool-types'
-import { createElement } from 'react'
+import React, { createElement } from 'react'
 import z from 'zod'
 import { JSONType } from 'zod/dist/types/v4/core/util'
 
@@ -43,7 +43,7 @@ export interface InterruptPart {
 
 export class JBTool<
   FactoryArgsT = unknown,
-  InputSchemaT extends ToolInputSchemaBase = ToolInputSchemaBase,
+  InputSchemaT extends z.AnyZodObject = z.AnyZodObject,
   OutputT = unknown,
   InputT = ToolInputSchemaOutputType<InputSchemaT> & Record<string, unknown>,
 > {
@@ -61,6 +61,7 @@ export class JBTool<
   private resume: (payload: unknown) => void = () => {
     throw new Error('Missing human tool resume method')
   }
+  mcp: () => React.JSX.Element
 
   constructor(
     {
@@ -75,7 +76,7 @@ export class JBTool<
       schema: InputSchemaT
       factory_fn: (
         args: FactoryArgsT,
-        context: ToolExecHumanContext,
+        context?: ToolExecHumanContext,
       ) => (
         input: InputT,
         runManager?: CallbackManagerForToolRun,
@@ -103,6 +104,15 @@ export class JBTool<
           createElement(render, { ...toolCall, resume: this.resume }),
       })
     }
+    this.mcp = function MCPTool() {
+      useWebMCP({
+        name,
+        description,
+        inputSchema: schema.shape,
+        handler: input => factory_fn(args)(input as InputT),
+      })
+      return <></>
+    }
   }
 
   human: ToolExecHumanContext['human'] = ({ config, payload }) => {
@@ -119,7 +129,7 @@ export class JBTool<
 
 export function createTool<
   FactoryArgsT,
-  InputSchemaT extends ToolInputSchemaBase,
+  InputSchemaT extends z.AnyZodObject,
   OutputT,
   InputT extends Record<
     string,
