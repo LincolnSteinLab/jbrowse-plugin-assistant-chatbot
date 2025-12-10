@@ -94,15 +94,16 @@
     "x-var": "^2.1.0"
   },
   "overrides": {
+    "@assistant-ui/react": {
+      "zod": "^4.1.12"
+    },
     "@jbrowse/development-tools": {
       "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
     },
-    "@mcp-b/global": {
-      "zod": "3.25.67"
-    },
-    "fsevents": "2.3.2"
+    "fsevents": "2.3.2",
+    "zod": "3.25.67"
   },
   "peerDependencies": {
     "@jbrowse/core": "^3.0.0"
