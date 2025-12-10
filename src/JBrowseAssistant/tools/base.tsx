@@ -135,10 +135,19 @@ export function createTool<
     string,
     unknown
   > = ToolInputSchemaOutputType<InputSchemaT> & Record<string, unknown>,
->(
-  create_args: ConstructorParameters<
-    typeof JBTool<FactoryArgsT, InputSchemaT, OutputT, InputT>
-  >[0],
-) {
+>(create_args: {
+  name: string
+  description: string
+  schema: InputSchemaT
+  factory_fn: (
+    args: FactoryArgsT,
+    context?: ToolExecHumanContext,
+  ) => (
+    input: InputT,
+    runManager?: CallbackManagerForToolRun,
+    config?: ToolRunnableConfig & LangGraphRunnableConfig,
+  ) => Promise<OutputT>
+  render?: ToolCallMessagePartComponent<InputT, OutputT>
+}) {
   return (factory_args: FactoryArgsT) => new JBTool(create_args, factory_args)
 }
