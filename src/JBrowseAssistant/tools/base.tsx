@@ -57,11 +57,11 @@ export class JBTool<
     >
   >
   readonly ui?: AssistantToolUI
+  readonly mcp: () => React.JSX.Element
 
   private resume: (payload: unknown) => void = () => {
     throw new Error('Missing human tool resume method')
   }
-  mcp: () => React.JSX.Element
 
   constructor(
     {

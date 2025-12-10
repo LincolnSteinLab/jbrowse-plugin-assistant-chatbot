@@ -44,6 +44,7 @@ export default class AssistantChatbotPlugin extends Plugin {
         },
       })
     }
+    // Set up WebMCP server in a hidden div
     if (
       typeof document !== 'undefined' &&
       typeof document.getElementById === 'function' &&
