@@ -8,6 +8,7 @@ import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
 import { OpenViewTool } from './OpenViewTool'
 import { SearchAndNavigateLGVTool, ViewsTool } from './SearchAndNavigateLGVTool'
+import { SetCompactDisplayTool } from './SetCompactDisplayTool'
 import { ToggleTracksTool } from './ToggleTracksTool'
 
 export function getTools(
@@ -28,6 +29,7 @@ export function getTools(
       textSearchManager,
       views,
     }),
+    setCompactDisplay: SetCompactDisplayTool(views),
     toggletracks: ToggleTracksTool(views),
     views: ViewsTool(views),
     ...(model && {
