@@ -14,3 +14,17 @@ export function withExceptionCapturing<S, T extends unknown[]>(
     })
   }
 }
+
+function isWebWorker() {
+  return (
+    // @ts-expect-error WebWorker lib
+    typeof WorkerGlobalScope !== 'undefined' &&
+    // @ts-expect-error WebWorker lib
+    self instanceof WorkerGlobalScope
+  )
+}
+
+if (isWebWorker()) {
+  // Prevent MCP-B from auto-initializing in Web Workers
+  window.__webModelContextOptions = { autoInitialize: false }
+}
