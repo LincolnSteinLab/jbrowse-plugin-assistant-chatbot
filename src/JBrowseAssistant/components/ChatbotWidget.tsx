@@ -17,15 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LocalLangchainAdapter } from '../LocalLangchainAdapter'
-import {
-  ApiKeyVaultTool,
-  JBrowseConfigTool,
-  JBrowseDocumentationTool,
-  OpenViewTool,
-  SearchAndNavigateLGVTool,
-  ToggleTracksTool,
-  ViewsTool,
-} from '../tools'
+import { getTools } from '../tools'
 
 import { ApiKeyVaultAuthPrompt } from './ApiKeyVault'
 import {
@@ -53,14 +45,7 @@ export const ChatbotWidget = observer(function ({
   model: IChatWidgetModel
 }) {
   const session = getSession(model)
-  const {
-    allThemes,
-    assemblyManager,
-    jbrowse,
-    textSearchManager,
-    themeName = 'default',
-    views,
-  } = session
+  const { allThemes, themeName = 'default' } = session
   const { pluginManager } = getEnv(model)
   // Synchronize chat UI with the JBrowse theme using CSS variables
   const themeOptions = allThemes?.()?.[themeName] ?? defaultThemes.default ?? {}
@@ -74,25 +59,7 @@ export const ChatbotWidget = observer(function ({
     adapter: browserThreadListAdapter,
   })
   // Setup tools
-  const tools = {
-    apiKeyVault: ApiKeyVaultTool({
-      provider: model.settingsForm.settings.provider,
-      getApiKey: model.apiKeyVault.get,
-    }),
-    jbrowseConfig: JBrowseConfigTool(jbrowse),
-    jbrowseDocumentation: JBrowseDocumentationTool({}),
-    openView: OpenViewTool({
-      addView: session.addView.bind(session),
-      viewTypes: pluginManager.getViewElements(),
-    }),
-    searchAndNavigateLGV: SearchAndNavigateLGVTool({
-      assemblyManager,
-      textSearchManager,
-      views,
-    }),
-    toggletracks: ToggleTracksTool(views),
-    views: ViewsTool(views),
-  }
+  const tools = getTools(pluginManager, session, model)
   // Register chat settings and tools as a context provider for the runtime
   useEffect(() => {
     return runtime.registerModelContextProvider({

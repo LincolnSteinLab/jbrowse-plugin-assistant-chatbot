@@ -28,7 +28,7 @@ export const OpenViewTool = createTool({
         addView: (viewType: string) => AbstractViewModel
         viewTypes: ViewType[]
       },
-      { human },
+      context,
     ) =>
     async ({ viewType }, _, config) => {
       const viewTypeNames = viewTypes.map(vt => vt.name)
@@ -38,14 +38,13 @@ export const OpenViewTool = createTool({
           availableViewTypes: viewTypeNames,
         }
       }
-      const approved = await human({
-        config,
-        payload: viewType,
-      })
-      if (!approved)
-        return {
-          result: 'skipped',
-        }
+      if (context) {
+        const approved = await context.human({
+          config,
+          payload: viewType,
+        })
+        if (!approved) return { result: 'skipped' }
+      }
       const newView = addView(viewType)
       if ((newView as object).hasOwnProperty('initialized')) {
         await when(

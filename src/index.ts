@@ -6,8 +6,10 @@ import { ConfigurationSchema } from '@jbrowse/core/configuration'
 import WidgetType from '@jbrowse/core/pluggableElementTypes/WidgetType'
 import { isAbstractMenuManager, SessionWithWidgets } from '@jbrowse/core/util'
 import SmartToyIcon from '@mui/icons-material/SmartToy'
+import { createElement } from 'react'
+import { createRoot } from 'react-dom/client'
 
-import { ChatbotWidget, ChatWidgetModel } from './JBrowseAssistant'
+import { ChatbotWidget, ChatWidgetModel, McpProvider } from './JBrowseAssistant'
 
 const configSchema = ConfigurationSchema('ChatbotWidget', {})
 
@@ -41,6 +43,24 @@ export default class AssistantChatbotPlugin extends Plugin {
           session.showWidget(chatbotWidget)
         },
       })
+    }
+    // Set up WebMCP server in a hidden div
+    if (
+      typeof document !== 'undefined' &&
+      typeof document.getElementById === 'function' &&
+      !document.getElementById('chatbot-mcp')
+    ) {
+      const mcpElement = document.createElement('div')
+      mcpElement.id = 'chatbot-mcp'
+      document.body.appendChild(mcpElement)
+      const root = createRoot(mcpElement)
+
+      root.render(
+        createElement(McpProvider, {
+          pluginManager,
+          session: pluginManager.rootModel?.session,
+        }),
+      )
     }
   }
 }
