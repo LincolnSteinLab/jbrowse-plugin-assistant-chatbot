@@ -1,5 +1,6 @@
 import os
 import argparse
+import asyncio
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.markdown import Markdown
@@ -22,7 +23,7 @@ class Config:
   def set_host_path(self, host):
     self.host_path = host
 
-def main():
+async def main():
   parser = argparse.ArgumentParser(description="")
 
   parser.add_argument('-p', '--prompt', type=str, help='prompt query regarding your JBrowse config.json', required=False)
@@ -43,18 +44,19 @@ def main():
 
   if args.prompt:
     llm = ChatBot(config.config_path, config.host_path, config.model, False)
-    non_interactive(llm, args.prompt)
+    await non_interactive(llm, args.prompt)
   else:
     llm = ChatBot(config.config_path, config.host_path, config.model, True)
-    interactive(llm)
+    await interactive(llm)
 
-def non_interactive(llm, prompt):
-  mdprint(f'\nResponse: {llm.run(prompt)}')
+async def non_interactive(llm, prompt):
+  # mdprint(f'\nResponse: {await llm.run(prompt)}')
+  await llm.run(prompt)
 
 def mdprint(text):
   console.print(Markdown(text))
 
-def interactive(llm):
+async def interactive(llm):
   open_chat = True
   mdprint('This interactive JBrowse assistant can help you navigate your configuration file. Enter a query relating to your config.json, or enter "q" to exit.')
   while open_chat is True:
@@ -62,7 +64,9 @@ def interactive(llm):
     if (query.lower().rstrip() == 'q'):
       open_chat = False
     else:
-      mdprint(f'\nResponse: \n\n{llm.run(query)}')
+      # mdprint(f'\nResponse: \n\n{await llm.run(query)}')
+      await llm.run(query)
 
 if __name__ == "__main__":
-  main()
+  loop = asyncio.new_event_loop()
+  loop.run_until_complete(main())
