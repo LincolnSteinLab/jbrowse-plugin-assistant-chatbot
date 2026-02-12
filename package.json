@@ -99,8 +99,10 @@
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
     },
+    "@modelcontextprotocol/sdk": "1.26.0",
     "@types/react": "^19.0.1",
     "fsevents": "2.3.2",
+    "langsmith": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "use-sync-external-store": "^1.6.0",
@@ -124,7 +126,6 @@
     "@langchain/ollama": "^0.2.3",
     "@langchain/openai": "^0.6.9",
     "@langchain/textsplitters": "^0.1.0",
-    "@mcp-b/global": "^1.2.1",
     "@mcp-b/react-webmcp": "^0.2.3",
     "@metamask/browser-passworder": "^6.0.0",
     "@mui/material": "^7.1.0",
