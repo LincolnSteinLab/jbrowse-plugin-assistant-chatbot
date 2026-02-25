@@ -1,4 +1,4 @@
-import { IAnyStateTreeNode } from 'mobx-state-tree'
+import { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
 
 import { createTool, EmptySchema } from './base'
 

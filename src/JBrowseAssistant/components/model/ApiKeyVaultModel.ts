@@ -1,4 +1,4 @@
-import { flow, Instance, types } from 'mobx-state-tree'
+import { flow, Instance, types } from '@jbrowse/mobx-state-tree'
 import { z } from 'zod'
 
 import { ChatModelProvider } from '@/JBrowseAssistant/agent/ChatModel'

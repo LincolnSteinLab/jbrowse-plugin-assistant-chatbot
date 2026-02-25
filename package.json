@@ -49,10 +49,11 @@
     "develop": "npm-run-all --parallel start browse"
   },
   "devDependencies": {
-    "@jbrowse/cli": "^3.4.0",
-    "@jbrowse/core": "^3.4.0",
+    "@jbrowse/cli": "^4.0.3",
+    "@jbrowse/core": "^4.0.3",
     "@jbrowse/development-tools": "^2.2.1",
-    "@jbrowse/plugin-linear-genome-view": "^3.6.4",
+    "@jbrowse/mobx-state-tree": "^5.5.0",
+    "@jbrowse/plugin-linear-genome-view": "^4.0.3",
     "@schemastore/package": "^0.0.10",
     "@tailwindcss/postcss": "^4.1.6",
     "@testing-library/jest-dom": "^6.1.5",
@@ -75,7 +76,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.6.1",
-    "mobx-state-tree": "^5.4.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.3",
     "postcss-cli": "^11.0.1",
@@ -96,6 +96,7 @@
     },
     "@jbrowse/development-tools": {
       "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
+      "@jbrowse/core": "^4.0.3",
       "rollup": "^3.0.0",
       "typescript": "^5.3.3"
     },
@@ -115,7 +116,7 @@
     "zod": "3.25.67"
   },
   "peerDependencies": {
-    "@jbrowse/core": "^3.0.0"
+    "@jbrowse/core": "^4.0.3"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",

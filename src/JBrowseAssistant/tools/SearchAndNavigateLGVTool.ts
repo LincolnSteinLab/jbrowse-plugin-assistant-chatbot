@@ -12,21 +12,7 @@ import {
 } from '@jbrowse/plugin-linear-genome-view/dist/searchUtils'
 import { z } from 'zod'
 
-import { createTool, EmptySchema } from './base'
-
-export const ViewsTool = createTool({
-  name: 'Views',
-  description: 'Display info about all views in the JBrowse session',
-  schema: EmptySchema,
-  factory_fn:
-    (views: AbstractViewModel[]) =>
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async ({}) =>
-      JSON.stringify(views, null, '\t'),
-})
-
-const assemblyNotFoundMessage =
-  'assembly not found, the LinearGenomeView may not be initialized yet'
+import { createTool } from './base'
 
 interface NavSuccess {
   result: 'success'
@@ -37,6 +23,7 @@ interface NavSuccess {
 
 interface NavFailure {
   result: string
+  assemblyNames?: string[]
   searchResults?: BaseResult[]
 }
 
@@ -52,6 +39,7 @@ export const SearchAndNavigateLGVTool = createTool({
       .describe(
         'Feature search string, for example a gene name, protein, or transcript ID',
       ),
+    assemblyName: z.string().describe('The assembly to search within the LGV'),
   }),
   factory_fn:
     ({
@@ -63,26 +51,23 @@ export const SearchAndNavigateLGVTool = createTool({
       textSearchManager?: TextSearchManager
       views: AbstractViewModel[]
     }) =>
-    async ({ input }) => {
+    async ({ input, assemblyName }) => {
       const lgviews: LinearGenomeViewModel[] = views.filter(
         view => view.type === 'LinearGenomeView',
       ) as LinearGenomeViewModel[]
       if (lgviews.length === 0)
         return { result: 'no Linear Genome Views are open' }
       const resultPromises: Promise<NavResult>[] = lgviews.map(async lgview => {
-        let assemblyName: string
         let assembly: Awaited<ReturnType<AssemblyManager['waitForAssembly']>>
-        if (lgview.assemblyNames[0]) {
-          assemblyName = lgview.assemblyNames[0]
+        if (lgview.assemblyNames.includes(assemblyName)) {
           assembly = await assemblyManager.waitForAssembly(assemblyName)
-          if (!assembly) return { result: assemblyNotFoundMessage }
-        } else {
-          // TODO: handle assembly selection when missing
-          assemblyName = 'hg38'
-          assembly = await assemblyManager.waitForAssembly(assemblyName)
-          if (!assembly) return { result: assemblyNotFoundMessage }
-          lgview.setDisplayedRegions(assembly.regions ?? [])
         }
+        if (!assembly)
+          return {
+            result:
+              'assembly not found, the LinearGenomeView may not be initialized yet',
+            assemblyNames: lgview.assemblyNames,
+          }
         const allRefs = assembly?.allRefNamesWithLowerCase ?? []
         if (input.split(' ').every(entry => checkRef(entry, allRefs))) {
           await lgview.navToLocString(input, assembly.name)
