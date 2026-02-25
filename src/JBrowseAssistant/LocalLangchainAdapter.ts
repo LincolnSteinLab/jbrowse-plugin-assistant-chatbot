@@ -52,13 +52,15 @@ async function getLangchainTools(
     Object.values(tools)
       .filter(tool => tool.execute)
       .map(tool =>
-        tool.execute!(
-          {},
-          {
-            toolCallId: '',
-            abortSignal,
-            human: () => Promise.resolve(undefined),
-          },
+        Promise.resolve(
+          tool.execute!(
+            {},
+            {
+              toolCallId: '',
+              abortSignal,
+              human: () => Promise.resolve(undefined),
+            },
+          ),
         ),
       ),
   )

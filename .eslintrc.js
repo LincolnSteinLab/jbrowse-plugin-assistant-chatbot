@@ -20,7 +20,6 @@ module.exports = {
     },
     projectService: true,
     tsconfigRootDir: __dirname,
-    project: './tsconfig.json',
   },
   rules: {
     '@typescript-eslint/no-empty-function': 0,
