@@ -14,6 +14,9 @@ import { z } from 'zod'
 
 import { createTool } from './base'
 
+const assemblyNotFoundMessage =
+  'assembly not found, the LinearGenomeView may not be initialized yet'
+
 interface NavSuccess {
   result: 'success'
   locString: string
@@ -27,9 +30,6 @@ interface NavFailure {
 }
 
 type NavResult = NavSuccess | NavFailure
-
-const assemblyNotFoundMessage =
-  'assembly not found, the LinearGenomeView may not be initialized yet'
 
 export const SearchAndNavigateLGVTool = createTool({
   name: 'SearchAndNavigateLGV',
