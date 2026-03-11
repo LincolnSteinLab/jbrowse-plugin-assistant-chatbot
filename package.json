@@ -49,6 +49,7 @@
     "develop": "npm-run-all --parallel start browse"
   },
   "devDependencies": {
+    "@babel/plugin-transform-class-properties": "^7.25.9",
     "@jbrowse/cli": "^4.0.3",
     "@jbrowse/core": "^4.0.3",
     "@jbrowse/development-tools": "^2.2.1",
@@ -163,6 +164,9 @@
     "tw-animate-css": "^1.2.9",
     "zod": "3.25.67",
     "zustand": "^5.0.8"
+  },
+  "imports": {
+    "#_/*": "./.modules/*"
   },
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",

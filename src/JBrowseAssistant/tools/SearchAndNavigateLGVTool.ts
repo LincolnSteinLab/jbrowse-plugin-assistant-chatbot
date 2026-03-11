@@ -1,3 +1,8 @@
+import {
+  checkRef,
+  fetchResults,
+  navToOption,
+} from '#_/@jbrowse/plugin-linear-genome-view/esm/searchUtils'
 import BaseResult from '@jbrowse/core/TextSearch/BaseResults'
 import {
   AbstractViewModel,
@@ -5,11 +10,6 @@ import {
   TextSearchManager,
 } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import {
-  checkRef,
-  fetchResults,
-  navToOption,
-} from '@jbrowse/plugin-linear-genome-view/dist/searchUtils'
 import { z } from 'zod'
 
 import { createTool } from './base'

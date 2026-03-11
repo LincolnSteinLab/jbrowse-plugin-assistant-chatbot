@@ -34,7 +34,8 @@
     "resolveJsonModule": true,
     // shadcn/ui path alias
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "#_/*": ["./.modules/*"]
     }
   },
   // Jest uses ts-node to load the jest.config.ts file
