@@ -23,11 +23,13 @@ interface NavSuccess {
 
 interface NavFailure {
   result: string
-  assemblyNames?: string[]
   searchResults?: BaseResult[]
 }
 
 type NavResult = NavSuccess | NavFailure
+
+const assemblyNotFoundMessage =
+  'assembly not found, the LinearGenomeView may not be initialized yet'
 
 export const SearchAndNavigateLGVTool = createTool({
   name: 'SearchAndNavigateLGV',
@@ -39,7 +41,6 @@ export const SearchAndNavigateLGVTool = createTool({
       .describe(
         'Feature search string, for example a gene name, protein, or transcript ID',
       ),
-    assemblyName: z.string().describe('The assembly to search within the LGV'),
   }),
   factory_fn:
     ({
@@ -51,23 +52,26 @@ export const SearchAndNavigateLGVTool = createTool({
       textSearchManager?: TextSearchManager
       views: AbstractViewModel[]
     }) =>
-    async ({ input, assemblyName }) => {
+    async ({ input }) => {
       const lgviews: LinearGenomeViewModel[] = views.filter(
         view => view.type === 'LinearGenomeView',
       ) as LinearGenomeViewModel[]
       if (lgviews.length === 0)
         return { result: 'no Linear Genome Views are open' }
       const resultPromises: Promise<NavResult>[] = lgviews.map(async lgview => {
+        let assemblyName: string
         let assembly: Awaited<ReturnType<AssemblyManager['waitForAssembly']>>
-        if (lgview.assemblyNames.includes(assemblyName)) {
+        if (lgview.assemblyNames[0]) {
+          assemblyName = lgview.assemblyNames[0]
           assembly = await assemblyManager.waitForAssembly(assemblyName)
+          if (!assembly) return { result: assemblyNotFoundMessage }
+        } else {
+          // TODO: handle assembly selection when missing
+          assemblyName = 'hg38'
+          assembly = await assemblyManager.waitForAssembly(assemblyName)
+          if (!assembly) return { result: assemblyNotFoundMessage }
+          lgview.setDisplayedRegions(assembly.regions ?? [])
         }
-        if (!assembly)
-          return {
-            result:
-              'assembly not found, the LinearGenomeView may not be initialized yet',
-            assemblyNames: lgview.assemblyNames,
-          }
         const allRefs = assembly?.allRefNamesWithLowerCase ?? []
         if (input.split(' ').every(entry => checkRef(entry, allRefs))) {
           await lgview.navToLocString(input, assembly.name)
