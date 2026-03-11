@@ -1,15 +1,19 @@
+import { ToolNode } from '#_/@langchain/langgraph/dist/prebuilt/index'
+import {
+  Annotation,
+  END,
+  START,
+  StateGraph,
+} from '#_/@langchain/langgraph/dist/web'
 import {
   AIMessage,
   AIMessageChunk,
   BaseMessage,
   BaseMessageChunk,
-  isAIMessageChunk,
   SystemMessage,
 } from '@langchain/core/messages'
 import { Runnable, RunnableConfig } from '@langchain/core/runnables'
 import { DynamicStructuredTool } from '@langchain/core/tools'
-import { ToolNode } from '@langchain/langgraph/prebuilt'
-import { Annotation, END, START, StateGraph } from '@langchain/langgraph/web'
 
 import { InterruptPart } from '../tools/base'
 
@@ -113,7 +117,7 @@ export class ChatAgent extends ChatModel {
     for await (const [streamMode, part] of stream) {
       if (streamMode === 'messages') {
         let [message] = part
-        if (isAIMessageChunk(message as BaseMessageChunk)) {
+        if (AIMessageChunk.isInstance(message as BaseMessageChunk)) {
           message = this.parseResponse(message as AIMessageChunk)
         }
         yield message as BaseMessageChunk
