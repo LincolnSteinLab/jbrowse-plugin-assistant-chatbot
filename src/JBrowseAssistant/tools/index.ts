@@ -7,8 +7,9 @@ import { ApiKeyVaultTool } from './ApiKeyVault'
 import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
 import { OpenViewTool } from './OpenViewTool'
-import { SearchAndNavigateLGVTool, ViewsTool } from './SearchAndNavigateLGVTool'
+import { SearchAndNavigateLGVTool } from './SearchAndNavigateLGVTool'
 import { ToggleTracksTool } from './ToggleTracksTool'
+import { ViewsTool } from './ViewsTool'
 
 export function getTools(
   pluginManager: PluginManager,

@@ -1,4 +1,4 @@
-import packageJSON from './package.json'
+import packageJSON from './package.json' with { type: 'json' }
 
 import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
@@ -30,7 +30,7 @@ const includeCJS = stringToBoolean(process.env.JB_CJS)
 const includeESMBundle = stringToBoolean(process.env.JB_ESM_BUNDLE)
 const includeNPM = stringToBoolean(process.env.JB_NPM)
 
-const configs = createRollupConfig(globals.default, {
+const configs = createRollupConfig(globals, {
   includeUMD,
   includeCJS,
   includeESMBundle,

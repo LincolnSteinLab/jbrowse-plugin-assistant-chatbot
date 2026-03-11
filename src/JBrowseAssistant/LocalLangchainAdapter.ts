@@ -12,11 +12,8 @@ import {
   BaseMessage,
   BaseMessageFields,
   HumanMessage,
-  isAIMessage,
-  isAIMessageChunk,
-  isBaseMessage,
-  isToolMessage,
   SystemMessage,
+  ToolMessage,
 } from '@langchain/core/messages'
 
 import { ChatAgent } from './agent/ChatAgent'
@@ -52,13 +49,15 @@ async function getLangchainTools(
     Object.values(tools)
       .filter(tool => tool.execute)
       .map(tool =>
-        tool.execute!(
-          {},
-          {
-            toolCallId: '',
-            abortSignal,
-            human: () => Promise.resolve(undefined),
-          },
+        Promise.resolve(
+          tool.execute!(
+            {},
+            {
+              toolCallId: '',
+              abortSignal,
+              human: () => Promise.resolve(undefined),
+            },
+          ),
         ),
       ),
   )
@@ -104,12 +103,12 @@ async function* streamAgentResponse({
   const tool_calls: Record<string, ToolCallMessagePart> = {}
   for await (const part of stream) {
     let status: MessageStatus = { type: 'running' }
-    if (isBaseMessage(part)) {
-      if (isAIMessageChunk(part)) {
+    if (BaseMessage.isInstance(part)) {
+      if (AIMessageChunk.isInstance(part)) {
         // Collect agent response and reasoning text
         text += part.text
         reasoning += (part.additional_kwargs?.reasoning_content as string) ?? ''
-      } else if (isToolMessage(part)) {
+      } else if (ToolMessage.isInstance(part)) {
         // Collect completed tool call results
         tool_calls[part.tool_call_id] = {
           type: 'tool-call',
@@ -124,9 +123,9 @@ async function* streamAgentResponse({
       } else {
         continue
       }
-    } else if ('agent' in part) {
-      for (const message of part.agent?.messages ?? []) {
-        if (isAIMessage(message)) {
+    } else if ('agent' in part && Array.isArray(part.agent?.messages)) {
+      for (const message of part.agent?.messages) {
+        if (AIMessage.isInstance(message)) {
           // Collect initial tool call info from completed AIMessage
           message.tool_calls
             ?.filter(tool_call => tool_call.id)

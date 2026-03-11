@@ -1,5 +1,5 @@
 import { ElementId } from '@jbrowse/core/util/types/mst'
-import { Instance, types } from 'mobx-state-tree'
+import { Instance, types } from '@jbrowse/mobx-state-tree'
 
 import { ApiKeyVaultModel } from './ApiKeyVaultModel'
 import { SettingsFormModel } from './SettingsFormModel'

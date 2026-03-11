@@ -1,3 +1,8 @@
+import {
+  checkRef,
+  fetchResults,
+  navToOption,
+} from '#_/@jbrowse/plugin-linear-genome-view/esm/searchUtils'
 import BaseResult from '@jbrowse/core/TextSearch/BaseResults'
 import {
   AbstractViewModel,
@@ -5,25 +10,9 @@ import {
   TextSearchManager,
 } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import {
-  checkRef,
-  fetchResults,
-  navToOption,
-} from '@jbrowse/plugin-linear-genome-view/dist/searchUtils'
 import { z } from 'zod'
 
-import { createTool, EmptySchema } from './base'
-
-export const ViewsTool = createTool({
-  name: 'Views',
-  description: 'Display info about all views in the JBrowse session',
-  schema: EmptySchema,
-  factory_fn:
-    (views: AbstractViewModel[]) =>
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async ({}) =>
-      JSON.stringify(views, null, '\t'),
-})
+import { createTool } from './base'
 
 const assemblyNotFoundMessage =
   'assembly not found, the LinearGenomeView may not be initialized yet'

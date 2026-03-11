@@ -1,5 +1,5 @@
 import { localStorageGetItem, localStorageSetItem } from '@jbrowse/core/util'
-import { Instance, types } from 'mobx-state-tree'
+import { Instance, types } from '@jbrowse/mobx-state-tree'
 import { z } from 'zod'
 
 import {
