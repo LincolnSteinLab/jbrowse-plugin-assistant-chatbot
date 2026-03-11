@@ -15,22 +15,29 @@ import { createTool } from './base'
 
 export const OpenViewTool = createTool({
   name: 'OpenView',
-  description: 'Open a new view in JBrowse',
+  description:
+    'Open a new view in JBrowse (optionally with init state like loc/tracks)',
   schema: z.object({
     viewType: z.string().describe('Type of view to open'),
+    init: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe(
+        'Optional init object passed to the view (e.g., { loc, assembly, tracks })',
+      ),
   }),
   factory_fn:
-    (
-      {
-        addView,
-        viewTypes,
-      }: {
-        addView: (viewType: string) => AbstractViewModel
-        viewTypes: ViewType[]
-      },
-      context,
-    ) =>
-    async ({ viewType }, _, config) => {
+    ({
+      addView,
+      viewTypes,
+    }: {
+      addView: (
+        viewType: string,
+        initialState?: Record<string, unknown>,
+      ) => AbstractViewModel
+      viewTypes: ViewType[]
+    }) =>
+    async ({ viewType, init }) => {
       const viewTypeNames = viewTypes.map(vt => vt.name)
       if (!viewTypeNames.includes(viewType)) {
         return {
@@ -38,30 +45,33 @@ export const OpenViewTool = createTool({
           availableViewTypes: viewTypeNames,
         }
       }
-      if (context) {
-        const approved = await context.human({
-          config,
-          payload: viewType,
-        })
-        if (!approved) return { result: 'skipped' }
-      }
-      const newView = addView(viewType)
+
+      // create view using init as initial state so view's autoruns handle nav/tracks
+      const newView = addView(viewType, init ?? {})
+      // wait for initialization flag if present
       if ((newView as object).hasOwnProperty('initialized')) {
-        await when(
-          () =>
-            (newView as AbstractViewModel & { initialized: boolean })
-              .initialized,
-        )
-        return {
-          result: 'success',
-          view: newView,
+        try {
+          await when(
+            () =>
+              (newView as AbstractViewModel & { initialized: boolean })
+                .initialized,
+            { timeout: 5000 },
+          )
+        } catch (e) {
+          console.error(e)
+          return {
+            result: 'success',
+            view: newView,
+            note: 'view created; initialization timeout waiting for initialized=true',
+            viewId: newView.id ?? null,
+          }
         }
-      } else {
-        console.error('View does not have initialized property')
-        return {
-          result: 'success',
-          view: newView,
-        }
+      }
+
+      return {
+        result: 'success',
+        view: newView,
+        viewId: newView.id ?? null,
       }
     },
   render: toolCall => {

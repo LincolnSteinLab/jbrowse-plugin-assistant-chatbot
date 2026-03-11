@@ -6,6 +6,7 @@ import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
 import { AddTemporaryAssemblyTool } from './AddTemporaryAssemblyTool'
 import { AddTrackTool } from './AddTrackTool'
 import { ApiKeyVaultTool } from './ApiKeyVault'
+import { ExportViewTool } from './ExportViewTool'
 import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
 import { ListAssembliesTool } from './ListAssembliesTool'
@@ -26,6 +27,7 @@ export function getTools(
   return {
     addTemporaryAssembly: AddTemporaryAssemblyTool(session),
     addTrack: AddTrackTool(session as SessionWithAddTracks),
+    exportView: ExportViewTool({ session, views }),
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
     listAssemblies: ListAssembliesTool(session),
