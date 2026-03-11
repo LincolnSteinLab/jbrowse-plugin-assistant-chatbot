@@ -1,13 +1,18 @@
 import PluginManager from '@jbrowse/core/PluginManager'
-import { AbstractSessionModel } from '@jbrowse/core/util'
+import { AbstractSessionModel, SessionWithAddTracks } from '@jbrowse/core/util'
 
 import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
 
+import { AddTemporaryAssemblyTool } from './AddTemporaryAssemblyTool'
+import { AddTrackTool } from './AddTrackTool'
 import { ApiKeyVaultTool } from './ApiKeyVault'
 import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
+import { ListAssembliesTool } from './ListAssembliesTool'
+import { ListTracksTool } from './ListTracksTool'
+import { NavigateTool } from './NavigateTool'
 import { OpenViewTool } from './OpenViewTool'
-import { SearchAndNavigateLGVTool } from './SearchAndNavigateLGVTool'
+import { SearchFeaturesTool } from './SearchFeaturesTool'
 import { ToggleTracksTool } from './ToggleTracksTool'
 import { ViewsTool } from './ViewsTool'
 
@@ -17,18 +22,20 @@ export function getTools(
   model?: IChatWidgetModel,
 ) {
   const { assemblyManager, jbrowse, textSearchManager, views } = session
+  const addView = session.addView.bind(session)
   return {
+    addTemporaryAssembly: AddTemporaryAssemblyTool(session),
+    addTrack: AddTrackTool(session as SessionWithAddTracks),
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
+    listAssemblies: ListAssembliesTool(session),
+    listTracks: ListTracksTool(session),
+    navigate: NavigateTool({ assemblyManager, views, session, addView }),
     openView: OpenViewTool({
-      addView: session.addView.bind(session),
+      addView,
       viewTypes: pluginManager.getViewElements(),
     }),
-    searchAndNavigateLGV: SearchAndNavigateLGVTool({
-      assemblyManager,
-      textSearchManager,
-      views,
-    }),
+    searchFeatures: SearchFeaturesTool({ textSearchManager, session }),
     toggletracks: ToggleTracksTool(views),
     views: ViewsTool(views),
     ...(model && {
