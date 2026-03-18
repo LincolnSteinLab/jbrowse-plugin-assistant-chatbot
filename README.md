@@ -10,7 +10,7 @@ Agentic AI interfaces for JBrowse:
 
 - [git](https://git-scm.com/downloads)
 - [Node.js](https://nodejs.org/en/download/) (version 24)
-- [JBrowse 2](https://github.com/gmod/jbrowse-components) (version 4.0 or
+- [JBrowse](https://github.com/gmod/jbrowse-components) (version 4.0 or
   greater)
 
 ## Getting started
@@ -43,10 +43,12 @@ To develop against JBrowse Web:
 - When you make changes to your plugin, it will automatically be re-built. You
   can then refresh JBrowse Web to see the changes.
 
+Alternatively, download a [JBrowse development build](https://github.com/GFJHogue/jbrowse2-development-builds/releases), replace `.jbrowse/` with its contents, and run `npm run develop`.
+
 ### Testing
 
 #### `npm run browse`
 
 Launches your local JBrowse 2 build that is used for integration testing, with
 your plugin already included in the configuration. Your plugin must also be
-running (`npm run start`). Alternatively `npm run develop` will run both commands in parallel.
+running (`npm run start`). Alternatively, `npm run develop` will run both commands in parallel.
