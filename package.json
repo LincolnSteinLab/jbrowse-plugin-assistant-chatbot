@@ -97,10 +97,10 @@
       "zod": "^4.1.12"
     },
     "@jbrowse/development-tools": {
-      "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
+      "@babel/plugin-proposal-class-properties": "npm:@babel/plugin-transform-class-properties@^7.25.9",
       "@jbrowse/core": "^4.0.3",
       "rollup": "^3.0.0",
-      "rollup-plugin-terser": "@rollup/plugin-terser@^1.0.0",
+      "rollup-plugin-terser": "npm:@rollup/plugin-terser@^1.0.0",
       "typescript": "^5.3.3"
     },
     "@modelcontextprotocol/sdk": "1.26.0",
