@@ -4,10 +4,15 @@ import { AbstractSessionModel } from '@jbrowse/core/util'
 import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
 
 import { ApiKeyVaultTool } from './ApiKeyVault'
+import { EnsureViewTool } from './EnsureViewTool'
+import { FindFeatureTool } from './FindFeatureTool'
 import { JBrowseConfigTool } from './JBrowseConfig'
 import { JBrowseDocumentationTool } from './JBrowseDocumentation'
+import { NavigateGenomeTool } from './NavigateGenomeTool'
 import { OpenViewTool } from './OpenViewTool'
 import { SearchAndNavigateLGVTool } from './SearchAndNavigateLGVTool'
+import { SessionSnapshotTool } from './SessionSnapshotTool'
+import { SetTrackVisibilityTool } from './SetTrackVisibilityTool'
 import { ToggleTracksTool } from './ToggleTracksTool'
 import { ViewsTool } from './ViewsTool'
 
@@ -18,6 +23,21 @@ export function getTools(
 ) {
   const { assemblyManager, jbrowse, textSearchManager, views } = session
   return {
+    sessionSnapshot: SessionSnapshotTool(session),
+    ensureView: EnsureViewTool({
+      addView: session.addView.bind(session),
+      viewTypes: pluginManager.getViewElements(),
+      views,
+    }),
+    findFeature: FindFeatureTool({
+      assemblyManager,
+      textSearchManager,
+      views,
+    }),
+    navigateGenome: NavigateGenomeTool(views),
+    setTrackVisibility: SetTrackVisibilityTool(views),
+
+    // Legacy tools retained for compatibility while v1 tools are adopted.
     jbrowseConfig: JBrowseConfigTool(jbrowse),
     jbrowseDocumentation: JBrowseDocumentationTool({}),
     openView: OpenViewTool({
