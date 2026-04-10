@@ -49,12 +49,11 @@ function toStringArray(value: unknown) {
 export const SetTrackVisibilityTool = createTool({
   name: 'SetTrackVisibility',
   description:
-    'Show or hide tracks in a linear genome view by track ID or name, with matching diagnostics',
+    'Show or hide tracks in a linear genome view. Pass exact track IDs from SessionSnapshot.availableTracks[].id for reliable, single-call matching. Display names are also accepted but may match ambiguously. Returns assembly mismatch and render diagnostics so you can refine selection.',
   schema: z.object({
     show: z.array(z.string()).optional().default([]),
     hide: z.array(z.string()).optional().default([]),
     viewId: z.string().optional(),
-    matchMode: z.enum(['id', 'name', 'auto']).optional().default('auto'),
   }),
   factory_fn:
     ({
@@ -68,7 +67,6 @@ export const SetTrackVisibilityTool = createTool({
       show,
       hide,
       viewId,
-      matchMode,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SetTrackVisibilityData>> => {
       if (show.length === 0 && hide.length === 0) {
@@ -120,11 +118,13 @@ export const SetTrackVisibilityTool = createTool({
         .map(t => ({
           id: String(t?.trackId ?? ''),
           name: t?.name,
-          assemblyNames: toStringArray((t as AnyConfigurationModel).assemblyNames),
+          assemblyNames: toStringArray(t.assemblyNames),
         }))
         .filter(t => !!t.id || !!t.name)
 
-      const targetAssemblyNames = toStringArray((target as { assemblyNames?: unknown })?.assemblyNames)
+      const targetAssemblyNames = toStringArray(
+        (target as { assemblyNames?: unknown })?.assemblyNames,
+      )
 
       const isAssemblyCompatible = (trackAssemblyNames: string[]) => {
         if (!targetAssemblyNames.length || !trackAssemblyNames.length) {
@@ -190,14 +190,17 @@ export const SetTrackVisibilityTool = createTool({
 
           if (anyDisplay.regionTooLarge) {
             messages.add(
-              anyDisplay.regionTooLargeReason ||
+              anyDisplay.regionTooLargeReason ??
                 'Zoom in to see features or force load (may be slow)',
             )
           }
 
           const firstRegion = (target as { displayedRegions?: unknown[] })
             ?.displayedRegions?.[0]
-          if (firstRegion && typeof anyDisplay.regionCannotBeRenderedText === 'function') {
+          if (
+            firstRegion &&
+            typeof anyDisplay.regionCannotBeRenderedText === 'function'
+          ) {
             const msg = anyDisplay.regionCannotBeRenderedText(firstRegion)
             if (msg) {
               messages.add(msg)
@@ -228,17 +231,20 @@ export const SetTrackVisibilityTool = createTool({
 
       const resolve = (query: string) => {
         const q = norm(query)
-        const matches = sessionTracks.filter(t => {
-          const byId = !!t.id && norm(String(t.id)) === q
-          const byName = !!t.name && norm(String(t.name)) === q
-          const fuzzy =
+        // Prefer exact ID match, then exact name match, then substring match
+        const exactId = sessionTracks.filter(
+          t => !!t.id && norm(String(t.id)) === q,
+        )
+        if (exactId.length > 0) return exactId
+        const exactName = sessionTracks.filter(
+          t => !!t.name && norm(String(t.name)) === q,
+        )
+        if (exactName.length > 0) return exactName
+        return sessionTracks.filter(
+          t =>
             (!!t.id && norm(String(t.id)).includes(q)) ||
-            (!!t.name && norm(String(t.name)).includes(q))
-          if (matchMode === 'id') return byId
-          if (matchMode === 'name') return byName
-          return byId || byName || fuzzy
-        })
-        return matches
+            (!!t.name && norm(String(t.name)).includes(q)),
+        )
       }
 
       for (const q of show) {
