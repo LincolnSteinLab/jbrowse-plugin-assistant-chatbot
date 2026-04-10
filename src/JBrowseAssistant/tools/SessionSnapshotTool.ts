@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
 
-interface SessionSnapshotData {
+export interface SessionSnapshotData {
   assemblies: {
     name: string
     refNameCount?: number

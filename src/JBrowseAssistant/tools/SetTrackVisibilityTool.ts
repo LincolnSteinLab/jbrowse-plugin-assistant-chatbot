@@ -1,11 +1,12 @@
-import { AbstractViewModel } from '@jbrowse/core/util'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { AbstractSessionModel, AbstractViewModel } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
 
-interface SetTrackVisibilityData {
+export interface SetTrackVisibilityData {
   viewId?: string
   shown: string[]
   hidden: string[]
@@ -31,7 +32,13 @@ export const SetTrackVisibilityTool = createTool({
     matchMode: z.enum(['id', 'name', 'auto']).optional().default('auto'),
   }),
   factory_fn:
-    (views: AbstractViewModel[]) =>
+    ({
+      session,
+      views,
+    }: {
+      session: AbstractSessionModel
+      views: AbstractViewModel[]
+    }) =>
     async ({
       show,
       hide,
@@ -69,9 +76,7 @@ export const SetTrackVisibilityTool = createTool({
         ? lgviews.find(view => view.id === viewId)
         : lgviews[0]
 
-      const sessionTracks = (
-        ((target as any).session?.jbrowse?.tracks ?? []) as any[]
-      )
+      const sessionTracks = (session.jbrowse.tracks as AnyConfigurationModel[])
         .map(t => ({
           id: t?.trackId,
           name: t?.name,
@@ -115,7 +120,7 @@ export const SetTrackVisibilityTool = createTool({
           continue
         }
         const trackId = String(matches[0]?.id ?? '')
-        if (!trackId) {
+        if (!target || !trackId) {
           unmatched.push(q)
           continue
         }

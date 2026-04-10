@@ -35,7 +35,7 @@ export function getTools(
       views,
     }),
     navigateGenome: NavigateGenomeTool(views),
-    setTrackVisibility: SetTrackVisibilityTool(views),
+    setTrackVisibility: SetTrackVisibilityTool({ session, views }),
 
     // Legacy tools retained for compatibility while v1 tools are adopted.
     jbrowseConfig: JBrowseConfigTool(jbrowse),

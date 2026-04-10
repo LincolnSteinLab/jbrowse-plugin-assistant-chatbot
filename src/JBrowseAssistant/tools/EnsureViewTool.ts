@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
 
-interface EnsureViewData {
+export interface EnsureViewData {
   viewId?: string
   viewType: string
   created: boolean

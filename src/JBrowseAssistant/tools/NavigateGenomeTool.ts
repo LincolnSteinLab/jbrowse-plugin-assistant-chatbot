@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
 
-interface NavigateGenomeData {
+export interface NavigateGenomeData {
   navigations: {
     viewId?: string
     viewType: string

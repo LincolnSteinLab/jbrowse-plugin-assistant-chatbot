@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
 
-interface FindFeatureData {
+export interface FindFeatureData {
   assembly?: string
   candidates: {
     label: string
