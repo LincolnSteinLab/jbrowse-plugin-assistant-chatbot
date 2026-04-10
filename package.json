@@ -97,10 +97,10 @@
       "zod": "^4.1.12"
     },
     "@jbrowse/development-tools": {
-      "@babel/plugin-proposal-class-properties": "@babel/plugin-transform-class-properties@^7.25.9",
+      "@babel/plugin-proposal-class-properties": "npm:@babel/plugin-transform-class-properties@^7.25.9",
       "@jbrowse/core": "^4.0.3",
       "rollup": "^3.0.0",
-      "rollup-plugin-terser": "@rollup/plugin-terser@^1.0.0",
+      "rollup-plugin-terser": "npm:@rollup/plugin-terser@^1.0.0",
       "typescript": "^5.3.3"
     },
     "@modelcontextprotocol/sdk": "1.26.0",
@@ -127,15 +127,12 @@
     "@assistant-ui/react-markdown": "^0.11.3",
     "@google/genai": "^1.20.0",
     "@hookform/resolvers": "^5.2.1",
-    "@huggingface/transformers": "^3.6.1",
     "@langchain/anthropic": "^1.3.22",
-    "@langchain/community": "^1.1.22",
     "@langchain/core": "^1.1.31",
     "@langchain/google-genai": "^2.1.24",
     "@langchain/langgraph": "^1.2.2",
     "@langchain/ollama": "^1.2.6",
     "@langchain/openai": "^1.2.12",
-    "@langchain/textsplitters": "^1.0.1",
     "@mcp-b/react-webmcp": "^0.2.3",
     "@metamask/browser-passworder": "^6.0.0",
     "@mui/material": "^7.1.0",
@@ -164,8 +161,7 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
     "tw-animate-css": "^1.2.9",
-    "zod": "3.25.67",
-    "zustand": "^5.0.8"
+    "zod": "3.25.67"
   },
   "imports": {
     "#_/*": "./.modules/*"
