@@ -11,6 +11,21 @@ export interface SetTrackVisibilityData {
   shown: string[]
   hidden: string[]
   unmatched: string[]
+  assemblyMismatches?: {
+    query: string
+    trackId: string
+    viewAssemblies: string[]
+    trackAssemblies: string[]
+  }[]
+  trackDiagnostics?: {
+    trackId: string
+    severity: 'warning' | 'error'
+    message: string
+  }[]
+  unmatchedSuggestions?: {
+    query: string
+    candidates: string[]
+  }[]
   ambiguous: {
     query: string
     candidates: string[]
@@ -19,6 +34,16 @@ export interface SetTrackVisibilityData {
 
 function norm(value: string) {
   return value.trim().toLowerCase()
+}
+
+function toStringArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map(entry => String(entry)).filter(Boolean)
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return [value]
+  }
+  return [] as string[]
 }
 
 export const SetTrackVisibilityTool = createTool({
@@ -76,17 +101,130 @@ export const SetTrackVisibilityTool = createTool({
         ? lgviews.find(view => view.id === viewId)
         : lgviews[0]
 
+      if (viewId && !target) {
+        return err(
+          'Requested viewId was not found among open Linear Genome Views',
+          {
+            shown: [],
+            hidden: [],
+            unmatched: [...show, ...hide],
+            unmatchedSuggestions: [],
+            ambiguous: [],
+          },
+          [
+            `Use one of the open view IDs: ${lgviews.map(v => v.id).join(', ')}`,
+          ],
+        )
+      }
       const sessionTracks = (session.jbrowse.tracks as AnyConfigurationModel[])
         .map(t => ({
-          id: t?.trackId,
+          id: String(t?.trackId ?? ''),
           name: t?.name,
+          assemblyNames: toStringArray((t as AnyConfigurationModel).assemblyNames),
         }))
-        .filter(t => t.id ?? t.name)
+        .filter(t => !!t.id || !!t.name)
+
+      const targetAssemblyNames = toStringArray((target as { assemblyNames?: unknown })?.assemblyNames)
+
+      const isAssemblyCompatible = (trackAssemblyNames: string[]) => {
+        if (!targetAssemblyNames.length || !trackAssemblyNames.length) {
+          return true
+        }
+        return trackAssemblyNames.some(trackAssembly =>
+          targetAssemblyNames.some(viewAssembly => {
+            if (trackAssembly === viewAssembly) {
+              return true
+            }
+            const assembly = session.assemblyManager.get(trackAssembly)
+            return !!assembly?.hasName(viewAssembly)
+          }),
+        )
+      }
 
       const shown: string[] = []
       const hidden: string[] = []
       const unmatched: string[] = []
+      const assemblyMismatches: {
+        query: string
+        trackId: string
+        viewAssemblies: string[]
+        trackAssemblies: string[]
+      }[] = []
+      const trackDiagnostics: {
+        trackId: string
+        severity: 'warning' | 'error'
+        message: string
+      }[] = []
+      const unmatchedSuggestions: {
+        query: string
+        candidates: string[]
+      }[] = []
       const ambiguous: { query: string; candidates: string[] }[] = []
+
+      const collectDiagnostics = (trackId: string) => {
+        const selectedTrack = target?.tracks.find(
+          track => track.configuration.trackId === trackId,
+        )
+        if (!selectedTrack) {
+          return
+        }
+        const messages = new Set<string>()
+        for (const display of selectedTrack.displays ?? []) {
+          const anyDisplay = display as AbstractViewModel & {
+            error?: unknown
+            cannotBeRenderedReason?: string
+            regionTooLarge?: boolean
+            regionTooLargeReason?: string
+            regionCannotBeRenderedText?: (region: unknown) => string
+          }
+
+          if (anyDisplay.error instanceof Error) {
+            messages.add(anyDisplay.error.message)
+          } else if (typeof anyDisplay.error === 'string') {
+            messages.add(anyDisplay.error)
+          }
+
+          if (anyDisplay.cannotBeRenderedReason) {
+            messages.add(anyDisplay.cannotBeRenderedReason)
+          }
+
+          if (anyDisplay.regionTooLarge) {
+            messages.add(
+              anyDisplay.regionTooLargeReason ||
+                'Zoom in to see features or force load (may be slow)',
+            )
+          }
+
+          const firstRegion = (target as { displayedRegions?: unknown[] })
+            ?.displayedRegions?.[0]
+          if (firstRegion && typeof anyDisplay.regionCannotBeRenderedText === 'function') {
+            const msg = anyDisplay.regionCannotBeRenderedText(firstRegion)
+            if (msg) {
+              messages.add(msg)
+            }
+          }
+        }
+
+        for (const message of messages) {
+          const severity = /error|does not match/i.test(message)
+            ? 'error'
+            : 'warning'
+          trackDiagnostics.push({ trackId, severity, message })
+        }
+      }
+
+      const suggest = (query: string) => {
+        const q = norm(query)
+        return sessionTracks
+          .filter(t => {
+            const id = t.id ? norm(String(t.id)) : ''
+            const name = t.name ? norm(String(t.name)) : ''
+            return id.includes(q) || name.includes(q) || q.includes(id)
+          })
+          .map(t => String(t.id ?? t.name))
+          .filter(Boolean)
+          .slice(0, 8)
+      }
 
       const resolve = (query: string) => {
         const q = norm(query)
@@ -107,6 +245,10 @@ export const SetTrackVisibilityTool = createTool({
         const matches = resolve(q)
         if (matches.length === 0) {
           unmatched.push(q)
+          const candidates = suggest(q)
+          if (candidates.length > 0) {
+            unmatchedSuggestions.push({ query: q, candidates })
+          }
           continue
         }
         if (matches.length > 1) {
@@ -124,14 +266,31 @@ export const SetTrackVisibilityTool = createTool({
           unmatched.push(q)
           continue
         }
+
+        const trackAssemblyNames = matches[0]?.assemblyNames ?? []
+        if (!isAssemblyCompatible(trackAssemblyNames)) {
+          assemblyMismatches.push({
+            query: q,
+            trackId,
+            viewAssemblies: targetAssemblyNames,
+            trackAssemblies: trackAssemblyNames,
+          })
+          continue
+        }
+
         target.showTrack(trackId)
         shown.push(trackId)
+        collectDiagnostics(trackId)
       }
 
       for (const q of hide) {
         const matches = resolve(q)
         if (matches.length === 0) {
           unmatched.push(q)
+          const candidates = suggest(q)
+          if (candidates.length > 0) {
+            unmatchedSuggestions.push({ query: q, candidates })
+          }
           continue
         }
         if (matches.length > 1) {
@@ -166,9 +325,49 @@ export const SetTrackVisibilityTool = createTool({
             shown,
             hidden,
             unmatched,
+            assemblyMismatches,
+            trackDiagnostics,
+            unmatchedSuggestions,
             ambiguous,
           },
           ['Provide exact track IDs for ambiguous entries'],
+        )
+      }
+
+      if (unmatched.length > 0 && shown.length === 0 && hidden.length === 0) {
+        return needsInput(
+          'No requested tracks were updated because none matched exactly',
+          {
+            viewId: target?.id,
+            shown,
+            hidden,
+            unmatched,
+            assemblyMismatches,
+            trackDiagnostics,
+            unmatchedSuggestions,
+            ambiguous,
+          },
+          ['Use exact track IDs from SessionSnapshot.availableTracks'],
+        )
+      }
+
+      if (assemblyMismatches.length > 0 || trackDiagnostics.length > 0) {
+        return needsInput(
+          'Some requested tracks may be unsuitable for the current view region',
+          {
+            viewId: target?.id,
+            shown,
+            hidden,
+            unmatched,
+            assemblyMismatches,
+            trackDiagnostics,
+            unmatchedSuggestions,
+            ambiguous,
+          },
+          [
+            'Prefer tracks where track assemblyNames overlap the view assembly',
+            'If diagnostics indicate force load, zoom in before selecting that track',
+          ],
         )
       }
 
@@ -177,6 +376,9 @@ export const SetTrackVisibilityTool = createTool({
         shown,
         hidden,
         unmatched,
+        assemblyMismatches,
+        trackDiagnostics,
+        unmatchedSuggestions,
         ambiguous,
       })
     },

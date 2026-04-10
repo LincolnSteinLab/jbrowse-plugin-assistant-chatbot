@@ -1,3 +1,4 @@
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import {
   AbstractSessionModel,
   AbstractTrackModel,
@@ -13,6 +14,12 @@ export interface SessionSnapshotData {
   assemblies: {
     name: string
     refNameCount?: number
+  }[]
+  availableTracks?: {
+    id: string
+    name?: string
+    assemblyNames?: string[]
+    type?: string
   }[]
   views: {
     id?: string
@@ -60,6 +67,18 @@ export const SessionSnapshotTool = createTool({
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SessionSnapshotData>> => {
       const assemblies = session.assemblyManager.assemblies
+      const availableTracks = includeTracks
+        ? (session.jbrowse.tracks as AnyConfigurationModel[])
+            .map(track => ({
+              id: String(track.trackId ?? ''),
+              name: track.name,
+              assemblyNames: Array.isArray(track.assemblyNames)
+                ? track.assemblyNames.map(name => String(name))
+                : undefined,
+              type: track.type,
+            }))
+            .filter(track => !!track.id)
+        : undefined
       const views = session.views.map(view => {
         const v = view
         const displayedRegions =
@@ -92,6 +111,7 @@ export const SessionSnapshotTool = createTool({
           name: a.name,
           refNameCount: a.allRefNames?.length,
         })),
+        availableTracks,
         views,
         defaults: {
           preferredViewId: firstLGV?.id,
