@@ -8,6 +8,7 @@ import { createTool } from './base'
 
 export interface SetTrackVisibilityData {
   viewId?: string
+  onlyCompatibleWithViewAssembly?: boolean
   shown: string[]
   hidden: string[]
   unmatched: string[]
@@ -49,11 +50,12 @@ function toStringArray(value: unknown) {
 export const SetTrackVisibilityTool = createTool({
   name: 'SetTrackVisibility',
   description:
-    'Show or hide tracks in a linear genome view. Pass exact track IDs from SessionSnapshot.availableTracks[].id for reliable, single-call matching. Display names are also accepted but may match ambiguously. Returns assembly mismatch and render diagnostics so you can refine selection.',
+    'Show or hide tracks in a linear genome view. Pass exact track IDs from SessionSnapshot.availableTracks[].id for reliable, single-call matching. Display names are also accepted but may match ambiguously. Set onlyCompatibleWithViewAssembly=true to strictly filter show candidates to tracks compatible with the target view assembly. Returns assembly mismatch and render diagnostics so you can refine selection.',
   schema: z.object({
     show: z.array(z.string()).optional().default([]),
     hide: z.array(z.string()).optional().default([]),
     viewId: z.string().optional(),
+    onlyCompatibleWithViewAssembly: z.boolean().optional().default(false),
   }),
   factory_fn:
     ({
@@ -67,6 +69,7 @@ export const SetTrackVisibilityTool = createTool({
       show,
       hide,
       viewId,
+      onlyCompatibleWithViewAssembly,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SetTrackVisibilityData>> => {
       if (show.length === 0 && hide.length === 0) {
@@ -218,7 +221,12 @@ export const SetTrackVisibilityTool = createTool({
 
       const suggest = (query: string) => {
         const q = norm(query)
-        return sessionTracks
+        const filteredTracks = onlyCompatibleWithViewAssembly
+          ? sessionTracks.filter(t =>
+              isAssemblyCompatible(t.assemblyNames ?? []),
+            )
+          : sessionTracks
+        return filteredTracks
           .filter(t => {
             const id = t.id ? norm(String(t.id)) : ''
             const name = t.name ? norm(String(t.name)) : ''
@@ -229,18 +237,24 @@ export const SetTrackVisibilityTool = createTool({
           .slice(0, 8)
       }
 
-      const resolve = (query: string) => {
+      const resolve = (query: string, forShow: boolean) => {
         const q = norm(query)
+        const candidateTracks =
+          forShow && onlyCompatibleWithViewAssembly
+            ? sessionTracks.filter(t =>
+                isAssemblyCompatible(t.assemblyNames ?? []),
+              )
+            : sessionTracks
         // Prefer exact ID match, then exact name match, then substring match
-        const exactId = sessionTracks.filter(
+        const exactId = candidateTracks.filter(
           t => !!t.id && norm(String(t.id)) === q,
         )
         if (exactId.length > 0) return exactId
-        const exactName = sessionTracks.filter(
+        const exactName = candidateTracks.filter(
           t => !!t.name && norm(String(t.name)) === q,
         )
         if (exactName.length > 0) return exactName
-        return sessionTracks.filter(
+        return candidateTracks.filter(
           t =>
             (!!t.id && norm(String(t.id)).includes(q)) ||
             (!!t.name && norm(String(t.name)).includes(q)),
@@ -248,8 +262,23 @@ export const SetTrackVisibilityTool = createTool({
       }
 
       for (const q of show) {
-        const matches = resolve(q)
+        const matches = resolve(q, true)
         if (matches.length === 0) {
+          const allMatches = resolve(q, false)
+          if (onlyCompatibleWithViewAssembly && allMatches.length > 0) {
+            const incompatibleMatches = allMatches.filter(
+              match => !isAssemblyCompatible(match.assemblyNames ?? []),
+            )
+            for (const match of incompatibleMatches) {
+              assemblyMismatches.push({
+                query: q,
+                trackId: String(match.id ?? ''),
+                viewAssemblies: targetAssemblyNames,
+                trackAssemblies: match.assemblyNames ?? [],
+              })
+            }
+            continue
+          }
           unmatched.push(q)
           const candidates = suggest(q)
           if (candidates.length > 0) {
@@ -290,7 +319,7 @@ export const SetTrackVisibilityTool = createTool({
       }
 
       for (const q of hide) {
-        const matches = resolve(q)
+        const matches = resolve(q, false)
         if (matches.length === 0) {
           unmatched.push(q)
           const candidates = suggest(q)
@@ -328,6 +357,7 @@ export const SetTrackVisibilityTool = createTool({
           'Some track queries matched multiple tracks',
           {
             viewId: target?.id,
+            onlyCompatibleWithViewAssembly,
             shown,
             hidden,
             unmatched,
@@ -345,6 +375,7 @@ export const SetTrackVisibilityTool = createTool({
           'No requested tracks were updated because none matched exactly',
           {
             viewId: target?.id,
+            onlyCompatibleWithViewAssembly,
             shown,
             hidden,
             unmatched,
@@ -362,6 +393,7 @@ export const SetTrackVisibilityTool = createTool({
           'Some requested tracks may be unsuitable for the current view region',
           {
             viewId: target?.id,
+            onlyCompatibleWithViewAssembly,
             shown,
             hidden,
             unmatched,
@@ -372,6 +404,7 @@ export const SetTrackVisibilityTool = createTool({
           },
           [
             'Prefer tracks where track assemblyNames overlap the view assembly',
+            'Re-run with onlyCompatibleWithViewAssembly=true to enforce assembly-safe track selection',
             'If diagnostics indicate force load, zoom in before selecting that track',
           ],
         )
@@ -379,6 +412,7 @@ export const SetTrackVisibilityTool = createTool({
 
       return ok('Track visibility updated', {
         viewId: target?.id,
+        onlyCompatibleWithViewAssembly,
         shown,
         hidden,
         unmatched,
