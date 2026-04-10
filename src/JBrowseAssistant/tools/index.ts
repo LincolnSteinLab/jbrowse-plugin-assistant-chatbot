@@ -6,7 +6,6 @@ import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
 import { ApiKeyVaultTool } from './ApiKeyVault'
 import { EnsureViewTool } from './EnsureViewTool'
 import { FindFeatureTool } from './FindFeatureTool'
-import { JBrowseDocumentationTool } from './JBrowseDocumentation'
 import { NavigateGenomeTool } from './NavigateGenomeTool'
 import { SessionSnapshotTool } from './SessionSnapshotTool'
 import { SetTrackVisibilityTool } from './SetTrackVisibilityTool'
@@ -31,7 +30,6 @@ export function getTools(
     }),
     navigateGenome: NavigateGenomeTool(views),
     setTrackVisibility: SetTrackVisibilityTool({ session, views }),
-    jbrowseDocumentation: JBrowseDocumentationTool({}),
     ...(model && {
       apiKeyVault: ApiKeyVaultTool({
         provider: model.settingsForm.settings.provider,
