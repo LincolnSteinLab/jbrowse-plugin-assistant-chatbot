@@ -143,9 +143,12 @@ async function* streamAgentResponse({
         }
       }
     } else if ('interrupt' in part) {
-      tool_calls[part.interrupt.toolCallId] = {
-        ...tool_calls[part.interrupt.toolCallId],
-        interrupt: { type: 'human', payload: part.interrupt.payload },
+      const interruptPart = part as {
+        interrupt: { toolCallId: string; payload: unknown }
+      }
+      tool_calls[interruptPart.interrupt.toolCallId] = {
+        ...tool_calls[interruptPart.interrupt.toolCallId],
+        interrupt: { type: 'human', payload: interruptPart.interrupt.payload },
       }
       status = { type: 'requires-action', reason: 'interrupt' }
     } else {
