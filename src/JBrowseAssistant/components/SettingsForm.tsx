@@ -415,9 +415,21 @@ export const SettingsForm = observer(function ({
           )}
         />
         <Field>
-          <Button type="submit" disabled={!form.formState.isDirty}>
-            Save
-          </Button>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={!form.formState.isDirty}>
+              Save
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                settingsForm.resetToDefaults()
+                form.reset(settingsForm.settings)
+              }}
+            >
+              Reset to defaults
+            </Button>
+          </div>
         </Field>
       </FieldGroup>
     </form>

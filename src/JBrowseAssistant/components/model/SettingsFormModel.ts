@@ -9,6 +9,9 @@ import {
 
 const settingsLocalStorageKey = 'chatbot-settings'
 
+/** Increment when settingsFormDefaults changes to auto-reset stored settings for existing users. */
+const SETTINGS_VERSION = 2
+
 const ProviderSettingsSchema = z
   .object({
     baseUrl: z.string().optional(),
@@ -19,6 +22,7 @@ const ProviderSettingsSchema = z
   .optional()
 
 export const SettingsFormSchema = z.object({
+  version: z.number().optional(),
   provider: z.enum(ChatModelProviders),
   providerSettings: z.object({
     openai: ProviderSettingsSchema,
@@ -32,21 +36,27 @@ export const SettingsFormSchema = z.object({
 export type Settings = z.infer<typeof SettingsFormSchema>
 
 const settingsFormDefaults: Settings = {
+  version: SETTINGS_VERSION,
   provider: 'openai',
-  defaultSystemPrompt: `
-You are an expert in biological processes and an assistant for answering questions regarding JBrowse 2, OR the user's running JBrowse 2 session.
-**No matter the question, you must provide a clear, accurate, and complete response to the question.**
-`,
+  defaultSystemPrompt: `You are an expert assistant for JBrowse 2 and genomics-focused analysis.
+
+Use available tools to inspect or change the live JBrowse session when a user asks for session-aware actions.
+Before taking stateful actions, gather enough context from the current session.
+Prefer exact identifiers returned by tools over guessed names.
+If an action is ambiguous or unsafe, ask a concise clarifying question.
+When you complete a tool-assisted step, summarize what changed in plain language.
+
+Always provide clear, accurate, and complete responses.`,
   useProviderSystemPrompt: false,
   providerSettings: {
     openai: {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4-nano',
     },
     anthropic: {
       model: 'claude-3-5-haiku-latest',
     },
     google: {
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-flash-lite-latest',
     },
     ollama: {
       baseUrl: 'http://localhost:11434',
@@ -61,13 +71,18 @@ export const SettingsFormModel = types
       const settingsStr = localStorageGetItem(settingsLocalStorageKey)
       if (!settingsStr) return settingsFormDefaults
       const parsed = SettingsFormSchema.safeParse(JSON.parse(settingsStr))
-      return parsed.success ? parsed.data : settingsFormDefaults
+      if (!parsed.success) return settingsFormDefaults
+      // Migrate stale settings when SETTINGS_VERSION increments
+      if ((parsed.data.version ?? 0) < SETTINGS_VERSION)
+        return settingsFormDefaults
+      return parsed.data
     }),
   })
   .actions(self => ({
     set(settings: Settings) {
-      localStorageSetItem(settingsLocalStorageKey, JSON.stringify(settings))
-      self.settings = settings
+      const versioned: Settings = { ...settings, version: SETTINGS_VERSION }
+      localStorageSetItem(settingsLocalStorageKey, JSON.stringify(versioned))
+      self.settings = versioned
     },
     setProvider(provider: ChatModelProvider) {
       self.settings = {
@@ -81,6 +96,13 @@ export const SettingsFormModel = types
     },
     clear() {
       localStorageSetItem(settingsLocalStorageKey, '')
+    },
+    resetToDefaults() {
+      localStorageSetItem(
+        settingsLocalStorageKey,
+        JSON.stringify(settingsFormDefaults),
+      )
+      self.settings = settingsFormDefaults
     },
   }))
 export interface ISettingsFormModel
