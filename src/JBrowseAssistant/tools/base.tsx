@@ -41,6 +41,25 @@ export interface InterruptPart {
   }
 }
 
+function normalizeNulls(value: unknown): unknown {
+  if (value === null) {
+    return undefined
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map(normalizeNulls)
+      .filter(
+        (entry): entry is Exclude<unknown, undefined> => entry !== undefined,
+      )
+  }
+  if (typeof value === 'object' && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, normalizeNulls(v)]),
+    )
+  }
+  return value
+}
+
 export class JBTool<
   FactoryArgsT = unknown,
   InputSchemaT extends z.AnyZodObject = z.AnyZodObject,
@@ -86,6 +105,12 @@ export class JBTool<
     },
     args: FactoryArgsT,
   ) {
+    // Tool-calling models often emit null for optional fields; normalize globally.
+    const runtimeSchema = z.preprocess(
+      normalizeNulls,
+      schema,
+    ) as unknown as InputSchemaT
+
     this.tool = tool({
       description,
       parameters: EmptySchema,
@@ -93,7 +118,7 @@ export class JBTool<
         new DynamicStructuredTool({
           name,
           description,
-          schema,
+          schema: runtimeSchema,
           func: factory_fn(args, { ...context, human: this.human }),
         }),
     })

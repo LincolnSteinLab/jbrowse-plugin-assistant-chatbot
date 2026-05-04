@@ -73,7 +73,24 @@ export const EnsureViewTool = createTool({
         const lgv = view as LinearGenomeViewModel
         const assemblyName = assembly ?? lgv?.assemblyNames?.[0]
         if (assemblyName) {
-          await lgv.navToLocString(locString, assemblyName)
+          try {
+            await lgv.navToLocString(locString, assemblyName)
+          } catch {
+            return err(
+              'Failed to navigate to locString',
+              {
+                viewId: view.id,
+                viewType,
+                created,
+                initialized: hasInitialized(view)
+                  ? view.initialized
+                  : undefined,
+                assembly: assemblyName,
+                locString,
+              },
+              ['Use the FindFeature tool to search for features by name.'],
+            )
+          }
         }
       }
 
