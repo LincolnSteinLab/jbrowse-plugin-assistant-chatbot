@@ -68,6 +68,49 @@ async function* streamAgentResponse({
   context,
   abortSignal,
 }: ChatModelRunOptions) {
+  const toInterruptPart = (
+    part: unknown,
+  ): { toolCallId: string; payload: unknown } | undefined => {
+    if (
+      typeof part === 'object' &&
+      part !== null &&
+      'interrupt' in part &&
+      typeof (part as { interrupt?: unknown }).interrupt === 'object' &&
+      (part as { interrupt?: unknown }).interrupt !== null
+    ) {
+      const interrupt = (
+        part as { interrupt: { toolCallId?: unknown; payload?: unknown } }
+      ).interrupt
+      if (typeof interrupt.toolCallId === 'string') {
+        return { toolCallId: interrupt.toolCallId, payload: interrupt.payload }
+      }
+    }
+
+    if (
+      typeof part === 'object' &&
+      part !== null &&
+      '__interrupt__' in part &&
+      Array.isArray((part as { __interrupt__?: unknown[] }).__interrupt__)
+    ) {
+      const first = (part as { __interrupt__: { value?: unknown }[] })
+        .__interrupt__[0]
+      const value = first?.value
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        'toolCallId' in value &&
+        typeof (value as { toolCallId?: unknown }).toolCallId === 'string'
+      ) {
+        return {
+          toolCallId: (value as { toolCallId: string }).toolCallId,
+          payload: (value as { payload?: unknown }).payload,
+        }
+      }
+    }
+
+    return undefined
+  }
+
   const chatAgent = new ChatAgent()
   const providerModel = context.config?.modelName?.split('/', 2)
   const { apiKeyVault, ...tools } = context.tools as Record<
@@ -142,17 +185,16 @@ async function* streamAgentResponse({
             })
         }
       }
-    } else if ('interrupt' in part) {
-      const interruptPart = part as {
-        interrupt: { toolCallId: string; payload: unknown }
+    } else {
+      const interruptPart = toInterruptPart(part)
+      if (!interruptPart) {
+        continue
       }
-      tool_calls[interruptPart.interrupt.toolCallId] = {
-        ...tool_calls[interruptPart.interrupt.toolCallId],
-        interrupt: { type: 'human', payload: interruptPart.interrupt.payload },
+      tool_calls[interruptPart.toolCallId] = {
+        ...tool_calls[interruptPart.toolCallId],
+        interrupt: { type: 'human', payload: interruptPart.payload },
       }
       status = { type: 'requires-action', reason: 'interrupt' }
-    } else {
-      continue
     }
     yield {
       content: [

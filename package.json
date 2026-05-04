@@ -55,6 +55,7 @@
     "@jbrowse/development-tools": "^2.2.1",
     "@jbrowse/mobx-state-tree": "^5.5.0",
     "@jbrowse/plugin-linear-genome-view": "^4.0.3",
+    "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-terser": "^1.0.0",
     "@schemastore/package": "^0.0.10",
     "@tailwindcss/postcss": "^4.1.6",

@@ -3,6 +3,7 @@ import packageJSON from './package.json' with { type: 'json' }
 import { execSync } from 'node:child_process'
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
+import alias from '@rollup/plugin-alias'
 import css from 'rollup-plugin-import-css'
 
 function postcssTransform(code) {
@@ -43,6 +44,7 @@ const ignoreWarningCodes = [
 ]
 const ignoreWarningPrefixes = [
   'Circular dependency: node_modules/',  // 3rd party circulars not our problem
+  'Circular dependency: \x00polyfill-node.'  // rollup-plugin-polyfill-node
 ]
 
 configs.forEach(config => {
@@ -60,6 +62,36 @@ configs.forEach(config => {
       output.name = `JBrowsePlugin${packageJSON['jbrowse-plugin'].name}`
     }
   })
+
+  const innerExternal = config.external.bind()
+  config.external = id => innerExternal(id) || [
+    // unused Node-only inner deps
+    'fast-glob',
+  ].includes(id)
+
+  /* Manage Node.js resolutions for browser */
+  const polyfillNodeIdx = config.plugins.findIndex(
+    plugin => plugin.name === 'polyfill-node'
+  )
+
+  if (polyfillNodeIdx !== -1) {  // not a Node.js build
+
+    /* Package aliasing, prior to Node.js polyfills */
+    const typescriptIdx = config.plugins.findIndex(
+      plugin => plugin.name === 'typescript'
+    )
+    config.plugins.splice(typescriptIdx, 0, alias({
+      entries: [
+        // custom shims for Node.js builtins
+        { find: 'node:child_process', replacement: '@/shims/child_process' },
+        { find: 'node:fs/promises', replacement: '@/shims/empty' },
+        // rollup-plugin-polyfill-node doesn't handle "node:" prefix
+        { find: /^node:([^/]*)$/, replacement: '$1' },
+      ],
+    }))
+  }
+
+  /* Build, Minify, & Inject CSS */
   config.plugins.push(
     css({
       transform: postcssTransform,

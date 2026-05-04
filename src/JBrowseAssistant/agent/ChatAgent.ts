@@ -4,7 +4,7 @@ import {
   BaseMessageChunk,
 } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
-import { createAgent } from 'langchain'
+import { createDeepAgent, StateBackend } from 'deepagents'
 
 import { InterruptPart } from '../tools/base'
 
@@ -28,10 +28,11 @@ export class ChatAgent extends ChatModel {
   ) {
     this.resetParser()
     await this.setupChatModel(chatModelConfig)
-    const graph = createAgent({
+    const graph = createDeepAgent({
       model: this.llm!,
       tools: tools ?? [],
       systemPrompt,
+      backend: new StateBackend(),
     })
     const stream = await graph.stream(
       { messages },
