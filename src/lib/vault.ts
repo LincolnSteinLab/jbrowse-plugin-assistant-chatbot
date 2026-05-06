@@ -7,7 +7,7 @@ import {
   generateSalt,
   importKey,
 } from '@metamask/browser-passworder'
-import { JSONType } from 'zod/dist/types/v4/core/util'
+import { JSONType } from 'zod'
 
 export class SecretsVault<T extends Record<string, JSONType>> {
   name: string

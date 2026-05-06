@@ -13,8 +13,11 @@ import {
   BaseMessageFields,
   HumanMessage,
   SystemMessage,
+  ToolCall,
   ToolMessage,
 } from '@langchain/core/messages'
+import { Command } from '@langchain/langgraph'
+import { HITLRequest } from 'langchain'
 
 import { ChatAgent } from './agent/ChatAgent'
 import { ChatModelProvider } from './agent/ChatModel'
@@ -63,54 +66,41 @@ async function getLangchainTools(
   )
 }
 
+function getThreadId(messages: readonly ThreadMessage[]) {
+  return messages.find(message => message.role === 'user')?.id ?? '1'
+}
+
+function getResumePayload(messages: readonly ThreadMessage[]) {
+  const lastAssistantMessage = messages.findLast(
+    message => message.role === 'assistant',
+  )
+
+  if (!lastAssistantMessage) {
+    return undefined
+  }
+
+  const interruptedToolCall = lastAssistantMessage.content.findLast(
+    part =>
+      part.type === 'tool-call' &&
+      part.interrupt?.type === 'human' &&
+      part.result !== undefined,
+  ) as ToolCallMessagePart | undefined
+
+  if (!interruptedToolCall) {
+    return undefined
+  }
+
+  return {
+    payload: interruptedToolCall.result,
+    threadId: lastAssistantMessage.id,
+  }
+}
+
 async function* streamAgentResponse({
   messages,
   context,
   abortSignal,
 }: ChatModelRunOptions) {
-  const toInterruptPart = (
-    part: unknown,
-  ): { toolCallId: string; payload: unknown } | undefined => {
-    if (
-      typeof part === 'object' &&
-      part !== null &&
-      'interrupt' in part &&
-      typeof (part as { interrupt?: unknown }).interrupt === 'object' &&
-      (part as { interrupt?: unknown }).interrupt !== null
-    ) {
-      const interrupt = (
-        part as { interrupt: { toolCallId?: unknown; payload?: unknown } }
-      ).interrupt
-      if (typeof interrupt.toolCallId === 'string') {
-        return { toolCallId: interrupt.toolCallId, payload: interrupt.payload }
-      }
-    }
-
-    if (
-      typeof part === 'object' &&
-      part !== null &&
-      '__interrupt__' in part &&
-      Array.isArray((part as { __interrupt__?: unknown[] }).__interrupt__)
-    ) {
-      const first = (part as { __interrupt__: { value?: unknown }[] })
-        .__interrupt__[0]
-      const value = first?.value
-      if (
-        typeof value === 'object' &&
-        value !== null &&
-        'toolCallId' in value &&
-        typeof (value as { toolCallId?: unknown }).toolCallId === 'string'
-      ) {
-        return {
-          toolCallId: (value as { toolCallId: string }).toolCallId,
-          payload: (value as { payload?: unknown }).payload,
-        }
-      }
-    }
-
-    return undefined
-  }
-
   const chatAgent = new ChatAgent()
   const providerModel = context.config?.modelName?.split('/', 2)
   const { apiKeyVault, ...tools } = context.tools as Record<
@@ -129,18 +119,25 @@ async function* streamAgentResponse({
       ),
     )
   ).func as ({}) => Promise<string | undefined>
-  const stream = chatAgent.stream(getLangchainMessages(messages), {
-    tools: await getLangchainTools(tools, abortSignal),
-    systemPrompt: context.system,
-    abortSignal,
-    chatModelConfig: {
-      provider: providerModel?.[0] as ChatModelProvider,
-      model: providerModel?.[1],
-      baseUrl: context.config?.baseUrl,
-      temperature: context.callSettings?.temperature,
-      getApiKey,
+  const resume = getResumePayload(messages)
+  const stream = chatAgent.stream(
+    resume
+      ? new Command({ resume: resume.payload })
+      : getLangchainMessages(messages),
+    {
+      tools: await getLangchainTools(tools, abortSignal),
+      systemPrompt: context.system,
+      abortSignal,
+      threadId: resume?.threadId ?? getThreadId(messages),
+      chatModelConfig: {
+        provider: providerModel?.[0] as ChatModelProvider,
+        model: providerModel?.[1],
+        baseUrl: context.config?.baseUrl,
+        temperature: context.callSettings?.temperature,
+        getApiKey,
+      },
     },
-  })
+  )
   let text = ''
   let reasoning = ''
   const tool_calls: Record<string, ToolCallMessagePart> = {}
@@ -185,16 +182,24 @@ async function* streamAgentResponse({
             })
         }
       }
-    } else {
-      const interruptPart = toInterruptPart(part)
-      if (!interruptPart) {
-        continue
-      }
-      tool_calls[interruptPart.toolCallId] = {
-        ...tool_calls[interruptPart.toolCallId],
-        interrupt: { type: 'human', payload: interruptPart.payload },
+    } else if (
+      '__interrupt__' in part &&
+      Array.isArray(part.__interrupt__) &&
+      part.__interrupt__[0]?.value
+    ) {
+      const { toolCall, ...hitlRequest } = part.__interrupt__[0]
+        .value as HITLRequest & { toolCall: ToolCall }
+      tool_calls[toolCall.id!] = {
+        type: 'tool-call',
+        toolCallId: toolCall.id!,
+        toolName: toolCall.name,
+        args: toolCall.args,
+        argsText: JSON.stringify(toolCall.args),
+        interrupt: { type: 'human', payload: hitlRequest },
       }
       status = { type: 'requires-action', reason: 'interrupt' }
+    } else {
+      continue
     }
     yield {
       content: [
@@ -205,7 +210,6 @@ async function* streamAgentResponse({
       status,
     } as ChatModelRunResult
   }
-  return
 }
 
 /**

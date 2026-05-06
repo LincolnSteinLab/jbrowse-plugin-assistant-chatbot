@@ -10,36 +10,17 @@ import {
   ToolInputSchemaOutputType,
   ToolRunnableConfig,
 } from '@langchain/core/dist/tools/types'
+import { ToolCall } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
-import { LangGraphRunnableConfig } from '@langchain/langgraph'
+import { LangGraphRunnableConfig, NodeInterrupt } from '@langchain/langgraph'
 import { useWebMCP } from '@mcp-b/react-webmcp'
-import {
-  Tool,
-  ToolExecutionContext,
-} from 'assistant-stream/dist/core/tool/tool-types'
+import { Tool } from 'assistant-stream/dist/core/tool/tool-types'
+import { HITLRequest, InterruptOnConfig } from 'langchain'
 import React, { createElement } from 'react'
 import z from 'zod'
-import { JSONType } from 'zod/dist/types/v4/core/util'
 
 export const EmptySchema = z.strictObject({})
 type Empty = z.infer<typeof EmptySchema>
-
-type ToolExecHumanContext = Omit<ToolExecutionContext, 'human'> & {
-  human: ({
-    config,
-    payload,
-  }: {
-    config?: ToolRunnableConfig & LangGraphRunnableConfig
-    payload: JSONType
-  }) => Promise<unknown>
-}
-
-export interface InterruptPart {
-  interrupt: {
-    toolCallId: string
-    payload: unknown
-  }
-}
 
 function normalizeNulls(value: unknown): unknown {
   if (value === null) {
@@ -62,10 +43,11 @@ function normalizeNulls(value: unknown): unknown {
 
 export class JBTool<
   FactoryArgsT = unknown,
-  InputSchemaT extends z.AnyZodObject = z.AnyZodObject,
+  InputSchemaT extends z.ZodObject = z.ZodObject,
   OutputT = unknown,
   InputT = ToolInputSchemaOutputType<InputSchemaT> & Record<string, unknown>,
 > {
+  readonly name: string
   readonly tool: Tool<
     Empty,
     DynamicStructuredTool<
@@ -77,10 +59,7 @@ export class JBTool<
   >
   readonly ui?: AssistantToolUI
   readonly mcp: () => React.JSX.Element
-
-  private resume: (payload: unknown) => void = () => {
-    throw new Error('Missing human tool resume method')
-  }
+  readonly interrupt?: InterruptOnConfig
 
   constructor(
     {
@@ -89,22 +68,26 @@ export class JBTool<
       schema,
       factory_fn,
       render,
+      interrupt,
     }: {
       name: string
       description: string
       schema: InputSchemaT
       factory_fn: (
         args: FactoryArgsT,
-        context?: ToolExecHumanContext,
       ) => (
         input: InputT,
         runManager?: CallbackManagerForToolRun,
         config?: ToolRunnableConfig & LangGraphRunnableConfig,
       ) => Promise<OutputT>
       render?: ToolCallMessagePartComponent<InputT, OutputT>
+      interrupt?: InterruptOnConfig & { description?: string }
     },
     args: FactoryArgsT,
   ) {
+    this.name = name
+    this.interrupt = interrupt
+
     // Tool-calling models often emit null for optional fields; normalize globally.
     const runtimeSchema = z.preprocess(
       normalizeNulls,
@@ -114,47 +97,57 @@ export class JBTool<
     this.tool = tool({
       description,
       parameters: EmptySchema,
-      execute: ({}, context) =>
+      execute: ({}) =>
         new DynamicStructuredTool({
           name,
           description,
           schema: runtimeSchema,
-          func: factory_fn(args, { ...context, human: this.human }),
+          func: (input, runManager, config) => {
+            if (interrupt && config) {
+              const toolCall = (config as ToolRunnableConfig).toolCall!
+              const hitlRequest: HITLRequest & { toolCall: ToolCall } = {
+                actionRequests: [
+                  {
+                    name,
+                    args: input as Record<string, unknown>,
+                    ...interrupt,
+                  },
+                ],
+                reviewConfigs: [
+                  {
+                    actionName: name,
+                    ...interrupt,
+                  },
+                ],
+                toolCall,
+              }
+              throw new NodeInterrupt(hitlRequest)
+            }
+            return factory_fn(args)(input, runManager, config)
+          },
         }),
     })
     if (render) {
       this.ui = makeAssistantToolUI<InputT, OutputT>({
         toolName: name,
-        render: toolCall =>
-          createElement(render, { ...toolCall, resume: this.resume }),
+        render: toolCall => createElement(render, { ...toolCall }),
       })
     }
     this.mcp = function MCPTool() {
       useWebMCP({
         name,
         description,
-        inputSchema: schema.shape,
+        inputSchema: schema.toJSONSchema(),
         handler: input => factory_fn(args)(input as InputT),
       })
       return <></>
     }
   }
-
-  human: ToolExecHumanContext['human'] = ({ config, payload }) => {
-    if (!config?.writer) throw new Error("Couldn't emit LangGraph event")
-    if (!config.toolCall?.id) throw new Error('Missing tool call ID')
-    config.writer({
-      interrupt: { toolCallId: config.toolCall.id, payload },
-    } as InterruptPart)
-    return new Promise(resolve => {
-      this.resume = resolve
-    })
-  }
 }
 
 export function createTool<
   FactoryArgsT,
-  InputSchemaT extends z.AnyZodObject,
+  InputSchemaT extends z.ZodObject,
   OutputT,
   InputT extends Record<
     string,
@@ -166,13 +159,13 @@ export function createTool<
   schema: InputSchemaT
   factory_fn: (
     args: FactoryArgsT,
-    context?: ToolExecHumanContext,
   ) => (
     input: InputT,
     runManager?: CallbackManagerForToolRun,
     config?: ToolRunnableConfig & LangGraphRunnableConfig,
   ) => Promise<OutputT>
   render?: ToolCallMessagePartComponent<InputT, OutputT>
+  interrupt?: InterruptOnConfig & { description?: string }
 }) {
   return (factory_args: FactoryArgsT) => new JBTool(create_args, factory_args)
 }

@@ -63,10 +63,10 @@ configs.forEach(config => {
     }
   })
 
+  /* Omit certain imports by dependencies */
   const innerExternal = config.external.bind()
   config.external = id => innerExternal(id) || [
-    // unused Node-only inner deps
-    'fast-glob',
+    'fast-glob',  // Node only
   ].includes(id)
 
   /* Manage Node.js resolutions for browser */
@@ -76,17 +76,22 @@ configs.forEach(config => {
 
   if (polyfillNodeIdx !== -1) {  // not a Node.js build
 
-    /* Package aliasing, prior to Node.js polyfills */
-    const typescriptIdx = config.plugins.findIndex(
-      plugin => plugin.name === 'typescript'
+    /* Package aliasing */
+    const nodeResolveIdx = config.plugins.findIndex(
+      plugin => plugin.name === 'node-resolve'
     )
-    config.plugins.splice(typescriptIdx, 0, alias({
+    config.plugins.splice(nodeResolveIdx, 0, alias({
       entries: [
+
         // custom shims for Node.js builtins
         { find: 'node:child_process', replacement: '@/shims/child_process' },
         { find: 'node:fs/promises', replacement: '@/shims/empty' },
+
         // rollup-plugin-polyfill-node doesn't handle "node:" prefix
         { find: /^node:([^/]*)$/, replacement: '$1' },
+
+        // temporary for MCP-B Zod 3->4 transition
+        { find: 'zod-to-json-schema', replacement: '@/shims/zod-to-json-schema' },
       ],
     }))
   }
