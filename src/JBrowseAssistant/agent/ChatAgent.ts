@@ -11,6 +11,7 @@ import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
 import { ChatModel, ChatModelConfig } from './ChatModel'
 import {
   builtInDeepAgentSkillPaths,
+  builtInSubAgents,
   getBuiltInDeepAgentSkillFiles,
 } from './deepAgentSkills'
 
@@ -42,6 +43,7 @@ export class ChatAgent extends ChatModel {
       backend: new StateBackend(),
       checkpointer,
       skills: builtInDeepAgentSkillPaths,
+      subagents: builtInSubAgents,
     })
     const stream = await graph.stream(
       input instanceof Command
