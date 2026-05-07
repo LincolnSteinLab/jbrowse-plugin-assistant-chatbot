@@ -48,22 +48,27 @@ async function getLangchainTools(
   tools: Record<string, JBTool['tool']>,
   abortSignal: AbortSignal,
 ) {
-  return Promise.all(
-    Object.values(tools)
-      .filter(tool => tool.execute)
-      .map(tool =>
-        Promise.resolve(
-          tool.execute!(
+  const results = await Promise.all(
+    Object.entries(tools)
+      .filter(([, tool]) => tool.execute)
+      .map(async ([toolKey, tool]) => {
+        try {
+          return await tool.execute!(
             {},
             {
               toolCallId: '',
               abortSignal,
               human: () => Promise.resolve(undefined),
             },
-          ),
-        ),
-      ),
+          )
+        } catch (error) {
+          console.error(`Failed to materialize tool ${toolKey}`, error)
+          return undefined
+        }
+      }),
   )
+
+  return results.filter(tool => !!tool)
 }
 
 function getThreadId(messages: readonly ThreadMessage[]) {
@@ -189,9 +194,12 @@ async function* streamAgentResponse({
     ) {
       const { toolCall, ...hitlRequest } = part.__interrupt__[0]
         .value as HITLRequest & { toolCall: ToolCall }
-      tool_calls[toolCall.id!] = {
+      if (!toolCall.id) {
+        continue
+      }
+      tool_calls[toolCall.id] = {
         type: 'tool-call',
-        toolCallId: toolCall.id!,
+        toolCallId: toolCall.id,
         toolName: toolCall.name,
         args: toolCall.args,
         argsText: JSON.stringify(toolCall.args),

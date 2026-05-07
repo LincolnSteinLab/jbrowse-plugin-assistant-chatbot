@@ -72,7 +72,10 @@ export const SetTrackVisibilityTool = createTool({
       onlyCompatibleWithViewAssembly,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SetTrackVisibilityData>> => {
-      if (show.length === 0 && hide.length === 0) {
+      const dedupedShow = [...new Set(show)]
+      const dedupedHide = [...new Set(hide)]
+
+      if (dedupedShow.length === 0 && dedupedHide.length === 0) {
         return err('Provide at least one track to show or hide', {
           shown: [],
           hidden: [],
@@ -91,7 +94,7 @@ export const SetTrackVisibilityTool = createTool({
           {
             shown: [],
             hidden: [],
-            unmatched: [...show, ...hide],
+            unmatched: [...dedupedShow, ...dedupedHide],
             ambiguous: [],
           },
           ['Open a LinearGenomeView and try again'],
@@ -108,7 +111,7 @@ export const SetTrackVisibilityTool = createTool({
           {
             shown: [],
             hidden: [],
-            unmatched: [...show, ...hide],
+            unmatched: [...dedupedShow, ...dedupedHide],
             unmatchedSuggestions: [],
             ambiguous: [],
           },
@@ -198,15 +201,22 @@ export const SetTrackVisibilityTool = createTool({
             )
           }
 
-          const firstRegion = (target as { displayedRegions?: unknown[] })
-            ?.displayedRegions?.[0]
+          const firstRegion = target?.displayedRegions?.[0]
           if (
             firstRegion &&
             typeof anyDisplay.regionCannotBeRenderedText === 'function'
           ) {
-            const msg = anyDisplay.regionCannotBeRenderedText(firstRegion)
-            if (msg) {
-              messages.add(msg)
+            try {
+              const msg = anyDisplay.regionCannotBeRenderedText(firstRegion)
+              if (msg) {
+                messages.add(msg)
+              }
+            } catch (error) {
+              messages.add(
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to retrieve renderer diagnostic text',
+              )
             }
           }
         }
@@ -261,7 +271,7 @@ export const SetTrackVisibilityTool = createTool({
         )
       }
 
-      for (const q of show) {
+      for (const q of dedupedShow) {
         const matches = resolve(q, true)
         if (matches.length === 0) {
           const allMatches = resolve(q, false)
@@ -318,7 +328,7 @@ export const SetTrackVisibilityTool = createTool({
         collectDiagnostics(trackId)
       }
 
-      for (const q of hide) {
+      for (const q of dedupedHide) {
         const matches = resolve(q, false)
         if (matches.length === 0) {
           unmatched.push(q)

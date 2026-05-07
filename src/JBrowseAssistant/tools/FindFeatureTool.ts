@@ -8,7 +8,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
-import { createTool } from './base'
+import { createTool, withTimeout } from './base'
 
 export interface FindFeatureData {
   assembly?: string
@@ -51,6 +51,13 @@ export const FindFeatureTool = createTool({
       maxResults,
       viewId,
     }): Promise<ToolEnvelope<FindFeatureData>> => {
+      const normalizedQuery = query.trim()
+      if (!normalizedQuery) {
+        return err('Query must contain at least one non-whitespace character', {
+          candidates: [],
+        })
+      }
+
       const lgviews = views.filter(
         view => view.type === 'LinearGenomeView',
       ) as LinearGenomeViewModel[]
@@ -77,8 +84,19 @@ export const FindFeatureTool = createTool({
         )
       }
 
-      const resolvedAssembly =
-        await assemblyManager.waitForAssembly(assemblyName)
+      let resolvedAssembly
+      try {
+        resolvedAssembly = await withTimeout(
+          assemblyManager.waitForAssembly(assemblyName),
+          10_000,
+        )
+      } catch {
+        return err(
+          `Assembly lookup timed out for ${assemblyName}`,
+          { candidates: [] },
+          ['Verify assembly loading has completed and try again'],
+        )
+      }
       if (!resolvedAssembly) {
         return err('Assembly could not be resolved', { candidates: [] }, [
           `Check that assembly ${assemblyName} is loaded`,
@@ -86,7 +104,7 @@ export const FindFeatureTool = createTool({
       }
 
       const results = await fetchResults({
-        queryString: query,
+        queryString: normalizedQuery,
         searchType: searchType === 'fuzzy' ? 'exact' : searchType,
         searchScope: view.searchScope(resolvedAssembly.name),
         rankSearchResults: view.rankSearchResults.bind(view),

@@ -10,7 +10,11 @@ export default class ChatLLMCallbackHandler extends BaseCallbackHandler {
     this.chatModelType = llm.id.at(-1)
   }
 
-  handleLLMError(err: TypeError) {
-    err.message = `${this.chatModelType} Error: ${err.message}`
+  handleLLMError(err: Error) {
+    const modelType = this.chatModelType ?? 'ChatModel'
+    const prefix = `${modelType} Error:`
+    if (!err.message.startsWith(prefix)) {
+      err.message = `${prefix} ${err.message}`
+    }
   }
 }

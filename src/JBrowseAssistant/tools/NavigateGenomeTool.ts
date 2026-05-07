@@ -38,6 +38,11 @@ export const NavigateGenomeTool = createTool({
           navigations: [],
         })
       }
+      if (assembly !== undefined && !assembly.trim()) {
+        return err('If provided, assembly must not be empty', {
+          navigations: [],
+        })
+      }
 
       const lgviews = views.filter(
         view => view.type === 'LinearGenomeView',
@@ -85,7 +90,7 @@ export const NavigateGenomeTool = createTool({
             assembly: assemblyName,
             locString,
             result: 'failed',
-            reason: e instanceof Error ? e.message : 'Unknown navigation error',
+            reason: e instanceof Error ? e.message : String(e),
           })
         }
       }

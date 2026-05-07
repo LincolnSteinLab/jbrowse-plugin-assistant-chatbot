@@ -4,7 +4,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
-import { createTool } from './base'
+import { createTool, withTimeout } from './base'
 
 export interface EnsureViewData {
   viewId?: string
@@ -66,7 +66,21 @@ export const EnsureViewTool = createTool({
       }
 
       if (hasInitialized(view) && view.initialized === false) {
-        await when(() => view && view.initialized === true)
+        try {
+          await withTimeout(
+            when(() => view && view.initialized === true),
+            10_000,
+          )
+        } catch {
+          return err('View initialization timed out', {
+            viewId: view.id,
+            viewType,
+            created,
+            initialized: false,
+            assembly,
+            locString,
+          })
+        }
       }
 
       if (locString && view.type === 'LinearGenomeView') {

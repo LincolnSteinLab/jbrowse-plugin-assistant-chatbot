@@ -22,23 +22,57 @@ import z from 'zod'
 export const EmptySchema = z.strictObject({})
 type Empty = z.infer<typeof EmptySchema>
 
+export function withTimeout<T>(promise: Promise<T>, ms: number) {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Operation timed out after ${ms}ms`))
+    }, ms)
+    promise
+      .then(value => {
+        clearTimeout(timeoutId)
+        resolve(value)
+      })
+      .catch(error => {
+        clearTimeout(timeoutId)
+        reject(error as Error)
+      })
+  })
+}
+
 function normalizeNulls(value: unknown): unknown {
-  if (value === null) {
-    return undefined
-  }
-  if (Array.isArray(value)) {
-    return value
-      .map(normalizeNulls)
-      .filter(
-        (entry): entry is Exclude<unknown, undefined> => entry !== undefined,
+  const MAX_DEPTH = 50
+
+  function walk(
+    current: unknown,
+    depth: number,
+    seen: WeakSet<object>,
+  ): unknown {
+    if (current === null) {
+      return undefined
+    }
+    if (depth > MAX_DEPTH) {
+      return current
+    }
+    if (Array.isArray(current)) {
+      return current
+        .map(entry => walk(entry, depth + 1, seen))
+        .filter(
+          (entry): entry is Exclude<unknown, undefined> => entry !== undefined,
+        )
+    }
+    if (typeof current === 'object' && current !== null) {
+      if (seen.has(current)) {
+        return current
+      }
+      seen.add(current)
+      return Object.fromEntries(
+        Object.entries(current).map(([k, v]) => [k, walk(v, depth + 1, seen)]),
       )
+    }
+    return current
   }
-  if (typeof value === 'object' && value !== null) {
-    return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, normalizeNulls(v)]),
-    )
-  }
-  return value
+
+  return walk(value, 0, new WeakSet<object>())
 }
 
 export class JBTool<
