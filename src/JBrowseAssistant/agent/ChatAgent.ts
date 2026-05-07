@@ -9,6 +9,10 @@ import { createDeepAgent, StateBackend } from 'deepagents'
 
 import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
 import { ChatModel, ChatModelConfig } from './ChatModel'
+import {
+  builtInDeepAgentSkillPaths,
+  getBuiltInDeepAgentSkillFiles,
+} from './deepAgentSkills'
 
 const checkpointer = new MemorySaver()
 
@@ -37,9 +41,15 @@ export class ChatAgent extends ChatModel {
       systemPrompt,
       backend: new StateBackend(),
       checkpointer,
+      skills: builtInDeepAgentSkillPaths,
     })
     const stream = await graph.stream(
-      input instanceof Command ? input : { messages: input },
+      input instanceof Command
+        ? input
+        : {
+            messages: input,
+            files: getBuiltInDeepAgentSkillFiles(),
+          },
       {
         callbacks: [new ChatLLMCallbackHandler()],
         configurable: { thread_id: threadId },
