@@ -2,13 +2,16 @@ import {
   AbstractSessionModel,
   AbstractTrackModel,
   AbstractViewModel,
-  Region,
 } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import {
+  getBookmarkViewState,
+  getLinearGenomeViews,
+  selectLinearGenomeView,
+} from './bookmarkState'
 import { getSessionTracks } from './sessionState'
 
 export interface SessionShareAssistantData {
@@ -19,12 +22,6 @@ export interface SessionShareAssistantData {
   shownTrackIds: string[]
   missingForReproducibility: string[]
   operatorInstructions: string[]
-}
-
-function hasDisplayedRegions(
-  view: AbstractViewModel,
-): view is AbstractViewModel & { displayedRegions: Region[] } {
-  return 'displayedRegions' in view
 }
 
 function hasTracks(
@@ -62,9 +59,7 @@ export const SessionShareAssistantTool = createTool({
       includeVisibleTrackNames,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SessionShareAssistantData>> => {
-      const lgviews = views.filter(
-        v => v.type === 'LinearGenomeView',
-      ) as LinearGenomeViewModel[]
+      const lgviews = getLinearGenomeViews(views)
 
       if (lgviews.length === 0) {
         return err(
@@ -80,16 +75,9 @@ export const SessionShareAssistantTool = createTool({
         )
       }
 
-      const view =
-        (viewId ? lgviews.find(v => v.id === viewId) : lgviews[0]) ?? lgviews[0]
-
-      const assembly = view.assemblyNames?.[0]
-      const displayedLocations = hasDisplayedRegions(view)
-        ? view.displayedRegions.map(
-            r =>
-              `${r.refName}:${(r.start + 1).toLocaleString()}-${r.end.toLocaleString()}`,
-          )
-        : []
+      const view = selectLinearGenomeView(lgviews, viewId)
+      const { assembly, locations } = getBookmarkViewState(view)
+      const displayedLocations = locations.map(location => location.locString)
 
       const shownTrackIds = hasTracks(view)
         ? view.tracks

@@ -9,7 +9,7 @@ import { defaultThemes } from '@jbrowse/core/ui'
 import { getEnv, getSession } from '@jbrowse/core/util'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { observer } from 'mobx-react'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { Thread } from '@/components/assistant-ui/thread'
 import { ThreadList } from '@/components/assistant-ui/thread-list'
@@ -59,7 +59,10 @@ export const ChatbotWidget = observer(function ({
     adapter: browserThreadListAdapter,
   })
   // Setup tools
-  const tools = getTools(pluginManager, session, model)
+  const tools = useMemo(
+    () => getTools(pluginManager, session, model),
+    [pluginManager, session, model],
+  )
   // Register chat settings and tools as a context provider for the runtime
   useEffect(() => {
     return runtime.registerModelContextProvider({

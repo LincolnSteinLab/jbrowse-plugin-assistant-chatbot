@@ -2,12 +2,12 @@ import {
   AbstractSessionModel,
   AbstractTrackModel,
   AbstractViewModel,
-  Region,
 } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { hasDisplayedRegions } from './bookmarkState'
 import { getSessionTracks } from './sessionState'
 
 export interface SessionSnapshotData {
@@ -33,12 +33,6 @@ export interface SessionSnapshotData {
     preferredViewId?: string
     preferredAssembly?: string
   }
-}
-
-function hasDisplayedRegions(
-  view: AbstractViewModel,
-): view is AbstractViewModel & { displayedRegions: Region[] } {
-  return 'displayedRegions' in view
 }
 
 function hasTracks(
