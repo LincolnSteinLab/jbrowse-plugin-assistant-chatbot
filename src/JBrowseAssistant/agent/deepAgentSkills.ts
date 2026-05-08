@@ -312,5 +312,92 @@ Use a short '**Actions taken**' section at the end of responses that mutated ses
 - Showed track ncbi_refseq_109_hg38
 \`\`\`
 `),
+    '/skills/jbrowse-workflow-orchestration/SKILL.md': createFileData(`---
+name: jbrowse-workflow-orchestration
+description: Use this skill when a request spans multiple steps or maps to a known workflow (feature triage, synteny setup, SV inspector bootstrap).
+---
+
+# jbrowse-workflow-orchestration
+
+## Overview
+
+This skill teaches the agent to use workflow contracts and bootstrap tools for deterministic multi-step execution.
+
+## Instructions
+
+### 1. Use WorkflowOrchestrator first for known flows
+
+When a request resembles one of these workflows, call WorkflowOrchestrator immediately:
+- feature triage
+- synteny setup
+- sv inspector bootstrap
+
+Use the returned nextActions and completionCriteria as the execution plan.
+
+### 2. Pair orchestrator with workflow-specific bootstrap tools
+
+For synteny setup:
+- call SyntenySetup with sourceAssembly, targetAssembly, and comparativeTrackQueries
+- use resolvedComparativeTrackIds with SetTrackVisibility
+
+For SV inspector bootstrap:
+- call SVInspectorBootstrap with locString/assembly and variantTrackQueries
+- use resolvedVariantTrackIds with SetTrackVisibility
+- if locString exists, navigate with NavigateGenome
+
+### 3. Respect ambiguity protocol
+
+If bootstrap tools report ambiguousTrackQueries or missingTrackQueries:
+- do not guess
+- ask for exact track IDs
+- continue only after clarification
+
+### 4. Keep execution minimal and state-aware
+
+Do not execute all suggested steps blindly.
+Use SessionSnapshot to skip already-satisfied steps and apply only required state changes.
+`),
+    '/skills/jbrowse-session-sharing/SKILL.md': createFileData(`---
+name: jbrowse-session-sharing
+description: Use this skill when the user wants to share, reproduce, bookmark, or hand off a JBrowse analysis state.
+---
+
+# jbrowse-session-sharing
+
+## Overview
+
+This skill teaches the agent how to produce reproducible handoff instructions and bookmarkable context using session-aware tools.
+
+## Instructions
+
+### 1. Build the share bundle with SessionShareAssistant
+
+For sharing or handoff requests:
+- call SessionShareAssistant first
+- surface shareable, displayedLocations, shownTrackIds, and operatorInstructions
+
+If shareable is false, explicitly list missingForReproducibility and ask only for the missing pieces.
+
+### 2. Capture investigation trail with BookmarkWorkflow
+
+When a user asks to bookmark or save current context:
+- call BookmarkWorkflow
+- return the exact assembly and location strings
+- include any user-provided label in the response
+
+### 3. Report exact identifiers
+
+Always include:
+- exact locString values
+- exact track IDs (not only display names)
+- assembly name
+
+### 4. Keep the handoff concise
+
+Output should be short and action-oriented:
+- current state summary
+- concrete step list to reproduce
+- unresolved prerequisites, if any
+`),
   }
 }

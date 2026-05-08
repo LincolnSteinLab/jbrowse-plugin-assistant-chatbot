@@ -9,9 +9,11 @@ import { ConfigDiagnosticTool } from './ConfigDiagnosticTool'
 import { EnsureViewTool } from './EnsureViewTool'
 import { FindFeatureTool } from './FindFeatureTool'
 import { NavigateGenomeTool } from './NavigateGenomeTool'
+import { SVInspectorBootstrapTool } from './SVInspectorBootstrapTool'
 import { SessionShareAssistantTool } from './SessionShareAssistantTool'
 import { SessionSnapshotTool } from './SessionSnapshotTool'
 import { SetTrackVisibilityTool } from './SetTrackVisibilityTool'
+import { SyntenySetupTool } from './SyntenySetupTool'
 import { WorkflowOrchestratorTool } from './WorkflowOrchestratorTool'
 
 export function getTools(
@@ -37,6 +39,8 @@ export function getTools(
     bookmarkWorkflow: BookmarkWorkflowTool(views),
     configDiagnostic: ConfigDiagnosticTool({ session, views }),
     sessionShareAssistant: SessionShareAssistantTool({ session, views }),
+    syntenySetup: SyntenySetupTool(session),
+    svInspectorBootstrap: SVInspectorBootstrapTool(session),
     workflowOrchestrator: WorkflowOrchestratorTool({}),
     ...(model && {
       apiKeyVault: ApiKeyVaultTool({
