@@ -4,6 +4,8 @@ import { AbstractSessionModel } from '@jbrowse/core/util'
 import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
 
 import { ApiKeyVaultTool } from './ApiKeyVault'
+import { BookmarkWorkflowTool } from './BookmarkWorkflowTool'
+import { ConfigDiagnosticTool } from './ConfigDiagnosticTool'
 import { EnsureViewTool } from './EnsureViewTool'
 import { FindFeatureTool } from './FindFeatureTool'
 import { NavigateGenomeTool } from './NavigateGenomeTool'
@@ -30,6 +32,8 @@ export function getTools(
     }),
     navigateGenome: NavigateGenomeTool(views),
     setTrackVisibility: SetTrackVisibilityTool({ session, views }),
+    bookmarkWorkflow: BookmarkWorkflowTool(views),
+    configDiagnostic: ConfigDiagnosticTool({ session, views }),
     ...(model && {
       apiKeyVault: ApiKeyVaultTool({
         provider: model.settingsForm.settings.provider,
