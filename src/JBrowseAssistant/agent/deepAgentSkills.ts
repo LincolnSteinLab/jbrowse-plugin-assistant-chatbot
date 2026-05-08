@@ -214,5 +214,103 @@ Every diagnostic finding should end with one of:
 
 Never leave a diagnostic without a suggested resolution.
 `),
+    '/skills/jbrowse-ambiguity-protocol/SKILL.md': createFileData(`---
+name: jbrowse-ambiguity-protocol
+description: Use this skill whenever a user request is underspecified, a tool returns multiple candidates, or required context (assembly, track, region) is missing before a mutating action.
+---
+
+# jbrowse-ambiguity-protocol
+
+## Overview
+
+This skill defines exactly when and how the agent must ask the user for clarification rather than guessing or proceeding.
+
+## Decision rules
+
+### Stop and ask when:
+
+1. **FindFeature returns multiple results** and the user did not provide a gene symbol that unambiguously selects one entry (e.g., same name appears in multiple assemblies or on multiple chromosomes).
+
+2. **SetTrackVisibility receives a display name that matches more than one track ID** and the user did not specify assembly context.
+
+3. **NavigateGenome receives a bare region string** (e.g., "chr1") with no coordinates and no visible feature to center on.
+
+4. **The user's intended assembly is unknown** and more than one assembly is loaded in the session.
+
+5. **A tool returns needsInput** — always surface the tool's clarification prompt directly to the user without rephrasing.
+
+### Proceed without asking when:
+
+1. The user's request maps to exactly one tool result and there is no plausible alternative.
+
+2. The session snapshot provides enough context to resolve the ambiguity without guessing (e.g., only one assembly is loaded, or the track name matches exactly one ID).
+
+3. The user has already provided the disambiguating detail in an earlier message within this thread.
+
+## How to ask
+
+When stopping to ask:
+- State what you found (e.g., 'I found 3 tracks matching "RNA-seq"')
+- List the exact IDs or candidates concisely (use a short numbered or bullet list)
+- Ask the single most important clarifying question
+- Do not take any mutating action before receiving the answer
+
+## How to proceed after clarification
+
+When the user answers:
+- Confirm which candidate you selected
+- Complete the original task using the exact ID or value they specified
+- Do not ask again for the same information
+`),
+    '/skills/jbrowse-reproducibility/SKILL.md': createFileData(`---
+name: jbrowse-reproducibility
+description: Use this skill for every response that modifies the JBrowse session — navigation, track changes, or view creation — to ensure the user can reproduce or share what was done.
+---
+
+# jbrowse-reproducibility
+
+## Overview
+
+This skill ensures that every mutating action the agent takes is reported with enough precision that the user (or another agent) can reproduce it exactly.
+
+## Instructions
+
+### 1. Report exact coordinates after navigation
+
+After calling NavigateGenome, include the resolved location in your response:
+- Assembly name
+- Chromosome / sequence name
+- Start and end coordinates (1-based, inclusive)
+
+Example: 'Navigated to hg38 chr17:7,669,609–7,676,594'
+
+### 2. Report exact track IDs after visibility changes
+
+After calling SetTrackVisibility, list:
+- The operation (shown / hidden)
+- The exact track ID(s) used (not the display name)
+
+Example: 'Showed track ncbi_refseq_109_hg38'
+
+### 3. Record subagent findings that informed the action
+
+If session-analyzer or config-diagnostics was used to inform a subsequent action, briefly note:
+- What the subagent found
+- How it influenced the chosen action
+
+### 4. Omit reproduction details for read-only operations
+
+If no session state was mutated (e.g., FindFeature with no navigation, SessionSnapshot, diagnostic queries), skip the reproducibility summary.
+
+### 5. Format
+
+Use a short '**Actions taken**' section at the end of responses that mutated session state:
+
+\`\`\`
+**Actions taken**
+- Navigated to hg38 chr17:7,669,609–7,676,594
+- Showed track ncbi_refseq_109_hg38
+\`\`\`
+`),
   }
 }
