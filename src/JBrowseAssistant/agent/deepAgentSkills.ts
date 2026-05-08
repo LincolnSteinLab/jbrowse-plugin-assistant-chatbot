@@ -18,16 +18,16 @@ function createFileData(content: string): DeepAgentFileData {
 
 export const builtInDeepAgentSkillPaths = ['/skills/']
 
-const SESSION_ANALYZER_SKILLS = ['/skills/']
-const CONFIG_DIAGNOSTICS_SKILLS = ['/skills/']
+const SESSION_ANALYZER_SKILLS = ['/skills-subagents/session-analyzer/']
+const CONFIG_DIAGNOSTICS_SKILLS = ['/skills-subagents/config-diagnostics/']
 
 export const builtInSubAgents: SubAgent[] = [
   {
     name: 'session-analyzer',
     description:
-      'Analyzes the current JBrowse session state. Use this subagent when you need a structured summary of the active view, visible tracks, active assembly, and suggested next steps before taking any actions.',
+      'Analyzes current JBrowse session state before action. Use when the parent agent needs a structured snapshot summary (active view, assembly, visible tracks, and next-step options) prior to any navigation or track mutation.',
     systemPrompt:
-      'You are a JBrowse session analysis assistant. Call SessionSnapshot, then return a concise structured analysis. Do not modify the session.',
+      'You are a read-only JBrowse session analysis assistant. Call SessionSnapshot and produce a concise structured analysis. Do not call mutating tools and do not claim changes were applied.',
     skills: SESSION_ANALYZER_SKILLS,
     responseFormat: z.object({
       activeAssembly: z
@@ -59,9 +59,9 @@ export const builtInSubAgents: SubAgent[] = [
   {
     name: 'config-diagnostics',
     description:
-      'Diagnoses JBrowse configuration and compatibility issues — assembly mismatches, missing tracks, view constraints, and rendering limitations. Use this subagent when the user reports something is not working or asks why a track or feature is not visible.',
+      'Diagnoses JBrowse configuration and compatibility issues (assembly mismatches, missing tracks, view constraints, rendering limits). Use when behavior is failing or unclear and the parent agent needs a focused diagnostic report before deciding actions.',
     systemPrompt:
-      'You are a JBrowse configuration diagnostics assistant. Call SessionSnapshot to inspect the current config, then return a structured diagnostic report. Be specific about assembly names and track IDs.',
+      'You are a read-only JBrowse configuration diagnostics assistant. Inspect current state with SessionSnapshot and return a structured diagnostic report. Be specific about assembly names and track IDs. Do not call mutating tools.',
     skills: CONFIG_DIAGNOSTICS_SKILLS,
     responseFormat: z.object({
       issues: z.array(
@@ -312,6 +312,85 @@ Use a short '**Actions taken**' section at the end of responses that mutated ses
 - Showed track ncbi_refseq_109_hg38
 \`\`\`
 `),
+    '/skills/jbrowse-planning-discipline/SKILL.md': createFileData(`---
+name: jbrowse-planning-discipline
+description: Use this skill for any request that requires more than one meaningful step, especially when planning, diagnostics, navigation, and track actions are combined.
+---
+
+# jbrowse-planning-discipline
+
+## Overview
+
+This skill enforces harness-native planning behavior so multi-step tasks remain structured and easy to verify.
+
+## Instructions
+
+### 1. Use write_todos for multi-step requests
+
+If the task requires more than one meaningful step, call write_todos before executing action tools.
+
+Include only concrete execution tasks, each with one status:
+- pending
+- in_progress
+- completed
+
+### 2. Keep todo lifecycle accurate
+
+When work starts on a step, update it to in_progress.
+
+When a step is fully done, update it to completed.
+
+Do not leave stale in_progress items after the task has moved on.
+
+### 3. Clarify only after reflecting plan state
+
+If a tool response is ambiguous or needs_input:
+- update the relevant step to in_progress
+- ask a focused clarification question
+- do not mark the step completed until clarification is resolved
+
+### 4. Close with plan-aligned summary
+
+For multi-step tasks, end with a concise summary that reflects completed steps and any still-pending item.
+`),
+    '/skills/jbrowse-subagent-routing/SKILL.md': createFileData(`---
+name: jbrowse-subagent-routing
+description: Use this skill to decide when to delegate work to subagents versus handling the request directly in the parent agent.
+---
+
+# jbrowse-subagent-routing
+
+## Overview
+
+This skill keeps parent-agent context lean by delegating analysis-heavy tasks to specialized subagents.
+
+## Routing rules
+
+### 1. Delegate to session-analyzer when
+
+- the request needs a compact understanding of current session state before action
+- the parent agent needs active assembly, visible tracks, and view status in one structured summary
+- the next action is not yet clear without snapshot interpretation
+
+### 2. Delegate to config-diagnostics when
+
+- the user reports that tracks/features are missing, incompatible, or failing to render
+- assembly compatibility or track-selection correctness is uncertain
+- tool errors suggest configuration mismatch instead of user input ambiguity
+
+### 3. Keep parent agent responsible for final execution
+
+After subagent output is received:
+- parent agent chooses the final tool calls
+- parent agent performs mutating actions (navigation, visibility changes, view creation)
+- parent agent reports final actions taken
+
+### 4. Avoid unnecessary delegation
+
+Do not delegate when:
+- the request is single-step and unambiguous
+- required context is already available from a recent tool result in the same turn
+`),
     '/skills/jbrowse-workflow-orchestration/SKILL.md': createFileData(`---
 name: jbrowse-workflow-orchestration
 description: Use this skill when a request spans multiple steps or maps to a known workflow (feature triage, synteny setup, SV inspector bootstrap).
@@ -324,6 +403,11 @@ description: Use this skill when a request spans multiple steps or maps to a kno
 This skill teaches the agent to use workflow contracts and bootstrap tools for deterministic multi-step execution.
 
 ## Instructions
+
+### 0. Create a plan first for multi-step workflows
+
+Before calling workflow tools, create a todo plan with write_todos.
+Keep statuses synchronized with actual progress throughout execution.
 
 ### 1. Use WorkflowOrchestrator first for known flows
 
@@ -398,6 +482,42 @@ Output should be short and action-oriented:
 - current state summary
 - concrete step list to reproduce
 - unresolved prerequisites, if any
+`),
+    '/skills-subagents/session-analyzer/SKILL.md': createFileData(`---
+name: jbrowse-session-analyzer-subagent
+description: Specialized read-only instructions for the session-analyzer subagent.
+---
+
+# jbrowse-session-analyzer-subagent
+
+## Mission
+
+Produce a concise, structured snapshot analysis that helps the parent agent decide next actions.
+
+## Rules
+
+- Call SessionSnapshot first.
+- Treat this subagent as read-only; do not perform mutating actions.
+- Focus on active assembly, view type, visible tracks, and what is missing for the user request.
+- Keep suggestions concrete and short so the parent agent can execute immediately.
+`),
+    '/skills-subagents/config-diagnostics/SKILL.md': createFileData(`---
+name: jbrowse-config-diagnostics-subagent
+description: Specialized read-only instructions for the config-diagnostics subagent.
+---
+
+# jbrowse-config-diagnostics-subagent
+
+## Mission
+
+Return a compact diagnostic report explaining why behavior fails and what the parent agent should do next.
+
+## Rules
+
+- Call SessionSnapshot first.
+- Treat this subagent as read-only; do not perform mutating actions.
+- Prioritize assembly compatibility, track ID correctness, and rendering constraints.
+- Express findings as specific issues with clear remediation suggestions.
 `),
   }
 }
