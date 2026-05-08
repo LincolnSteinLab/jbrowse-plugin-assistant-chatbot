@@ -5,6 +5,7 @@ import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
 import alias from '@rollup/plugin-alias'
 import css from 'rollup-plugin-import-css'
+import { importAsString } from 'rollup-plugin-string-import'
 
 function postcssTransform(code) {
   return execSync('npx postcss', {
@@ -95,6 +96,13 @@ configs.forEach(config => {
       ],
     }))
   }
+
+  /* Import markdown files as strings */
+  config.plugins.push(
+    importAsString({
+      include: '**/*.md',
+    })
+  )
 
   /* Build, Minify, & Inject CSS */
   config.plugins.push(

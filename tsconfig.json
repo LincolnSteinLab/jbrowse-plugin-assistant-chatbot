@@ -32,6 +32,8 @@
     "noEmit": true,
     // Allow importing JSON files
     "resolveJsonModule": true,
+    // Allow non-code asset imports that are bundled by Rollup
+    "allowArbitraryExtensions": true,
     // shadcn/ui path alias
     "paths": {
       "@/*": ["./src/*"],
