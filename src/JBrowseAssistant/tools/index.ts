@@ -9,8 +9,10 @@ import { ConfigDiagnosticTool } from './ConfigDiagnosticTool'
 import { EnsureViewTool } from './EnsureViewTool'
 import { FindFeatureTool } from './FindFeatureTool'
 import { NavigateGenomeTool } from './NavigateGenomeTool'
+import { SessionShareAssistantTool } from './SessionShareAssistantTool'
 import { SessionSnapshotTool } from './SessionSnapshotTool'
 import { SetTrackVisibilityTool } from './SetTrackVisibilityTool'
+import { WorkflowOrchestratorTool } from './WorkflowOrchestratorTool'
 
 export function getTools(
   pluginManager: PluginManager,
@@ -34,6 +36,8 @@ export function getTools(
     setTrackVisibility: SetTrackVisibilityTool({ session, views }),
     bookmarkWorkflow: BookmarkWorkflowTool(views),
     configDiagnostic: ConfigDiagnosticTool({ session, views }),
+    sessionShareAssistant: SessionShareAssistantTool({ session, views }),
+    workflowOrchestrator: WorkflowOrchestratorTool({}),
     ...(model && {
       apiKeyVault: ApiKeyVaultTool({
         provider: model.settingsForm.settings.provider,
