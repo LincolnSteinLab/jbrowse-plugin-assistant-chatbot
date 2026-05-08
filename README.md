@@ -61,12 +61,15 @@ available to both the AI chat agent and as
 automatically in the browser when the plugin is loaded, making JBrowse
 controllable by any MCP-compatible AI client running on the same page.
 
+Not every chat tool must be exposed as WebMCP. Orchestration/meta tools can be
+chat-only by setting `mcp: false` when defining the tool.
+
 ### Defining New Tools
 
 All tools are created with `createTool()` from
 `src/JBrowseAssistant/tools/base.tsx`. Each tool defined this way is
-automatically available to the chat agent **and** registered as a WebMCP tool —
-no extra wiring is needed.
+automatically available to the chat agent. WebMCP exposure is opt-out
+per tool via the `mcp` option.
 
 #### Signature
 
@@ -80,6 +83,7 @@ createTool<FactoryArgsT, InputSchemaT, OutputT>({
     context?: ToolExecHumanContext,
   ) => (input: InputT) => Promise<OutputT>
   render?: ToolCallMessagePartComponent<InputT, OutputT>  // optional chat UI
+  mcp?: boolean          // default true; set false to keep this tool out of WebMCP
 })
 ```
 
@@ -179,13 +183,58 @@ export const MyConfirmedTool = createTool({
 ### WebMCP
 
 When the plugin is loaded, it automatically mounts a hidden React subtree that
-registers all tools (except `ApiKeyVault`) as WebMCP tools. This allows
+registers tools with `mcp: true` as WebMCP tools. This allows
 external MCP clients — such as AI agents running in a [browser extension](https://chromewebstore.google.com/detail/mcp-b-extension/daohopfhkdelnpemnhlekblhnikhdhfa) or
 another tab on the same page — to invoke JBrowse actions without going through
 the chat widget.
 
-No additional configuration is required to enable WebMCP; it is active whenever
-the plugin is installed.
+No additional configuration is required to enable WebMCP for MCP-enabled tools;
+they are active whenever the plugin is installed.
+
+## Manual Verification Runbook
+
+Use these checks after orchestration or tooling changes to verify deepagents
+planning/delegation behavior and WebMCP boundaries.
+
+1. Planning discipline check
+
+Prompt:
+`Set up a synteny analysis between hg38 and T2T and explain each step as you go.`
+
+Expected behavior:
+- Assistant performs explicit multi-step planning behavior.
+- Response progress is structured rather than one-shot.
+
+2. Subagent delegation check
+
+Prompt:
+`Tracks are not showing for my assembly; diagnose first, then fix if possible.`
+
+Expected behavior:
+- Diagnostics are performed before mutation.
+- Final actions are concise and grounded in diagnostic findings.
+
+3. Ambiguity protocol check
+
+Prompt:
+`Show RNA-seq tracks.`
+
+Expected behavior:
+- If multiple matches exist, assistant asks a focused clarification question.
+- No speculative track toggles before disambiguation.
+
+4. Reproducibility check
+
+Prompt:
+`Navigate to BRCA1 and turn on the relevant track.`
+
+Expected behavior:
+- Final response includes exact coordinates and exact track IDs in actions taken.
+
+5. WebMCP boundary check
+
+From an external MCP client on the same page, verify MCP-exposed domain tools
+are available and orchestration/meta tools with `mcp: false` are not listed.
 
 ## Credential Management (widget only)
 

@@ -88,7 +88,7 @@ export function getBuiltInDeepAgentSkillFiles(): Record<
   return {
     '/skills/jbrowse-session-triage/SKILL.md': createFileData(`---
 name: jbrowse-session-triage
-description: Use this skill for multi-step JBrowse browsing tasks that require understanding the current session before acting, especially feature lookup, navigation, and track-selection requests.
+description: Use this skill for immediate, non-workflow session-aware execution (feature lookup, navigation, track selection) where you need live context but not a full named workflow contract.
 ---
 
 # jbrowse-session-triage
@@ -119,9 +119,10 @@ Use these patterns:
 
 ### 3. Reduce ambiguity before mutating session state
 
-If FindFeature returns multiple candidates, do not guess. Ask for a precise choice or choose only when the user already provided enough disambiguating context.
+Do not define ad-hoc ambiguity behavior in this skill.
+When ambiguity exists (multiple feature candidates, ambiguous track matches, missing required context), defer to jbrowse-ambiguity-protocol.
 
-If SetTrackVisibility reports ambiguous matches, use exact track IDs from SessionSnapshot.availableTracks.
+If additional context is needed before action, ask one focused clarification question and pause mutating steps.
 
 ### 4. Keep outputs concise
 
@@ -393,7 +394,7 @@ Do not delegate when:
 `),
     '/skills/jbrowse-workflow-orchestration/SKILL.md': createFileData(`---
 name: jbrowse-workflow-orchestration
-description: Use this skill when a request spans multiple steps or maps to a known workflow (feature triage, synteny setup, SV inspector bootstrap).
+description: Use this skill only when the request maps to a named workflow contract (feature triage, synteny setup, SV inspector bootstrap) and staged coordination is required.
 ---
 
 # jbrowse-workflow-orchestration
@@ -406,8 +407,8 @@ This skill teaches the agent to use workflow contracts and bootstrap tools for d
 
 ### 0. Create a plan first for multi-step workflows
 
-Before calling workflow tools, create a todo plan with write_todos.
-Keep statuses synchronized with actual progress throughout execution.
+For planning behavior (write_todos usage and status lifecycle), follow jbrowse-planning-discipline.
+This skill focuses on workflow-specific orchestration only.
 
 ### 1. Use WorkflowOrchestrator only for introspection or checklist requests
 
@@ -432,10 +433,7 @@ For SV inspector bootstrap:
 
 ### 3. Respect ambiguity protocol
 
-If bootstrap tools report ambiguousTrackQueries or missingTrackQueries:
-- do not guess
-- ask for exact track IDs
-- continue only after clarification
+If bootstrap tools report ambiguousTrackQueries or missingTrackQueries, follow jbrowse-ambiguity-protocol directly.
 
 ### 4. Keep execution minimal and state-aware
 
