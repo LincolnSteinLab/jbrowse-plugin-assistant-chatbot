@@ -470,10 +470,9 @@ When a user asks to bookmark or save current context:
 
 ### 3. Report exact identifiers
 
-Always include:
-- exact locString values
-- exact track IDs (not only display names)
-- assembly name
+For mutation-reporting details (exact locString values, exact track IDs, assembly naming), follow jbrowse-reproducibility.
+
+This skill focuses on handoff composition and missing-prerequisite guidance.
 
 ### 4. Keep the handoff concise
 
