@@ -16,10 +16,12 @@ export const McpProvider = observer(function ({
   const tools = getTools(pluginManager, session)
   return (
     <>
-      {Object.entries(tools).map(([k, v]) => {
-        const ToolMCP = v.mcp
-        return <ToolMCP key={k} />
-      })}
+      {Object.entries(tools)
+        .filter(([, v]) => v.mcp)
+        .map(([k, v]) => {
+          const ToolMCP = v.mcp!
+          return <ToolMCP key={k} />
+        })}
     </>
   )
 })

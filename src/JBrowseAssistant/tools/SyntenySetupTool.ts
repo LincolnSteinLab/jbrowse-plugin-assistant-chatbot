@@ -1,9 +1,9 @@
-import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { AbstractSessionModel } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getLoadedAssemblies, getSessionTracks } from './sessionState'
 
 export interface SyntenySetupData {
   sourceAssembly: string
@@ -31,6 +31,7 @@ export const SyntenySetupTool = createTool({
   name: 'SyntenySetup',
   description:
     'Validate source/target assembly context and resolve comparative track IDs for a synteny workflow bootstrap. Returns compatible track IDs, compatibility issues, and concrete next actions.',
+  mcp: false,
   schema: z.object({
     sourceAssembly: z.string(),
     targetAssembly: z.string(),
@@ -59,19 +60,8 @@ export const SyntenySetupTool = createTool({
         })
       }
 
-      const loadedAssemblies = new Set(
-        session.assemblyManager.assemblies.map(a => a.name),
-      )
-
-      const tracks = (session.jbrowse.tracks as AnyConfigurationModel[])
-        .map(track => ({
-          id: String(track.trackId ?? ''),
-          name: String(track.name ?? ''),
-          assemblyNames: Array.isArray(track.assemblyNames)
-            ? (track.assemblyNames as unknown[]).map(a => String(a))
-            : [],
-        }))
-        .filter(track => Boolean(track.id))
+      const loadedAssemblies = new Set(getLoadedAssemblies(session))
+      const tracks = getSessionTracks(session)
 
       const missingTrackQueries: string[] = []
       const resolvedComparativeTrackIds: string[] = []

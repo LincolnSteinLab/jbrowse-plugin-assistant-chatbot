@@ -138,7 +138,8 @@ function getWorkflowContract(
 export const WorkflowOrchestratorTool = createTool({
   name: 'WorkflowOrchestrator',
   description:
-    'Return deterministic step contracts for high-value JBrowse workflows (feature triage, synteny setup, SV inspector bootstrap). Produces required inputs, clarification prompts, next actions, and completion criteria.',
+    'Return diagnostic workflow contracts for high-value JBrowse workflows (feature triage, synteny setup, SV inspector bootstrap). Use for dry-run planning, phase checklists, and operator introspection; execution can proceed directly via workflow-specific tools and skills.',
+  mcp: false,
   schema: z.object({
     workflow: z.enum([
       'feature_triage',

@@ -1,9 +1,9 @@
-import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { AbstractSessionModel, AbstractViewModel } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getSessionTracks, resolveActiveAssemblies } from './sessionState'
 
 export interface ConfigDiagnosticIssue {
   severity: 'error' | 'warning' | 'info'
@@ -47,34 +47,13 @@ export const ConfigDiagnosticTool = createTool({
     }) =>
     // eslint-disable-next-line @typescript-eslint/require-await
     async ({ targetAssembly }): Promise<ToolEnvelope<ConfigDiagnosticData>> => {
-      // Resolve target assembly
-      const viewAssemblies = views
-        .flatMap(v =>
-          'assemblyNames' in v &&
-          Array.isArray((v as { assemblyNames: unknown }).assemblyNames)
-            ? (v as { assemblyNames: string[] }).assemblyNames
-            : [],
-        )
-        .filter(Boolean)
+      const activeAssemblies = resolveActiveAssemblies({
+        session,
+        views,
+        targetAssembly,
+      })
 
-      const activeAssemblies = targetAssembly
-        ? [targetAssembly]
-        : viewAssemblies.length > 0
-          ? [...new Set(viewAssemblies)]
-          : session.assemblyManager.assemblies.map(a => a.name)
-
-      const availableTracks = (
-        session.jbrowse.tracks as AnyConfigurationModel[]
-      )
-        .map(track => ({
-          id: String(track.trackId ?? ''),
-          name: String(track.name ?? ''),
-          assemblyNames: Array.isArray(track.assemblyNames)
-            ? (track.assemblyNames as unknown[]).map(n => String(n))
-            : [],
-          type: String(track.type ?? ''),
-        }))
-        .filter(t => !!t.id)
+      const availableTracks = getSessionTracks(session)
 
       const issues: ConfigDiagnosticIssue[] = []
       let compatibleTracks = 0

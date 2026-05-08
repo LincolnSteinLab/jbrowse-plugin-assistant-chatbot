@@ -1,4 +1,3 @@
-import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import {
   AbstractSessionModel,
   AbstractTrackModel,
@@ -9,6 +8,7 @@ import { z } from 'zod'
 
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getSessionTracks } from './sessionState'
 
 export interface SessionSnapshotData {
   assemblies: {
@@ -68,16 +68,12 @@ export const SessionSnapshotTool = createTool({
     }): Promise<ToolEnvelope<SessionSnapshotData>> => {
       const assemblies = session.assemblyManager.assemblies
       const availableTracks = includeTracks
-        ? (session.jbrowse.tracks as AnyConfigurationModel[])
-            .map(track => ({
-              id: String(track.trackId ?? ''),
-              name: track.name,
-              assemblyNames: Array.isArray(track.assemblyNames)
-                ? track.assemblyNames.map(name => String(name))
-                : undefined,
-              type: track.type,
-            }))
-            .filter(track => !!track.id)
+        ? getSessionTracks(session).map(track => ({
+            id: track.id,
+            name: track.name,
+            assemblyNames: track.assemblyNames,
+            type: track.type,
+          }))
         : undefined
       const views = session.views.map(view => {
         const v = view

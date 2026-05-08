@@ -409,14 +409,15 @@ This skill teaches the agent to use workflow contracts and bootstrap tools for d
 Before calling workflow tools, create a todo plan with write_todos.
 Keep statuses synchronized with actual progress throughout execution.
 
-### 1. Use WorkflowOrchestrator first for known flows
+### 1. Use WorkflowOrchestrator only for introspection or checklist requests
 
-When a request resembles one of these workflows, call WorkflowOrchestrator immediately:
+When a request resembles one of these workflows, use planning + direct workflow tools first.
+Call WorkflowOrchestrator only when the user explicitly asks for a step checklist, a dry-run plan, or a phase-by-phase workflow contract:
 - feature triage
 - synteny setup
 - sv inspector bootstrap
 
-Use the returned nextActions and completionCriteria as the execution plan.
+When used, treat its nextActions/completionCriteria as advisory diagnostics rather than the single source of truth.
 
 ### 2. Pair orchestrator with workflow-specific bootstrap tools
 

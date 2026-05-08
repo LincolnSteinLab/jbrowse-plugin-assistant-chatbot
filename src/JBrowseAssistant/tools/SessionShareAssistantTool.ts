@@ -1,4 +1,3 @@
-import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import {
   AbstractSessionModel,
   AbstractTrackModel,
@@ -10,6 +9,7 @@ import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getSessionTracks } from './sessionState'
 
 export interface SessionShareAssistantData {
   shareable: boolean
@@ -37,6 +37,7 @@ export const SessionShareAssistantTool = createTool({
   name: 'SessionShareAssistant',
   description:
     'Generate a reproducibility/shareability bundle from the current JBrowse view. Returns exact location, assembly, and shown track IDs plus operator instructions for sharing the investigation context.',
+  mcp: false,
   schema: z.object({
     viewId: z
       .string()
@@ -104,12 +105,7 @@ export const SessionShareAssistantTool = createTool({
         missingForReproducibility.push('No displayed location is available')
       }
 
-      const allTracks = (session.jbrowse.tracks as AnyConfigurationModel[]).map(
-        track => ({
-          id: String(track.trackId ?? ''),
-          name: String(track.name ?? ''),
-        }),
-      )
+      const allTracks = getSessionTracks(session)
       const shownTrackNames = shownTrackIds
         .map(id => allTracks.find(track => track.id === id)?.name)
         .filter((name): name is string => Boolean(name))

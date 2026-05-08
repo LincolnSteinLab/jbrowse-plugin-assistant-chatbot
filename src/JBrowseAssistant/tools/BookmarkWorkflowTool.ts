@@ -31,6 +31,7 @@ export const BookmarkWorkflowTool = createTool({
   name: 'BookmarkWorkflow',
   description:
     'Capture the current navigation state of a linear genome view as a reproducible location record. Returns the assembly, chromosome, and coordinates of the currently displayed region(s) so the user can share or reproduce the view.',
+  mcp: false,
   schema: z.object({
     viewId: z
       .string()

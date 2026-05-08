@@ -1,9 +1,9 @@
-import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { AbstractSessionModel } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getSessionTracks } from './sessionState'
 
 export interface SVInspectorBootstrapData {
   assembly?: string
@@ -33,6 +33,7 @@ export const SVInspectorBootstrapTool = createTool({
   name: 'SVInspectorBootstrap',
   description:
     'Bootstrap structural-variant inspection by validating locus/assembly context and resolving variant track IDs. Returns actionable next steps for navigation and track activation.',
+  mcp: false,
   schema: z.object({
     assembly: z.string().optional(),
     locString: z.string().optional(),
@@ -46,16 +47,7 @@ export const SVInspectorBootstrapTool = createTool({
       variantTrackQueries,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SVInspectorBootstrapData>> => {
-      const tracks = (session.jbrowse.tracks as AnyConfigurationModel[])
-        .map(track => ({
-          id: String(track.trackId ?? ''),
-          name: String(track.name ?? ''),
-          assemblyNames: Array.isArray(track.assemblyNames)
-            ? (track.assemblyNames as unknown[]).map(a => String(a))
-            : [],
-          type: String(track.type ?? ''),
-        }))
-        .filter(track => Boolean(track.id))
+      const tracks = getSessionTracks(session)
 
       const targetLocString = locString?.trim()
       if (targetLocString && !looksLikeLocString(targetLocString)) {

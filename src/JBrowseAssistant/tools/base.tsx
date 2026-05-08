@@ -92,7 +92,7 @@ export class JBTool<
     >
   >
   readonly ui?: AssistantToolUI
-  readonly mcp: () => React.JSX.Element
+  readonly mcp?: () => React.JSX.Element
   readonly interrupt?: InterruptOnConfig
 
   constructor(
@@ -102,6 +102,7 @@ export class JBTool<
       schema,
       factory_fn,
       render,
+      mcp,
       interrupt,
     }: {
       name: string
@@ -115,6 +116,7 @@ export class JBTool<
         config?: ToolRunnableConfig & LangGraphRunnableConfig,
       ) => Promise<OutputT>
       render?: ToolCallMessagePartComponent<InputT, OutputT>
+      mcp?: boolean
       interrupt?: InterruptOnConfig & { description?: string }
     },
     args: FactoryArgsT,
@@ -167,15 +169,17 @@ export class JBTool<
         render: toolCall => createElement(render, { ...toolCall }),
       })
     }
-    this.mcp = function MCPTool() {
-      useWebMCP({
-        name,
-        description,
-        inputSchema: schema.toJSONSchema(),
-        handler: input => factory_fn(args)(input as InputT),
-      })
-      return <></>
-    }
+    this.mcp = mcp
+      ? function MCPTool() {
+          useWebMCP({
+            name,
+            description,
+            inputSchema: schema.toJSONSchema(),
+            handler: input => factory_fn(args)(input as InputT),
+          })
+          return <></>
+        }
+      : undefined
   }
 }
 
@@ -199,7 +203,9 @@ export function createTool<
     config?: ToolRunnableConfig & LangGraphRunnableConfig,
   ) => Promise<OutputT>
   render?: ToolCallMessagePartComponent<InputT, OutputT>
+  mcp?: boolean
   interrupt?: InterruptOnConfig & { description?: string }
 }) {
-  return (factory_args: FactoryArgsT) => new JBTool(create_args, factory_args)
+  return (factory_args: FactoryArgsT) =>
+    new JBTool({ mcp: true, ...create_args }, factory_args)
 }
