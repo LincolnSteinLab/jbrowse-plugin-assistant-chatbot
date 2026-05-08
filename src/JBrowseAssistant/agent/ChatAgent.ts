@@ -5,12 +5,7 @@ import {
 } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { Command, MemorySaver } from '@langchain/langgraph'
-import {
-  computeSummarizationDefaults,
-  createDeepAgent,
-  createSummarizationMiddleware,
-  StateBackend,
-} from 'deepagents'
+import { createDeepAgent, StateBackend } from 'deepagents'
 
 import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
 import { ChatModel, ChatModelConfig } from './ChatModel'
@@ -41,25 +36,14 @@ export class ChatAgent extends ChatModel {
   ) {
     this.resetParser()
     await this.setupChatModel(chatModelConfig)
-    const backend = new StateBackend()
-    const summarizationDefaults = computeSummarizationDefaults(this.llm!)
     const graph = createDeepAgent({
       model: this.llm!,
       tools: tools,
       systemPrompt,
-      backend,
+      backend: new StateBackend(),
       checkpointer,
       skills: builtInDeepAgentSkillPaths,
       subagents: builtInSubAgents,
-      middleware: [
-        createSummarizationMiddleware({
-          model: this.llm!,
-          backend,
-          trigger: summarizationDefaults.trigger,
-          keep: summarizationDefaults.keep,
-          truncateArgsSettings: summarizationDefaults.truncateArgsSettings,
-        }),
-      ],
     })
     const stream = await graph.stream(
       input instanceof Command
