@@ -113,7 +113,7 @@ export class ResponseParser {
     return message
   }
 
-  finalParsedChunk = () => {
+  finalParsedChunk: () => AIMessageChunk | undefined = () => {
     if (!this.is_reasoning_parsing_enabled || this.last_text.length === 0)
       return
     if (this.is_reasoning) {

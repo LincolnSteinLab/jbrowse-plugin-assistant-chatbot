@@ -168,8 +168,11 @@ async function* streamAgentResponse({
       } else {
         continue
       }
-    } else if ('agent' in part && Array.isArray(part.agent?.messages)) {
-      for (const message of part.agent?.messages) {
+    } else if (
+      'model_request' in part &&
+      Array.isArray(part.model_request?.messages)
+    ) {
+      for (const message of part.model_request?.messages) {
         if (AIMessage.isInstance(message)) {
           // Collect initial tool call info from completed AIMessage
           message.tool_calls
