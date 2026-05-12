@@ -1,7 +1,8 @@
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
 import {
   AbstractSessionModel,
-  AbstractTrackModel,
   AbstractViewModel,
+  isTrackModel,
 } from '@jbrowse/core/util'
 import { z } from 'zod'
 
@@ -10,7 +11,7 @@ import { createTool } from './base'
 import {
   getBookmarkViewState,
   getLinearGenomeViews,
-  selectLinearGenomeView,
+  selectById,
 } from './bookmarkState'
 import { getSessionTracks } from './sessionState'
 
@@ -22,12 +23,6 @@ export interface SessionShareAssistantData {
   shownTrackIds: string[]
   missingForReproducibility: string[]
   operatorInstructions: string[]
-}
-
-function hasTracks(
-  view: AbstractViewModel,
-): view is AbstractViewModel & { tracks: AbstractTrackModel[] } {
-  return 'tracks' in view
 }
 
 export const SessionShareAssistantTool = createTool({
@@ -75,13 +70,33 @@ export const SessionShareAssistantTool = createTool({
         )
       }
 
-      const view = selectLinearGenomeView(lgviews, viewId)
+      const view = selectById(lgviews, viewId)
+
+      if (!view) {
+        return err(
+          'Could not find view with specified ID',
+          {
+            shareable: false,
+            viewId: viewId ?? '',
+            displayedLocations: [],
+            shownTrackIds: [],
+            missingForReproducibility: [
+              'Ensure the view ID is correct and the view is open',
+            ],
+            operatorInstructions: [
+              'Ensure the view ID is correct and the view is open',
+            ],
+          },
+          ['Ensure the view ID is correct and the view is open'],
+        )
+      }
+
       const { assembly, locations } = getBookmarkViewState(view)
       const displayedLocations = locations.map(location => location.locString)
 
-      const shownTrackIds = hasTracks(view)
-        ? view.tracks
-            .map(track => String(track.configuration.trackId))
+      const shownTrackIds = isTrackModel(view)
+        ? (view.tracks as BaseTrackModel[])
+            .map(track => String(track.trackId))
             .filter(Boolean)
         : []
 

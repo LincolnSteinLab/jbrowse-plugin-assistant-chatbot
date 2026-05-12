@@ -1,9 +1,9 @@
 import { AbstractViewModel } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { getNavigableViews } from './viewCapabilities'
 
 export interface NavigateGenomeData {
   navigations: {
@@ -44,26 +44,33 @@ export const NavigateGenomeTool = createTool({
         })
       }
 
-      const lgviews = views.filter(
-        view => view.type === 'LinearGenomeView',
-      ) as LinearGenomeViewModel[]
+      const navigableViews = getNavigableViews(views)
 
-      if (lgviews.length === 0) {
-        return err('No Linear Genome View is open', { navigations: [] }, [
-          'Open or ensure a LinearGenomeView first',
+      if (navigableViews.length === 0) {
+        return err('No navigable view is open', { navigations: [] }, [
+          'Open a view that supports genome navigation (e.g., LinearGenomeView, LinearSyntenyView, DotplotView)',
         ])
       }
 
       const targets = allLinearGenomeViews
-        ? lgviews
+        ? navigableViews
         : [
-            (viewId ? lgviews.find(v => v.id === viewId) : lgviews[0]) ??
-              lgviews[0],
+            (viewId
+              ? navigableViews.find(v => v.id === viewId)
+              : navigableViews[0]) ?? navigableViews[0],
           ]
 
       const navigations: NavigateGenomeData['navigations'] = []
       for (const view of targets) {
-        const assemblyName = assembly ?? view.assemblyNames?.[0]
+        const v = view as unknown as {
+          assemblyNames?: unknown
+          navToLocString?: unknown
+        }
+        const assemblyName =
+          assembly ??
+          (Array.isArray(v.assemblyNames)
+            ? (v.assemblyNames[0] as string | undefined)
+            : undefined)
         if (!assemblyName) {
           navigations.push({
             viewId: view.id,
@@ -75,7 +82,21 @@ export const NavigateGenomeTool = createTool({
           continue
         }
         try {
-          await view.navToLocString(locString, assemblyName)
+          const navToLocString = v.navToLocString as
+            | ((loc: string, assembly: string) => Promise<void>)
+            | undefined
+          if (typeof navToLocString !== 'function') {
+            navigations.push({
+              viewId: view.id,
+              viewType: view.type,
+              assembly: assemblyName,
+              locString,
+              result: 'failed',
+              reason: 'This view does not expose a navigation method',
+            })
+            continue
+          }
+          await navToLocString.call(view, locString, assemblyName)
           navigations.push({
             viewId: view.id,
             viewType: view.type,

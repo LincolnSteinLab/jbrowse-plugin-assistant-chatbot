@@ -75,25 +75,32 @@ function getWorkflowContract(
           title: 'Inspect loaded assemblies and tracks',
           recommendedTool: 'SessionSnapshot',
           reason:
-            'Validate that required assemblies/tracks exist before setup.',
+            'Validate that required assemblies/tracks exist and identify available comparative views.',
         },
         {
           stepId: 'ss-2',
+          title: 'Open a view suitable for comparative analysis',
+          recommendedTool: 'EnsureView',
+          reason:
+            'Ensure a view capable of displaying multiple assemblies is available (e.g., LinearSyntenyView, DotplotView).',
+        },
+        {
+          stepId: 'ss-3',
           title: 'Run compatibility diagnostics',
           recommendedTool: 'ConfigDiagnostic',
           reason: 'Detect assembly mismatch risks before enabling tracks.',
         },
         {
-          stepId: 'ss-3',
+          stepId: 'ss-4',
           title: 'Enable compatible comparative tracks',
           recommendedTool: 'SetTrackVisibility',
-          reason: 'Activate only tracks compatible with the active assembly.',
+          reason: 'Activate only tracks compatible with both assemblies.',
         },
       ],
       completionCriteria: [
         'Both assemblies are identified and available',
         'Comparative track(s) are enabled without mismatch errors',
-        'Current view is ready for cross-assembly inspection',
+        'Current view supports multi-assembly context and is ready for cross-assembly inspection',
       ],
     }
   }

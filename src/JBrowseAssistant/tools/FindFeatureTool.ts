@@ -1,10 +1,9 @@
-import { fetchResults } from '#_/@jbrowse/plugin-linear-genome-view/esm/searchUtils'
 import {
   AbstractViewModel,
   AssemblyManager,
   TextSearchManager,
 } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import { fetchResults, LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'

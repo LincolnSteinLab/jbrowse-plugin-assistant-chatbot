@@ -1,14 +1,29 @@
+import type { LinearSyntenyViewHelperModel } from '#_/@jbrowse/plugin-linear-comparative-view/esm/LinearSyntenyViewHelper/stateModelFactory'
 import { AnyConfigurationModel } from '@jbrowse/core/configuration'
-import { AbstractSessionModel, AbstractViewModel } from '@jbrowse/core/util'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
+import {
+  AbstractSessionModel,
+  AbstractViewModel,
+  isTrackViewModel,
+} from '@jbrowse/core/util'
+import { LinearSyntenyViewModel } from '@jbrowse/plugin-linear-comparative-view'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
+import { hasDisplayedRegions } from './bookmarkState'
+
+const COMPATIBLE_VIEW_TYPES = [
+  'LinearGenomeView',
+  'LinearSyntenyView',
+  'LinearComparativeView',
+]
 
 export interface SetTrackVisibilityData {
   viewId?: string
   onlyCompatibleWithViewAssembly?: boolean
+  level?: number
   shown: string[]
   hidden: string[]
   unmatched: string[]
@@ -31,6 +46,12 @@ export interface SetTrackVisibilityData {
     query: string
     candidates: string[]
   }[]
+}
+
+function isLinearComparativeView(
+  view: AbstractViewModel,
+): view is AbstractViewModel & LinearSyntenyViewModel {
+  return 'levels' in view
 }
 
 function norm(value: string) {
@@ -56,6 +77,7 @@ export const SetTrackVisibilityTool = createTool({
     hide: z.array(z.string()).optional().default([]),
     viewId: z.string().optional(),
     onlyCompatibleWithViewAssembly: z.boolean().optional().default(false),
+    level: z.number().int().min(0).optional().default(0),
   }),
   factory_fn:
     ({
@@ -70,6 +92,7 @@ export const SetTrackVisibilityTool = createTool({
       hide,
       viewId,
       onlyCompatibleWithViewAssembly,
+      level,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SetTrackVisibilityData>> => {
       const dedupedShow = [...new Set(show)]
@@ -84,42 +107,50 @@ export const SetTrackVisibilityTool = createTool({
         })
       }
 
-      const lgviews = views.filter(
-        view => view.type === 'LinearGenomeView',
-      ) as LinearGenomeViewModel[]
+      const target = views.find(
+        view =>
+          (view.id === viewId || !viewId) &&
+          COMPATIBLE_VIEW_TYPES.includes(view.type),
+      )
 
-      if (lgviews.length === 0) {
-        return err(
-          'No Linear Genome View is open',
-          {
-            shown: [],
-            hidden: [],
-            unmatched: [...dedupedShow, ...dedupedHide],
-            ambiguous: [],
-          },
-          ['Open a LinearGenomeView and try again'],
-        )
+      if (!target) {
+        if (viewId) {
+          const allCompatibleViews = views.filter(view =>
+            COMPATIBLE_VIEW_TYPES.includes(view.type),
+          )
+          return err(
+            'Requested viewId was not found among open compatible views',
+            {
+              level,
+              shown: [],
+              hidden: [],
+              unmatched: [...dedupedShow, ...dedupedHide],
+              unmatchedSuggestions: [],
+              ambiguous: [],
+            },
+            [
+              `Use one of the open view IDs: ${allCompatibleViews.map(v => v.id).join(', ')}`,
+              'For synteny views, use the level parameter to target a specific gap between views (default=0)',
+            ],
+          )
+        } else {
+          return err(
+            'No compatible view is open (LinearGenomeView, LinearSyntenyView, or LinearComparativeView)',
+            {
+              level,
+              shown: [],
+              hidden: [],
+              unmatched: [...dedupedShow, ...dedupedHide],
+              ambiguous: [],
+            },
+            [
+              'Open a LinearGenomeView, LinearSyntenyView, or LinearComparativeView',
+              'For synteny views, use the level parameter to target a specific gap between views (default=0)',
+            ],
+          )
+        }
       }
 
-      const target = viewId
-        ? lgviews.find(view => view.id === viewId)
-        : lgviews[0]
-
-      if (viewId && !target) {
-        return err(
-          'Requested viewId was not found among open Linear Genome Views',
-          {
-            shown: [],
-            hidden: [],
-            unmatched: [...dedupedShow, ...dedupedHide],
-            unmatchedSuggestions: [],
-            ambiguous: [],
-          },
-          [
-            `Use one of the open view IDs: ${lgviews.map(v => v.id).join(', ')}`,
-          ],
-        )
-      }
       const sessionTracks = (session.jbrowse.tracks as AnyConfigurationModel[])
         .map(t => ({
           id: String(t?.trackId ?? ''),
@@ -167,10 +198,15 @@ export const SetTrackVisibilityTool = createTool({
       }[] = []
       const ambiguous: { query: string; candidates: string[] }[] = []
 
-      const collectDiagnostics = (trackId: string) => {
-        const selectedTrack = target?.tracks.find(
-          track => track.configuration.trackId === trackId,
-        )
+      const collectDiagnostics = (trackId: string, trackLevel: number) => {
+        const selectedTrack = (
+          (isLinearComparativeView(target)
+            ? (target.levels[trackLevel] as
+                | LinearSyntenyViewHelperModel
+                | undefined)
+            : (target as LinearGenomeViewModel)
+          )?.tracks as BaseTrackModel[] | undefined
+        )?.find(track => track.trackId === trackId)
         if (!selectedTrack) {
           return
         }
@@ -201,7 +237,10 @@ export const SetTrackVisibilityTool = createTool({
             )
           }
 
-          const firstRegion = target?.displayedRegions?.[0]
+          const firstRegion = isLinearComparativeView(target)
+            ? (target.views[trackLevel].displayedRegions[0] ??
+              target.views[0].displayedRegions[0])
+            : hasDisplayedRegions(target) && target.displayedRegions[0]
           if (
             firstRegion &&
             typeof anyDisplay.regionCannotBeRenderedText === 'function'
@@ -307,7 +346,7 @@ export const SetTrackVisibilityTool = createTool({
           continue
         }
         const trackId = String(matches[0]?.id ?? '')
-        if (!target || !trackId) {
+        if (!trackId) {
           unmatched.push(q)
           continue
         }
@@ -323,9 +362,14 @@ export const SetTrackVisibilityTool = createTool({
           continue
         }
 
-        target.showTrack(trackId)
-        shown.push(trackId)
-        collectDiagnostics(trackId)
+        if (isLinearComparativeView(target)) {
+          target.showTrack(trackId, level)
+          shown.push(trackId)
+        } else if (isTrackViewModel(target)) {
+          target.showTrack(trackId)
+          shown.push(trackId)
+        }
+        collectDiagnostics(trackId, level)
       }
 
       for (const q of dedupedHide) {
@@ -353,9 +397,11 @@ export const SetTrackVisibilityTool = createTool({
           unmatched.push(q)
           continue
         }
-        const hideTrack = target?.hideTrack.bind(target)
-        if (typeof hideTrack === 'function') {
-          hideTrack.call(target, trackId)
+        if (isLinearComparativeView(target)) {
+          target.hideTrack(trackId, level)
+          hidden.push(trackId)
+        } else if (isTrackViewModel(target)) {
+          target.hideTrack(trackId)
           hidden.push(trackId)
         } else {
           unmatched.push(q)
@@ -368,6 +414,7 @@ export const SetTrackVisibilityTool = createTool({
           {
             viewId: target?.id,
             onlyCompatibleWithViewAssembly,
+            level,
             shown,
             hidden,
             unmatched,
@@ -386,6 +433,7 @@ export const SetTrackVisibilityTool = createTool({
           {
             viewId: target?.id,
             onlyCompatibleWithViewAssembly,
+            level,
             shown,
             hidden,
             unmatched,
@@ -423,6 +471,7 @@ export const SetTrackVisibilityTool = createTool({
       return ok('Track visibility updated', {
         viewId: target?.id,
         onlyCompatibleWithViewAssembly,
+        level,
         shown,
         hidden,
         unmatched,

@@ -30,7 +30,9 @@ When used, treat its nextActions/completionCriteria as advisory diagnostics rath
 
 For synteny setup:
 - call SyntenySetup with sourceAssembly, targetAssembly, and comparativeTrackQueries
+- use the returned availableComparativeViewTypes to decide whether to open a comparative-capable view
 - use resolvedComparativeTrackIds with SetTrackVisibility
+- if a view is needed, call EnsureView with preferredCapability set to multi-assembly or comparative rather than hardcoding a specific view type
 
 For SV inspector bootstrap:
 - call SVInspectorBootstrap with locString/assembly and variantTrackQueries

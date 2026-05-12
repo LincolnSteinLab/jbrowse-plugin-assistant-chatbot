@@ -29,6 +29,8 @@ Use these patterns:
 - need a view first -> EnsureView, then NavigateGenome
 - track changes -> SetTrackVisibility using exact track IDs from SessionSnapshot
 
+When a comparative workflow needs a view, prefer EnsureView with a capability hint such as multi-assembly, comparative, linear, or circular instead of naming a specific JBrowse view type.
+
 ### 3. Reduce ambiguity before mutating session state
 
 Do not define ad-hoc ambiguity behavior in this skill.

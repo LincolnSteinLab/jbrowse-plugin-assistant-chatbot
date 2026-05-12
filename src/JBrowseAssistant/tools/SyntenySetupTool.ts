@@ -4,11 +4,16 @@ import { z } from 'zod'
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
 import { getLoadedAssemblies, getSessionTracks } from './sessionState'
+import {
+  getMultiAssemblyViewTypes,
+  getViewTypeDisplayName,
+} from './viewCapabilities'
 
 export interface SyntenySetupData {
   sourceAssembly: string
   targetAssembly: string
   resolvedComparativeTrackIds: string[]
+  availableComparativeViewTypes: string[]
   missingTrackQueries: string[]
   compatibilityIssues: {
     trackId: string
@@ -52,6 +57,7 @@ export const SyntenySetupTool = createTool({
           sourceAssembly: source,
           targetAssembly: target,
           resolvedComparativeTrackIds: [],
+          availableComparativeViewTypes: [],
           missingTrackQueries: comparativeTrackQueries,
           compatibilityIssues: [],
           nextActions: [
@@ -66,6 +72,9 @@ export const SyntenySetupTool = createTool({
       const missingTrackQueries: string[] = []
       const resolvedComparativeTrackIds: string[] = []
       const compatibilityIssues: SyntenySetupData['compatibilityIssues'] = []
+      const availableComparativeViewTypes = getMultiAssemblyViewTypes(
+        session.views,
+      )
 
       for (const query of comparativeTrackQueries) {
         const match = tracks.find(track =>
@@ -102,8 +111,14 @@ export const SyntenySetupTool = createTool({
       }
 
       if (resolvedComparativeTrackIds.length > 0) {
+        const viewTypeList =
+          availableComparativeViewTypes.length > 0
+            ? availableComparativeViewTypes
+                .map(getViewTypeDisplayName)
+                .join(', ')
+            : 'a view supporting multi-assembly analysis (e.g., LinearSyntenyView, DotplotView)'
         nextActions.push(
-          `Enable compatible comparative track IDs with SetTrackVisibility: ${resolvedComparativeTrackIds.join(', ')}.`,
+          `Open a view suitable for comparative analysis with EnsureView. Available: ${viewTypeList}. Then enable comparative tracks with SetTrackVisibility: ${resolvedComparativeTrackIds.join(', ')}.`,
         )
       }
 
@@ -129,6 +144,7 @@ export const SyntenySetupTool = createTool({
         sourceAssembly: source,
         targetAssembly: target,
         resolvedComparativeTrackIds,
+        availableComparativeViewTypes,
         missingTrackQueries,
         compatibilityIssues,
         nextActions,

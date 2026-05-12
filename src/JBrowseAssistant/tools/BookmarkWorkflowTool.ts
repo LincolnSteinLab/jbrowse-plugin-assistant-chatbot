@@ -1,24 +1,18 @@
-import { AbstractViewModel } from '@jbrowse/core/util'
+import {
+  AbstractViewModel,
+  assembleLocString,
+  Region,
+} from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import {
-  getBookmarkViewState,
-  getLinearGenomeViews,
-  selectLinearGenomeView,
-} from './bookmarkState'
+import { getLinearGenomeViews, selectById } from './bookmarkState'
 
 export interface BookmarkWorkflowData {
   viewId: string
   viewType: string
-  assembly: string
-  locations: {
-    refName: string
-    start: number
-    end: number
-    locString: string
-  }[]
+  locations: (Region & { locString: string })[]
   label?: string
 }
 
@@ -48,36 +42,38 @@ export const BookmarkWorkflowTool = createTool({
       if (lgviews.length === 0) {
         return err(
           'No LinearGenomeView is open',
-          { viewId: '', viewType: '', assembly: '', locations: [] },
+          { viewId: '', viewType: '', locations: [] },
           ['Open a LinearGenomeView first using EnsureView'],
         )
       }
 
-      const view = selectLinearGenomeView(lgviews, viewId)
-      const { assembly, locations } = getBookmarkViewState(view)
-      if (!assembly) {
+      const view = selectById(lgviews, viewId)
+
+      if (!view) {
         return err(
-          'Could not determine assembly for view',
-          { viewId: view.id, viewType: view.type, assembly: '', locations: [] },
-          ['Ensure the view has an active assembly'],
+          'Could not find view with specified ID',
+          { viewId: viewId ?? '', viewType: '', locations: [] },
+          ['Ensure the view ID is correct and the view is open'],
         )
       }
 
-      if (locations.length === 0) {
+      if (view.displayedRegions.length === 0) {
         return err(
           'View has no displayed regions',
-          { viewId: view.id, viewType: view.type, assembly, locations: [] },
+          { viewId: view.id, viewType: view.type, locations: [] },
           ['Navigate to a region first using NavigateGenome'],
         )
       }
 
       return ok(
-        `Captured ${locations.length} location(s) from view ${view.id}${label ? ` — "${label}"` : ''}`,
+        `Captured ${view.displayedRegions.length} location(s) from view ${view.id}${label ? ` — "${label}"` : ''}`,
         {
           viewId: view.id,
           viewType: view.type,
-          assembly,
-          locations,
+          locations: view.displayedRegions.map(region => ({
+            ...region,
+            locString: assembleLocString(region),
+          })),
           ...(label !== undefined && { label }),
         },
       )
