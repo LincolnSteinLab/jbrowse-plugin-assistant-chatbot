@@ -1,9 +1,14 @@
-import { AbstractSessionModel } from '@jbrowse/core/util'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
+import {
+  AbstractViewModel,
+  AssemblyManager,
+  getConfAssemblyNames,
+} from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { getLoadedAssemblies, getSessionTracks } from './sessionState'
 import {
   getMultiAssemblyViewTypes,
   getViewTypeDisplayName,
@@ -23,13 +28,11 @@ export interface SyntenySetupData {
   nextActions: string[]
 }
 
-function normalize(value: string) {
-  return value.trim().toLowerCase()
-}
-
 function matchesTrack(track: { id: string; name: string }, query: string) {
-  const q = normalize(query)
-  return normalize(track.id) === q || normalize(track.name) === q
+  const q = query.trim().toLowerCase()
+  return (
+    track.id.trim().toLowerCase() === q || track.name.trim().toLowerCase() === q
+  )
 }
 
 export const SyntenySetupTool = createTool({
@@ -43,7 +46,15 @@ export const SyntenySetupTool = createTool({
     comparativeTrackQueries: z.array(z.string()).optional().default([]),
   }),
   factory_fn:
-    (session: AbstractSessionModel) =>
+    ({
+      allTracks,
+      assemblyManager,
+      views,
+    }: {
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
+      assemblyManager: AssemblyManager
+      views: AbstractViewModel[]
+    }) =>
     async ({
       sourceAssembly,
       targetAssembly,
@@ -66,18 +77,15 @@ export const SyntenySetupTool = createTool({
         })
       }
 
-      const loadedAssemblies = new Set(getLoadedAssemblies(session))
-      const tracks = getSessionTracks(session)
+      const loadedAssemblies = new Set(assemblyManager.assemblyNamesList)
 
       const missingTrackQueries: string[] = []
       const resolvedComparativeTrackIds: string[] = []
       const compatibilityIssues: SyntenySetupData['compatibilityIssues'] = []
-      const availableComparativeViewTypes = getMultiAssemblyViewTypes(
-        session.views,
-      )
+      const availableComparativeViewTypes = getMultiAssemblyViewTypes(views)
 
       for (const query of comparativeTrackQueries) {
-        const match = tracks.find(track =>
+        const match = allTracks.find(track =>
           matchesTrack({ id: track.id, name: track.name }, query),
         )
         if (!match) {
@@ -85,14 +93,16 @@ export const SyntenySetupTool = createTool({
           continue
         }
 
-        const supportsSource = match.assemblyNames.includes(source)
-        const supportsTarget = match.assemblyNames.includes(target)
-        if (supportsSource && supportsTarget) {
+        const trackAssemblies = getConfAssemblyNames(match)
+        if (
+          trackAssemblies.includes(source) &&
+          trackAssemblies.includes(target)
+        ) {
           resolvedComparativeTrackIds.push(match.id)
         } else {
           compatibilityIssues.push({
             trackId: match.id,
-            trackAssemblies: match.assemblyNames,
+            trackAssemblies,
             reason: `Track does not cover both requested assemblies (${source}, ${target})`,
           })
         }

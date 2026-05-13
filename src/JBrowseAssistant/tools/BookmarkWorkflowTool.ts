@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { getLinearGenomeViews, selectById } from './bookmarkState'
+import { getLinearGenomeViews, selectOrFirst } from './bookmarkState'
 
 export interface BookmarkWorkflowData {
   viewId: string
@@ -47,7 +47,7 @@ export const BookmarkWorkflowTool = createTool({
         )
       }
 
-      const view = selectById(lgviews, viewId)
+      const view = selectOrFirst(lgviews, { id: viewId })
 
       if (!view) {
         return err(

@@ -1,4 +1,6 @@
 import PluginManager from '@jbrowse/core/PluginManager'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
 import { AbstractSessionModel } from '@jbrowse/core/util'
 
 import { IChatWidgetModel } from '../components/model/ChatbotWidgetModel'
@@ -21,26 +23,35 @@ export function getTools(
   session: AbstractSessionModel,
   model?: IChatWidgetModel,
 ) {
-  const { assemblyManager, textSearchManager, views } = session
+  const { assemblyManager, sessionTracks, textSearchManager, tracks, views } =
+    session
+  const allTracks = [
+    ...(sessionTracks ?? []),
+    ...tracks,
+  ] as (AnyConfigurationModel & BaseTrackModel)[]
   return {
-    sessionSnapshot: SessionSnapshotTool(session),
+    sessionSnapshot: SessionSnapshotTool({ allTracks, assemblyManager, views }),
     ensureView: EnsureViewTool({
       addView: session.addView.bind(session),
       viewTypes: pluginManager.getViewElements(),
       views,
     }),
-    findFeature: FindFeatureTool({
+    findFeature: FindFeatureTool({ assemblyManager, textSearchManager, views }),
+    navigateGenome: NavigateGenomeTool(views),
+    setTrackVisibility: SetTrackVisibilityTool({
+      allTracks,
       assemblyManager,
-      textSearchManager,
       views,
     }),
-    navigateGenome: NavigateGenomeTool(views),
-    setTrackVisibility: SetTrackVisibilityTool({ session, views }),
     bookmarkWorkflow: BookmarkWorkflowTool(views),
-    configDiagnostic: ConfigDiagnosticTool({ session, views }),
-    sessionShareAssistant: SessionShareAssistantTool({ session, views }),
-    syntenySetup: SyntenySetupTool(session),
-    svInspectorBootstrap: SVInspectorBootstrapTool(session),
+    configDiagnostic: ConfigDiagnosticTool({
+      allTracks,
+      assemblyManager,
+      views,
+    }),
+    sessionShareAssistant: SessionShareAssistantTool({ allTracks, views }),
+    syntenySetup: SyntenySetupTool({ allTracks, assemblyManager, views }),
+    svInspectorBootstrap: SVInspectorBootstrapTool(allTracks),
     workflowOrchestrator: WorkflowOrchestratorTool({}),
     ...(model && {
       apiKeyVault: ApiKeyVaultTool({

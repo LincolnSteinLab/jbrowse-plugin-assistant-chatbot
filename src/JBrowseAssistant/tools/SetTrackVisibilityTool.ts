@@ -2,8 +2,9 @@ import type { LinearSyntenyViewHelperModel } from '#_/@jbrowse/plugin-linear-com
 import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
 import {
-  AbstractSessionModel,
   AbstractViewModel,
+  AssemblyManager,
+  getConfAssemblyNames,
   isTrackViewModel,
 } from '@jbrowse/core/util'
 import { LinearSyntenyViewModel } from '@jbrowse/plugin-linear-comparative-view'
@@ -12,7 +13,6 @@ import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { hasDisplayedRegions } from './bookmarkState'
 
 const COMPATIBLE_VIEW_TYPES = [
   'LinearGenomeView',
@@ -58,16 +58,6 @@ function norm(value: string) {
   return value.trim().toLowerCase()
 }
 
-function toStringArray(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.map(entry => String(entry)).filter(Boolean)
-  }
-  if (typeof value === 'string' && value.trim()) {
-    return [value]
-  }
-  return [] as string[]
-}
-
 export const SetTrackVisibilityTool = createTool({
   name: 'SetTrackVisibility',
   description:
@@ -81,10 +71,12 @@ export const SetTrackVisibilityTool = createTool({
   }),
   factory_fn:
     ({
-      session,
+      allTracks,
+      assemblyManager,
       views,
     }: {
-      session: AbstractSessionModel
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
+      assemblyManager: AssemblyManager
       views: AbstractViewModel[]
     }) =>
     async ({
@@ -151,17 +143,8 @@ export const SetTrackVisibilityTool = createTool({
         }
       }
 
-      const sessionTracks = (session.jbrowse.tracks as AnyConfigurationModel[])
-        .map(t => ({
-          id: String(t?.trackId ?? ''),
-          name: t?.name,
-          assemblyNames: toStringArray(t.assemblyNames),
-        }))
-        .filter(t => !!t.id || !!t.name)
-
-      const targetAssemblyNames = toStringArray(
-        (target as { assemblyNames?: unknown })?.assemblyNames,
-      )
+      const targetAssemblyNames =
+        (target as LinearGenomeViewModel).assemblyNames ?? []
 
       const isAssemblyCompatible = (trackAssemblyNames: string[]) => {
         if (!targetAssemblyNames.length || !trackAssemblyNames.length) {
@@ -172,7 +155,7 @@ export const SetTrackVisibilityTool = createTool({
             if (trackAssembly === viewAssembly) {
               return true
             }
-            const assembly = session.assemblyManager.get(trackAssembly)
+            const assembly = assemblyManager.get(trackAssembly)
             return !!assembly?.hasName(viewAssembly)
           }),
         )
@@ -240,7 +223,7 @@ export const SetTrackVisibilityTool = createTool({
           const firstRegion = isLinearComparativeView(target)
             ? (target.views[trackLevel].displayedRegions[0] ??
               target.views[0].displayedRegions[0])
-            : hasDisplayedRegions(target) && target.displayedRegions[0]
+            : (target as LinearGenomeViewModel).displayedRegions[0]
           if (
             firstRegion &&
             typeof anyDisplay.regionCannotBeRenderedText === 'function'
@@ -271,10 +254,8 @@ export const SetTrackVisibilityTool = createTool({
       const suggest = (query: string) => {
         const q = norm(query)
         const filteredTracks = onlyCompatibleWithViewAssembly
-          ? sessionTracks.filter(t =>
-              isAssemblyCompatible(t.assemblyNames ?? []),
-            )
-          : sessionTracks
+          ? allTracks.filter(t => isAssemblyCompatible(getConfAssemblyNames(t)))
+          : allTracks
         return filteredTracks
           .filter(t => {
             const id = t.id ? norm(String(t.id)) : ''
@@ -290,10 +271,10 @@ export const SetTrackVisibilityTool = createTool({
         const q = norm(query)
         const candidateTracks =
           forShow && onlyCompatibleWithViewAssembly
-            ? sessionTracks.filter(t =>
-                isAssemblyCompatible(t.assemblyNames ?? []),
+            ? allTracks.filter(t =>
+                isAssemblyCompatible(getConfAssemblyNames(t)),
               )
-            : sessionTracks
+            : allTracks
         // Prefer exact ID match, then exact name match, then substring match
         const exactId = candidateTracks.filter(
           t => !!t.id && norm(String(t.id)) === q,
@@ -316,14 +297,14 @@ export const SetTrackVisibilityTool = createTool({
           const allMatches = resolve(q, false)
           if (onlyCompatibleWithViewAssembly && allMatches.length > 0) {
             const incompatibleMatches = allMatches.filter(
-              match => !isAssemblyCompatible(match.assemblyNames ?? []),
+              match => !isAssemblyCompatible(getConfAssemblyNames(match)),
             )
             for (const match of incompatibleMatches) {
               assemblyMismatches.push({
                 query: q,
                 trackId: String(match.id ?? ''),
                 viewAssemblies: targetAssemblyNames,
-                trackAssemblies: match.assemblyNames ?? [],
+                trackAssemblies: getConfAssemblyNames(match),
               })
             }
             continue
@@ -351,7 +332,7 @@ export const SetTrackVisibilityTool = createTool({
           continue
         }
 
-        const trackAssemblyNames = matches[0]?.assemblyNames ?? []
+        const trackAssemblyNames = getConfAssemblyNames(matches[0])
         if (!isAssemblyCompatible(trackAssemblyNames)) {
           assemblyMismatches.push({
             query: q,

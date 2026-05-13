@@ -1,24 +1,19 @@
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
 import {
-  AbstractSessionModel,
   AbstractViewModel,
+  assembleLocString,
   isTrackModel,
 } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import {
-  getBookmarkViewState,
-  getLinearGenomeViews,
-  selectById,
-} from './bookmarkState'
-import { getSessionTracks } from './sessionState'
+import { getLinearGenomeViews, selectOrFirst } from './bookmarkState'
 
 export interface SessionShareAssistantData {
   shareable: boolean
   viewId?: string
-  assembly?: string
   displayedLocations: string[]
   shownTrackIds: string[]
   missingForReproducibility: string[]
@@ -43,10 +38,10 @@ export const SessionShareAssistantTool = createTool({
   }),
   factory_fn:
     ({
-      session,
+      allTracks,
       views,
     }: {
-      session: AbstractSessionModel
+      allTracks: AnyConfigurationModel[]
       views: AbstractViewModel[]
     }) =>
     async ({
@@ -70,7 +65,7 @@ export const SessionShareAssistantTool = createTool({
         )
       }
 
-      const view = selectById(lgviews, viewId)
+      const view = selectOrFirst(lgviews, { id: viewId })
 
       if (!view) {
         return err(
@@ -91,24 +86,19 @@ export const SessionShareAssistantTool = createTool({
         )
       }
 
-      const { assembly, locations } = getBookmarkViewState(view)
-      const displayedLocations = locations.map(location => location.locString)
+      const displayedLocations = view.displayedRegions.map(region =>
+        assembleLocString(region),
+      )
 
       const shownTrackIds = isTrackModel(view)
-        ? (view.tracks as BaseTrackModel[])
-            .map(track => String(track.trackId))
-            .filter(Boolean)
+        ? (view.tracks as BaseTrackModel[]).map(track => track.trackId)
         : []
 
       const missingForReproducibility: string[] = []
-      if (!assembly) {
-        missingForReproducibility.push('Active assembly could not be resolved')
-      }
       if (displayedLocations.length === 0) {
         missingForReproducibility.push('No displayed location is available')
       }
 
-      const allTracks = getSessionTracks(session)
       const shownTrackNames = shownTrackIds
         .map(id => allTracks.find(track => track.id === id)?.name)
         .filter((name): name is string => Boolean(name))
@@ -138,7 +128,6 @@ export const SessionShareAssistantTool = createTool({
         {
           shareable,
           viewId: view.id,
-          assembly,
           displayedLocations,
           shownTrackIds,
           missingForReproducibility,

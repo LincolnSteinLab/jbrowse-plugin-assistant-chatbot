@@ -38,7 +38,7 @@ export const NavigateGenomeTool = createTool({
           navigations: [],
         })
       }
-      if (assembly !== undefined && !assembly.trim()) {
+      if (!(assembly?.trim() ?? true)) {
         return err('If provided, assembly must not be empty', {
           navigations: [],
         })

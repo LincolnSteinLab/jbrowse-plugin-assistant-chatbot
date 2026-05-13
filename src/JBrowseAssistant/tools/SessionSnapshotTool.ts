@@ -1,14 +1,17 @@
+import { Assembly } from '@jbrowse/core/assemblyManager/assembly'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
 import {
-  AbstractSessionModel,
-  AbstractTrackModel,
   AbstractViewModel,
+  AssemblyManager,
+  getConfAssemblyNames,
+  Region,
 } from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { hasDisplayedRegions } from './bookmarkState'
-import { getSessionTracks } from './sessionState'
 
 export interface SessionSnapshotData {
   assemblies: {
@@ -26,23 +29,13 @@ export interface SessionSnapshotData {
     type: string
     name?: string
     assemblyNames?: string[]
-    displayedRegions?: string[]
+    displayedRegions?: Region[]
     shownTrackIds?: string[]
   }[]
   defaults?: {
     preferredViewId?: string
     preferredAssembly?: string
   }
-}
-
-function hasTracks(
-  view: AbstractViewModel,
-): view is AbstractViewModel & { tracks: AbstractTrackModel[] } {
-  return 'tracks' in view
-}
-
-function hasAssemblyNames(view: unknown): view is { assemblyNames: string[] } {
-  return typeof view === 'object' && view !== null && 'assemblyNames' in view
 }
 
 export const SessionSnapshotTool = createTool({
@@ -54,55 +47,59 @@ export const SessionSnapshotTool = createTool({
     includeRegions: z.boolean().optional().default(true),
   }),
   factory_fn:
-    (session: AbstractSessionModel) =>
+    ({
+      allTracks,
+      assemblyManager,
+      views,
+    }: {
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
+      assemblyManager: AssemblyManager
+      views: AbstractViewModel[]
+    }) =>
     async ({
       includeTracks,
       includeRegions,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SessionSnapshotData>> => {
-      const assemblies = session.assemblyManager.assemblies
+      const assemblies: Assembly[] =
+        assemblyManager.assemblyList as AnyConfigurationModel[] & Assembly[]
       const availableTracks = includeTracks
-        ? getSessionTracks(session).map(track => ({
+        ? allTracks.map(track => ({
             id: track.id,
             name: track.name,
-            assemblyNames: track.assemblyNames,
+            assemblyNames: getConfAssemblyNames(track),
             type: track.type,
           }))
         : undefined
-      const views = session.views.map(view => {
-        const v = view
-        const displayedRegions =
-          includeRegions && hasDisplayedRegions(v)
-            ? v.displayedRegions
-                .map(r => JSON.stringify(r) ?? r.refName)
-                .filter(Boolean)
-            : undefined
-        const shownTrackIds =
-          includeTracks && hasTracks(v)
-            ? v.tracks.map(t => t.configuration.trackId).filter(Boolean)
-            : undefined
 
-        return {
-          id: v.id,
-          type: v.type,
-          name: v.displayName,
-          assemblyNames: hasAssemblyNames(v) ? v.assemblyNames : undefined,
-          displayedRegions,
-          shownTrackIds,
-        }
-      })
-
-      const firstLGV = views.find(v => v.type === 'LinearGenomeView')
+      const firstLGV = views.find(v => v.type === 'LinearGenomeView') as
+        | LinearGenomeViewModel
+        | undefined
       const preferredAssembly =
-        firstLGV?.assemblyNames?.[0] ?? assemblies?.[0]?.name
+        firstLGV?.assemblyNames?.[0] ?? assemblies[0].name
 
       return ok('Session snapshot retrieved', {
         assemblies: assemblies.map(a => ({
           name: a.name,
           refNameCount: a.allRefNames?.length,
         })),
-        availableTracks,
-        views,
+        ...(includeTracks && { availableTracks }),
+        views: views.map(v => ({
+          id: v.id,
+          type: v.type,
+          name: v.displayName,
+          assemblyNames: (v as LinearGenomeViewModel).assemblyNames,
+          ...(includeRegions && {
+            displayedRegions: (v as LinearGenomeViewModel).displayedRegions,
+          }),
+          ...(includeTracks && {
+            shownTrackIds: (
+              (v as LinearGenomeViewModel).tracks as
+                | BaseTrackModel[]
+                | undefined
+            )?.map(t => t.id),
+          }),
+        })),
         defaults: {
           preferredViewId: firstLGV?.id,
           preferredAssembly,

@@ -3,7 +3,10 @@ import {
   AssemblyManager,
   TextSearchManager,
 } from '@jbrowse/core/util'
-import { fetchResults, LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import {
+  fetchResults,
+  LinearGenomeViewModel,
+} from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'

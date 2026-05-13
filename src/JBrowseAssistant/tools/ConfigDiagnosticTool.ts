@@ -1,9 +1,15 @@
-import { AbstractSessionModel, AbstractViewModel } from '@jbrowse/core/util'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
+import {
+  AbstractViewModel,
+  AssemblyManager,
+  getConfAssemblyNames,
+} from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { z } from 'zod'
 
 import { ToolEnvelope, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { getSessionTracks, resolveActiveAssemblies } from './sessionState'
 
 export interface ConfigDiagnosticIssue {
   severity: 'error' | 'warning' | 'info'
@@ -39,27 +45,34 @@ export const ConfigDiagnosticTool = createTool({
   }),
   factory_fn:
     ({
-      session,
+      allTracks,
+      assemblyManager,
       views,
     }: {
-      session: AbstractSessionModel
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
+      assemblyManager: AssemblyManager
       views: AbstractViewModel[]
     }) =>
     // eslint-disable-next-line @typescript-eslint/require-await
     async ({ targetAssembly }): Promise<ToolEnvelope<ConfigDiagnosticData>> => {
-      const activeAssemblies = resolveActiveAssemblies({
-        session,
-        views,
-        targetAssembly,
-      })
-
-      const availableTracks = getSessionTracks(session)
+      let activeAssemblies = targetAssembly
+        ? [targetAssembly]
+        : [
+            ...new Set(
+              views.flatMap(
+                v => (v as LinearGenomeViewModel).assemblyNames ?? [],
+              ),
+            ),
+          ]
+      if (activeAssemblies.length === 0)
+        activeAssemblies = assemblyManager.assemblyNamesList
 
       const issues: ConfigDiagnosticIssue[] = []
       let compatibleTracks = 0
 
-      for (const track of availableTracks) {
-        if (track.assemblyNames.length === 0) {
+      for (const track of allTracks) {
+        const trackAssemblyNames = getConfAssemblyNames(track)
+        if (trackAssemblyNames.length === 0) {
           issues.push({
             severity: 'warning',
             trackId: track.id,
@@ -72,7 +85,7 @@ export const ConfigDiagnosticTool = createTool({
         }
 
         const compatible = assembliesOverlap(
-          track.assemblyNames,
+          trackAssemblyNames,
           activeAssemblies,
         )
         if (compatible) {
@@ -82,8 +95,8 @@ export const ConfigDiagnosticTool = createTool({
             severity: 'error',
             trackId: track.id,
             trackName: track.name,
-            message: `Track "${track.name}" (${track.id}) has assemblyNames [${track.assemblyNames.join(', ')}] which do not overlap the active assembly [${activeAssemblies.join(', ')}].`,
-            suggestion: `Add a track compatible with assembly "${activeAssemblies[0]}", or switch the view assembly to one of [${track.assemblyNames.join(', ')}].`,
+            message: `Track "${track.name}" (${track.id}) has assemblyNames [${trackAssemblyNames.join(', ')}] which do not overlap the active assembly [${activeAssemblies.join(', ')}].`,
+            suggestion: `Add a track compatible with assembly "${activeAssemblies[0]}", or switch the view assembly to one of [${trackAssemblyNames.join(', ')}].`,
           })
         }
       }
@@ -101,12 +114,12 @@ export const ConfigDiagnosticTool = createTool({
 
       const summary =
         issues.length === 0
-          ? `All ${availableTracks.length} track(s) are compatible with assembly [${activeAssemblies.join(', ')}].`
-          : `Found ${errorCount} error(s) and ${warnCount} warning(s) across ${availableTracks.length} track(s). ${compatibleTracks} track(s) are compatible with assembly [${activeAssemblies.join(', ')}].`
+          ? `All ${allTracks.length} track(s) are compatible with assembly [${activeAssemblies.join(', ')}].`
+          : `Found ${errorCount} error(s) and ${warnCount} warning(s) across ${allTracks.length} track(s). ${compatibleTracks} track(s) are compatible with assembly [${activeAssemblies.join(', ')}].`
 
       return ok(summary, {
         activeAssemblies,
-        totalTracks: availableTracks.length,
+        totalTracks: allTracks.length,
         compatibleTracks,
         issues,
         summary,

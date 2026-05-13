@@ -1,9 +1,10 @@
-import { AbstractSessionModel } from '@jbrowse/core/util'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel } from '@jbrowse/core/pluggableElementTypes'
+import { getConfAssemblyNames } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, ok } from './ToolEnvelope'
 import { createTool } from './base'
-import { getSessionTracks } from './sessionState'
 
 export interface SVInspectorBootstrapData {
   assembly?: string
@@ -17,12 +18,8 @@ export interface SVInspectorBootstrapData {
   nextActions: string[]
 }
 
-function normalize(value: string) {
-  return value.trim().toLowerCase()
-}
-
 function includesInsensitive(haystack: string, needle: string) {
-  return normalize(haystack).includes(normalize(needle))
+  return haystack.trim().toLowerCase().includes(needle.trim().toLowerCase())
 }
 
 function looksLikeLocString(value: string) {
@@ -40,15 +37,13 @@ export const SVInspectorBootstrapTool = createTool({
     variantTrackQueries: z.array(z.string()).optional().default([]),
   }),
   factory_fn:
-    (session: AbstractSessionModel) =>
+    (allTracks: (AnyConfigurationModel & BaseTrackModel)[]) =>
     async ({
       assembly,
       locString,
       variantTrackQueries,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SVInspectorBootstrapData>> => {
-      const tracks = getSessionTracks(session)
-
       const targetLocString = locString?.trim()
       if (targetLocString && !looksLikeLocString(targetLocString)) {
         return err('locString must be in ref:start-end format', {
@@ -69,10 +64,10 @@ export const SVInspectorBootstrapTool = createTool({
       const missingTrackQueries: string[] = []
 
       for (const query of variantTrackQueries) {
-        const matches = tracks.filter(
+        const matches = allTracks.filter(
           track =>
             includesInsensitive(track.id, query) ||
-            includesInsensitive(track.name, query),
+            includesInsensitive(track.name as string, query),
         )
 
         if (matches.length === 0) {
@@ -89,15 +84,16 @@ export const SVInspectorBootstrapTool = createTool({
         }
 
         const [match] = matches
+        const matchAssemblyNames = getConfAssemblyNames(match)
         if (
           assembly &&
-          match.assemblyNames.length > 0 &&
-          !match.assemblyNames.includes(assembly)
+          matchAssemblyNames.length > 0 &&
+          !matchAssemblyNames.includes(assembly)
         ) {
           ambiguousTrackQueries.push({
             query,
             candidates: [
-              `${match.id} (assembly mismatch: ${match.assemblyNames.join(', ')})`,
+              `${match.id} (assembly mismatch: ${matchAssemblyNames.join(', ')})`,
             ],
           })
           continue

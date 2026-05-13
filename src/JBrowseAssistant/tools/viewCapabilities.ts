@@ -1,4 +1,6 @@
 import { AbstractViewModel } from '@jbrowse/core/util'
+import { LinearSyntenyViewModel } from '@jbrowse/plugin-linear-comparative-view'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 /**
  * Capability detection utilities for JBrowse view types.
@@ -11,60 +13,17 @@ import { AbstractViewModel } from '@jbrowse/core/util'
  * or are specifically designed for comparative genomics (e.g., synteny, dotplot).
  */
 export function isMultiAssemblyView(view: AbstractViewModel): boolean {
-  const v = view as unknown as {
-    assemblyNames?: unknown
-    views?: unknown
-  }
-
-  // Check for assemblyNames array property
-  if (Array.isArray(v.assemblyNames)) {
-    const assemblyNames = v.assemblyNames as unknown[]
-    return assemblyNames.length > 1
-  }
-
-  // Check for views property (used by LinearSyntenyView, which has nested views)
-  if (Array.isArray(v.views)) {
-    const views = v.views as unknown[]
-    return views.length > 1
-  }
-
-  return false
+  const v = view as LinearSyntenyViewModel
+  return (v.assemblyNames ?? []).length > 1 || (v.views ?? []).length > 1
 }
 
 /**
- * Check if a view supports navigation via locString or location.
- * Navigation-capable views typically implement methods like navToLocString,
- * navToLocation, or similar genomic navigation actions.
+ * Check if a view supports navigation via locString.
  */
-export function isNavigableView(view: AbstractViewModel): boolean {
-  const v = view as unknown as {
-    navToLocString?: unknown
-    navToLocation?: unknown
-    navToLocations?: unknown
-    navTo?: unknown
-  }
-
-  // Check for navToLocString method (LinearGenomeView, LinearSyntenyView, others)
-  if (typeof v.navToLocString === 'function') {
-    return true
-  }
-
-  // Check for navToLocation method
-  if (typeof v.navToLocation === 'function') {
-    return true
-  }
-
-  // Check for navToLocations method
-  if (typeof v.navToLocations === 'function') {
-    return true
-  }
-
-  // Check for navTo method (Base1DViewModel)
-  if (typeof v.navTo === 'function') {
-    return true
-  }
-
-  return false
+export function isNavigableView(
+  view: AbstractViewModel,
+): view is LinearGenomeViewModel {
+  return typeof (view as LinearGenomeViewModel).navToLocString === 'function'
 }
 
 /**
@@ -74,10 +33,7 @@ export function isNavigableView(view: AbstractViewModel): boolean {
 export function getMultiAssemblyViewTypes(
   views: AbstractViewModel[],
 ): string[] {
-  return views
-    .filter(isMultiAssemblyView)
-    .map(v => v.type)
-    .filter((type, index, arr) => arr.indexOf(type) === index) // deduplicate
+  return [...new Set(views.filter(isMultiAssemblyView).map(v => v.type))]
 }
 
 /**
@@ -86,7 +42,7 @@ export function getMultiAssemblyViewTypes(
  */
 export function getNavigableViews(
   views: AbstractViewModel[],
-): AbstractViewModel[] {
+): LinearGenomeViewModel[] {
   return views.filter(isNavigableView)
 }
 
@@ -95,9 +51,7 @@ export function getNavigableViews(
  * Returns the view type names of views that support navigation.
  */
 export function getNavigableViewTypes(views: AbstractViewModel[]): string[] {
-  return getNavigableViews(views)
-    .map(v => v.type)
-    .filter((type, index, arr) => arr.indexOf(type) === index) // deduplicate
+  return [...new Set(getNavigableViews(views).map(v => v.type))]
 }
 
 /**

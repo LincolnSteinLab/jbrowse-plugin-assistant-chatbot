@@ -34,14 +34,8 @@ function getViewLifecycleState(view: AbstractViewModel): {
 
 function isTransitioningInitialization(view: AbstractViewModel): boolean {
   const state = getViewLifecycleState(view)
-
   // Prefer explicit loading state when available.
-  if (state.showLoading !== undefined) {
-    return state.showLoading
-  }
-
-  // Fallback for models that expose init without showLoading.
-  return !!state.initPresent
+  return state.showLoading ?? !!state.initPresent
 }
 
 export const EnsureViewTool = createTool({
@@ -160,36 +154,21 @@ export const EnsureViewTool = createTool({
 
       // Try to navigate if locString provided and view is navigable
       if (locString && isNavigableView(view)) {
-        const v = view as unknown as {
-          navToLocString?: unknown
-          assemblyNames?: unknown
-        }
-        const navToLocString = v.navToLocString as
-          | ((loc: string, assembly: string) => Promise<void>)
-          | undefined
-        if (typeof navToLocString === 'function') {
-          const assemblyName =
-            assembly ??
-            (v.assemblyNames && Array.isArray(v.assemblyNames)
-              ? (v.assemblyNames[0] as string | undefined)
-              : undefined)
-          if (assemblyName) {
-            try {
-              await navToLocString.call(view, locString, assemblyName)
-            } catch {
-              return err(
-                'Failed to navigate to locString',
-                {
-                  viewId: view.id,
-                  viewType: selectedViewType,
-                  created,
-                  assembly: assemblyName,
-                  locString,
-                },
-                ['Use the FindFeature tool to search for features by name.'],
-              )
-            }
-          }
+        const assemblyName = assembly ?? view.assemblyNames[0]
+        try {
+          await view.navToLocString(locString, assemblyName)
+        } catch {
+          return err(
+            'Failed to navigate to locString',
+            {
+              viewId: view.id,
+              viewType: selectedViewType,
+              created,
+              assembly: assemblyName,
+              locString,
+            },
+            ['Use the FindFeature tool to search for features by name.'],
+          )
         }
       }
 
