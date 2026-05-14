@@ -37,15 +37,11 @@ export const FindFeatureTool = createTool({
     viewId: z.string().optional(),
   }),
   factory_fn:
-    ({
-      assemblyManager,
-      textSearchManager,
-      views,
-    }: {
-      assemblyManager: AssemblyManager
-      textSearchManager?: TextSearchManager
-      views: AbstractViewModel[]
-    }) =>
+    ([assemblyManager, textSearchManager, views]: [
+      assemblyManager: AssemblyManager,
+      textSearchManager: TextSearchManager | undefined,
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       query,
       assembly,

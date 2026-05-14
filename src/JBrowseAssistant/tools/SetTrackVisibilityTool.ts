@@ -70,15 +70,11 @@ export const SetTrackVisibilityTool = createTool({
     level: z.number().int().min(0).optional().default(0),
   }),
   factory_fn:
-    ({
-      allTracks,
-      assemblyManager,
-      views,
-    }: {
-      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
-      assemblyManager: AssemblyManager
-      views: AbstractViewModel[]
-    }) =>
+    ([allTracks, assemblyManager, views]: [
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[],
+      assemblyManager: AssemblyManager,
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       show,
       hide,

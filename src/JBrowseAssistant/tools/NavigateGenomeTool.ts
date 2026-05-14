@@ -26,7 +26,7 @@ export const NavigateGenomeTool = createTool({
     allLinearGenomeViews: z.boolean().optional().default(false),
   }),
   factory_fn:
-    (views: AbstractViewModel[]) =>
+    ([views]: [views: AbstractViewModel[]]) =>
     async ({
       locString,
       assembly,

@@ -29,35 +29,30 @@ export function getTools(
     ...(sessionTracks ?? []),
     ...tracks,
   ] as (AnyConfigurationModel & BaseTrackModel)[]
+  const addView = session.addView.bind(session)
+  const viewTypes = pluginManager.getViewElements()
+  const provider = model?.settingsForm.settings.provider
+  const getApiKey = model?.apiKeyVault.get
   return {
-    sessionSnapshot: SessionSnapshotTool({ allTracks, assemblyManager, views }),
-    ensureView: EnsureViewTool({
-      addView: session.addView.bind(session),
-      viewTypes: pluginManager.getViewElements(),
-      views,
-    }),
-    findFeature: FindFeatureTool({ assemblyManager, textSearchManager, views }),
-    navigateGenome: NavigateGenomeTool(views),
-    setTrackVisibility: SetTrackVisibilityTool({
+    sessionSnapshot: SessionSnapshotTool([allTracks, assemblyManager, views]),
+    ensureView: EnsureViewTool([addView, viewTypes, views]),
+    findFeature: FindFeatureTool([assemblyManager, textSearchManager, views]),
+    navigateGenome: NavigateGenomeTool([views]),
+    setTrackVisibility: SetTrackVisibilityTool([
       allTracks,
       assemblyManager,
       views,
-    }),
-    bookmarkWorkflow: BookmarkWorkflowTool(views),
-    configDiagnostic: ConfigDiagnosticTool({
-      allTracks,
-      assemblyManager,
-      views,
-    }),
-    sessionShareAssistant: SessionShareAssistantTool({ allTracks, views }),
-    syntenySetup: SyntenySetupTool({ allTracks, assemblyManager, views }),
-    svInspectorBootstrap: SVInspectorBootstrapTool(allTracks),
-    workflowOrchestrator: WorkflowOrchestratorTool({}),
-    ...(model && {
-      apiKeyVault: ApiKeyVaultTool({
-        provider: model.settingsForm.settings.provider,
-        getApiKey: model.apiKeyVault.get,
+    ]),
+    bookmarkWorkflow: BookmarkWorkflowTool([views]),
+    configDiagnostic: ConfigDiagnosticTool([allTracks, assemblyManager, views]),
+    sessionShareAssistant: SessionShareAssistantTool([allTracks, views]),
+    syntenySetup: SyntenySetupTool([allTracks, assemblyManager, views]),
+    svInspectorBootstrap: SVInspectorBootstrapTool([allTracks]),
+    workflowOrchestrator: WorkflowOrchestratorTool([]),
+    ...(model &&
+      provider &&
+      getApiKey && {
+        apiKeyVault: ApiKeyVaultTool([provider, getApiKey]),
       }),
-    }),
   }
 }

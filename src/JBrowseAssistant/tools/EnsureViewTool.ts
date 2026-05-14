@@ -62,15 +62,11 @@ export const EnsureViewTool = createTool({
     reuseExisting: z.boolean().optional().default(true),
   }),
   factory_fn:
-    ({
-      addView,
-      viewTypes,
-      views,
-    }: {
-      addView: (viewType: string) => AbstractViewModel
-      viewTypes: ViewType[]
-      views: AbstractViewModel[]
-    }) =>
+    ([addView, viewTypes, views]: [
+      addView: (viewType: string) => AbstractViewModel,
+      viewTypes: ViewType[],
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       viewType,
       preferredCapability,

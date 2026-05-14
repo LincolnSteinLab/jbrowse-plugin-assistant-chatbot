@@ -34,7 +34,7 @@ export const BookmarkWorkflowTool = createTool({
       .describe('Optional label to attach to this bookmark.'),
   }),
   factory_fn:
-    (views: AbstractViewModel[]) =>
+    ([views]: [views: AbstractViewModel[]]) =>
     // eslint-disable-next-line @typescript-eslint/require-await
     async ({ viewId, label }): Promise<ToolEnvelope<BookmarkWorkflowData>> => {
       const lgviews = getLinearGenomeViews(views)

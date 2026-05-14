@@ -91,6 +91,9 @@ configs.forEach(config => {
         // rollup-plugin-polyfill-node doesn't handle "node:" prefix
         { find: /^node:([^/]*)$/, replacement: '$1' },
 
+        // temporary workaround for deepagents -> langsmith dep
+        { find: 'langsmith/experimental/sandbox', replacement: 'langsmith/sandbox' },
+
         // temporary for MCP-B Zod 3->4 transition
         { find: 'zod-to-json-schema', replacement: '@/shims/zod-to-json-schema' },
       ],

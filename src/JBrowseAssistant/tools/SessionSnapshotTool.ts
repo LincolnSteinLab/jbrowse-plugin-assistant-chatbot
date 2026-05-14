@@ -47,22 +47,18 @@ export const SessionSnapshotTool = createTool({
     includeRegions: z.boolean().optional().default(true),
   }),
   factory_fn:
-    ({
-      allTracks,
-      assemblyManager,
-      views,
-    }: {
-      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
-      assemblyManager: AssemblyManager
-      views: AbstractViewModel[]
-    }) =>
+    ([allTracks, assemblyManager, views]: [
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[],
+      assemblyManager: AssemblyManager,
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       includeTracks,
       includeRegions,
       // eslint-disable-next-line @typescript-eslint/require-await
     }): Promise<ToolEnvelope<SessionSnapshotData>> => {
       const assemblies: Assembly[] =
-        assemblyManager.assemblyList as AnyConfigurationModel[] & Assembly[]
+        assemblyManager.assemblyList as (AnyConfigurationModel & Assembly)[]
       const availableTracks = includeTracks
         ? allTracks.map(track => ({
             id: track.id,

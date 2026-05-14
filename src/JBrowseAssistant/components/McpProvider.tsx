@@ -1,7 +1,7 @@
 import PluginManager from '@jbrowse/core/PluginManager'
 import { AbstractSessionModel } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { getTools } from '../tools'
 
@@ -13,10 +13,7 @@ export const McpProvider = observer(function ({
   session?: AbstractSessionModel
 }) {
   if (!session) return <></>
-  const tools = useMemo(
-    () => getTools(pluginManager, session),
-    [pluginManager, session],
-  )
+  const tools = getTools(pluginManager, session)
   return (
     <>
       {Object.entries(tools)

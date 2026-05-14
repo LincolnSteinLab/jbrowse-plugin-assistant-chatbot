@@ -44,15 +44,11 @@ export const ConfigDiagnosticTool = createTool({
       ),
   }),
   factory_fn:
-    ({
-      allTracks,
-      assemblyManager,
-      views,
-    }: {
-      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
-      assemblyManager: AssemblyManager
-      views: AbstractViewModel[]
-    }) =>
+    ([allTracks, assemblyManager, views]: [
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[],
+      assemblyManager: AssemblyManager,
+      views: AbstractViewModel[],
+    ]) =>
     // eslint-disable-next-line @typescript-eslint/require-await
     async ({ targetAssembly }): Promise<ToolEnvelope<ConfigDiagnosticData>> => {
       let activeAssemblies = targetAssembly

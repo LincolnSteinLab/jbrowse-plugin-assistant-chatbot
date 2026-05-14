@@ -4,6 +4,13 @@ import {
   tool,
   ToolCallMessagePartComponent,
 } from '@assistant-ui/react'
+import { AnyConfigurationModel } from '@jbrowse/core/configuration'
+import { BaseTrackModel, ViewType } from '@jbrowse/core/pluggableElementTypes'
+import {
+  AbstractViewModel,
+  AssemblyManager,
+  TextSearchManager,
+} from '@jbrowse/core/util'
 import { CallbackManagerForToolRun } from '@langchain/core/callbacks/manager'
 import {
   ToolInputSchemaInputType,
@@ -16,8 +23,22 @@ import { LangGraphRunnableConfig, NodeInterrupt } from '@langchain/langgraph'
 import { useWebMCP } from '@mcp-b/react-webmcp'
 import { Tool } from 'assistant-stream/dist/core/tool/tool-types'
 import { HITLRequest, InterruptOnConfig } from 'langchain'
-import React, { createElement } from 'react'
+import React, { createElement, useMemo } from 'react'
 import z from 'zod'
+
+import { ChatModelProvider } from '../agent/ChatModel'
+
+type JBToolFactoryArg =
+  | AssemblyManager
+  | (AnyConfigurationModel & BaseTrackModel)[]
+  | TextSearchManager
+  | AbstractViewModel[]
+  | ((viewType: string) => AbstractViewModel)
+  | ViewType[]
+  | ChatModelProvider
+  | ((provider: ChatModelProvider) => Promise<string | undefined>)
+  | undefined
+export type JBToolFactoryArgs = [...JBToolFactoryArg[]]
 
 export const EmptySchema = z.strictObject({})
 type Empty = z.infer<typeof EmptySchema>
@@ -76,7 +97,7 @@ function normalizeNulls(value: unknown): unknown {
 }
 
 export class JBTool<
-  FactoryArgsT = unknown,
+  FactoryArgsT extends JBToolFactoryArgs = JBToolFactoryArgs,
   InputSchemaT extends z.ZodObject = z.ZodObject,
   OutputT = unknown,
   InputT = ToolInputSchemaOutputType<InputSchemaT> & Record<string, unknown>,
@@ -124,6 +145,8 @@ export class JBTool<
     this.name = name
     this.interrupt = interrupt
 
+    const tool_fn = factory_fn(args)
+
     // Tool-calling models often emit null for optional fields; normalize globally.
     const runtimeSchema = z.preprocess(
       normalizeNulls,
@@ -159,7 +182,7 @@ export class JBTool<
               }
               throw new NodeInterrupt(hitlRequest)
             }
-            return factory_fn(args)(input, runManager, config)
+            return tool_fn(input, runManager, config)
           },
         }),
     })
@@ -171,12 +194,15 @@ export class JBTool<
     }
     this.mcp = mcp
       ? function MCPTool() {
-          useWebMCP({
-            name,
-            description,
-            inputSchema: schema.toJSONSchema(),
-            handler: input => factory_fn(args)(input as InputT),
-          })
+          useWebMCP(
+            {
+              name,
+              description,
+              inputSchema: useMemo(() => schema.toJSONSchema(), []),
+              handler: input => tool_fn(input as InputT),
+            },
+            args,
+          )
           return <></>
         }
       : undefined
@@ -184,7 +210,7 @@ export class JBTool<
 }
 
 export function createTool<
-  FactoryArgsT,
+  FactoryArgsT extends JBToolFactoryArgs,
   InputSchemaT extends z.ZodObject,
   OutputT,
   InputT extends Record<

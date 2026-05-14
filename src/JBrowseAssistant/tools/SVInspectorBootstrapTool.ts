@@ -37,7 +37,7 @@ export const SVInspectorBootstrapTool = createTool({
     variantTrackQueries: z.array(z.string()).optional().default([]),
   }),
   factory_fn:
-    (allTracks: (AnyConfigurationModel & BaseTrackModel)[]) =>
+    ([allTracks]: [allTracks: (AnyConfigurationModel & BaseTrackModel)[]]) =>
     async ({
       assembly,
       locString,

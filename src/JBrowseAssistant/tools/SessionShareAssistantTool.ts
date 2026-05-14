@@ -37,13 +37,10 @@ export const SessionShareAssistantTool = createTool({
       .describe('Include human-friendly track display names in instructions.'),
   }),
   factory_fn:
-    ({
-      allTracks,
-      views,
-    }: {
-      allTracks: AnyConfigurationModel[]
-      views: AbstractViewModel[]
-    }) =>
+    ([allTracks, views]: [
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[],
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       viewId,
       includeVisibleTrackNames,

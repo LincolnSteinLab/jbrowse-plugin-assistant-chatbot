@@ -7,13 +7,10 @@ export const ApiKeyVaultTool = createTool({
   description: '',
   schema: EmptySchema,
   factory_fn:
-    ({
-      provider,
-      getApiKey,
-    }: {
-      provider: ChatModelProvider
-      getApiKey: (provider: ChatModelProvider) => Promise<string | undefined>
-    }) =>
+    ([provider, getApiKey]: [
+      provider: ChatModelProvider,
+      getApiKey: (provider: ChatModelProvider) => Promise<string | undefined>,
+    ]) =>
     async ({}) =>
       await getApiKey(provider),
 })

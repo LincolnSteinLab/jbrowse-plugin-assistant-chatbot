@@ -46,15 +46,11 @@ export const SyntenySetupTool = createTool({
     comparativeTrackQueries: z.array(z.string()).optional().default([]),
   }),
   factory_fn:
-    ({
-      allTracks,
-      assemblyManager,
-      views,
-    }: {
-      allTracks: (AnyConfigurationModel & BaseTrackModel)[]
-      assemblyManager: AssemblyManager
-      views: AbstractViewModel[]
-    }) =>
+    ([allTracks, assemblyManager, views]: [
+      allTracks: (AnyConfigurationModel & BaseTrackModel)[],
+      assemblyManager: AssemblyManager,
+      views: AbstractViewModel[],
+    ]) =>
     async ({
       sourceAssembly,
       targetAssembly,
