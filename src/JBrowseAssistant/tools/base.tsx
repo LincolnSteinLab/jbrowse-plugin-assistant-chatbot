@@ -20,7 +20,11 @@ import {
 import { ToolCall } from '@langchain/core/messages'
 import { DynamicStructuredTool } from '@langchain/core/tools'
 import { LangGraphRunnableConfig, NodeInterrupt } from '@langchain/langgraph'
-import { useWebMCP } from '@mcp-b/react-webmcp'
+import {
+  ToolAnnotations,
+  useWebMCP,
+  useWebMCPContext,
+} from '@mcp-b/react-webmcp'
 import { Tool } from 'assistant-stream/dist/core/tool/tool-types'
 import { HITLRequest, InterruptOnConfig } from 'langchain'
 import React, { createElement, useMemo } from 'react'
@@ -121,6 +125,7 @@ export class JBTool<
       name,
       description,
       schema,
+      annotations,
       factory_fn,
       render,
       mcp,
@@ -129,6 +134,7 @@ export class JBTool<
       name: string
       description: string
       schema: InputSchemaT
+      annotations?: ToolAnnotations
       factory_fn: (
         args: FactoryArgsT,
       ) => (
@@ -193,18 +199,24 @@ export class JBTool<
       })
     }
     this.mcp = mcp
-      ? function MCPTool() {
-          useWebMCP(
-            {
-              name,
-              description,
-              inputSchema: useMemo(() => schema.toJSONSchema(), []),
-              handler: input => tool_fn(input as InputT),
-            },
-            args,
-          )
-          return <></>
-        }
+      ? schema === EmptySchema
+        ? function MCPContext() {
+            useWebMCPContext(name, description, () => tool_fn({} as InputT))
+            return <></>
+          }
+        : function MCPTool() {
+            useWebMCP(
+              {
+                name,
+                description,
+                inputSchema: useMemo(() => schema.toJSONSchema(), []),
+                annotations,
+                handler: input => tool_fn(input as InputT),
+              },
+              args,
+            )
+            return <></>
+          }
       : undefined
   }
 }
@@ -221,6 +233,7 @@ export function createTool<
   name: string
   description: string
   schema: InputSchemaT
+  annotations?: ToolAnnotations
   factory_fn: (
     args: FactoryArgsT,
   ) => (
