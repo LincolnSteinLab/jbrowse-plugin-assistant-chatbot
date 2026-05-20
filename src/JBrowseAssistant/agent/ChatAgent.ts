@@ -7,10 +7,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools'
 import { Command, MemorySaver } from '@langchain/langgraph'
 import { createDeepAgent, StateBackend } from 'deepagents'
 
-import {
-  builtInDeepAgentSkillPaths,
-  getBuiltInDeepAgentSkillFiles,
-} from '../skills'
+import { getSkills, skillsPath } from '../skills'
 
 import ChatLLMCallbackHandler from './ChatLLMCallbackHandler'
 import { ChatModel, ChatModelConfig } from './ChatModel'
@@ -43,7 +40,7 @@ export class ChatAgent extends ChatModel {
       systemPrompt,
       backend: new StateBackend(),
       checkpointer,
-      skills: builtInDeepAgentSkillPaths,
+      skills: [skillsPath],
       subagents: builtInSubAgents,
     })
     const stream = await graph.stream(
@@ -51,7 +48,7 @@ export class ChatAgent extends ChatModel {
         ? input
         : {
             messages: input,
-            files: getBuiltInDeepAgentSkillFiles(),
+            files: getSkills(),
           },
       {
         callbacks: [new ChatLLMCallbackHandler()],

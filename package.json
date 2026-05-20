@@ -134,6 +134,7 @@
     "@langchain/langgraph": "^1.2.2",
     "@langchain/ollama": "^1.2.6",
     "@langchain/openai": "^1.2.12",
+    "@mcp-b/global": "^2.3.2",
     "@mcp-b/react-webmcp": "^2.3.2",
     "@metamask/browser-passworder": "^6.0.0",
     "@mui/material": "^7.1.0",

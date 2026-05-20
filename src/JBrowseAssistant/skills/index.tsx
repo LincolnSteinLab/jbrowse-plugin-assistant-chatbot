@@ -1,3 +1,7 @@
+import { useWebMCPResource } from '@mcp-b/react-webmcp'
+import { FileData } from 'deepagents'
+import React from 'react'
+
 import jbrowseAmbiguityProtocol from './jbrowse-ambiguity-protocol/SKILL.md'
 import jbrowseConfigDiagnostics from './jbrowse-config-diagnostics/SKILL.md'
 import jbrowsePlanningDiscipline from './jbrowse-planning-discipline/SKILL.md'
@@ -10,22 +14,7 @@ import jbrowseWorkflowOrchestration from './jbrowse-workflow-orchestration/SKILL
 import configDiagnosticsSubagent from './subagents/config-diagnostics/SKILL.md'
 import sessionAnalyzerSubagent from './subagents/session-analyzer/SKILL.md'
 
-export interface DeepAgentFileData {
-  content: string[]
-  created_at: string
-  modified_at: string
-}
-
-function createFileData(content: string): DeepAgentFileData {
-  const now = new Date().toISOString()
-  return {
-    content: content.trim().split('\n'),
-    created_at: now,
-    modified_at: now,
-  }
-}
-
-export const builtInDeepAgentSkillPaths = ['/skills/']
+export const skillsPath = '/skills/'
 
 const markdownSkillFiles = {
   '/skills/jbrowse-session-triage/SKILL.md': jbrowseSessionTriage,
@@ -42,14 +31,45 @@ const markdownSkillFiles = {
   '/skills/subagents/config-diagnostics/SKILL.md': configDiagnosticsSubagent,
 } satisfies Record<string, string>
 
-export function getBuiltInDeepAgentSkillFiles(): Record<
+export function getSkills(): Record<
   string,
-  DeepAgentFileData
+  FileData & { mcp: () => React.JSX.Element }
 > {
+  const now = new Date().toISOString()
   return Object.fromEntries(
-    Object.entries(markdownSkillFiles).map(([path, content]) => [
-      path,
-      createFileData(content),
-    ]),
+    Object.entries(markdownSkillFiles).map(([uri, content]) => {
+      const match =
+        /^---\s*name:\s*(?<name>\S*)\s*\ndescription:\s*(?<description>.*(?=\n---))/s.exec(
+          content,
+        )
+      return [
+        uri,
+        {
+          content,
+          mimeType: 'text/markdown',
+          created_at: now,
+          modified_at: now,
+          mcp: function MCPResource() {
+            useWebMCPResource({
+              uri,
+              name: match?.groups?.name ?? uri,
+              description: match?.groups?.description,
+              mimeType: 'text/markdown',
+              read: () =>
+                Promise.resolve({
+                  contents: [
+                    {
+                      uri,
+                      mimeType: 'text/markdown',
+                      text: content,
+                    },
+                  ],
+                }),
+            })
+            return <></>
+          },
+        },
+      ]
+    }),
   )
 }

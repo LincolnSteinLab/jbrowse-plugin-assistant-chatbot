@@ -1,8 +1,9 @@
 import PluginManager from '@jbrowse/core/PluginManager'
 import { AbstractSessionModel } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
-import React from 'react'
+import React, { useMemo } from 'react'
 
+import { getSkills } from '../skills'
 import { getTools } from '../tools'
 
 export const McpProvider = observer(function ({
@@ -13,9 +14,14 @@ export const McpProvider = observer(function ({
   session?: AbstractSessionModel
 }) {
   if (!session) return <></>
+  const skills = useMemo(getSkills, [])
   const tools = getTools(pluginManager, session)
   return (
     <>
+      {Object.entries(skills).map(([k, v]) => {
+        const SkillMCP = v.mcp
+        return <SkillMCP key={k} />
+      })}
       {Object.entries(tools)
         .filter(([, v]) => v.mcp)
         .map(([k, v]) => {
