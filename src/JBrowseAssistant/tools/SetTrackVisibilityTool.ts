@@ -58,6 +58,28 @@ function norm(value: string) {
   return value.trim().toLowerCase()
 }
 
+function getDisplayTypes(track: AnyConfigurationModel & BaseTrackModel) {
+  const displays = track.displays as
+    | {
+        type?: string
+      }[]
+    | undefined
+  return (displays ?? []).map(d => String(d.type ?? ''))
+}
+
+function isComparativeCompatibleTrack(
+  track: AnyConfigurationModel & BaseTrackModel,
+) {
+  if (track.type === 'SyntenyTrack') {
+    return true
+  }
+  const displayTypes = getDisplayTypes(track)
+  return displayTypes.some(
+    type =>
+      type === 'LinearSyntenyDisplay' || type === 'LinearComparativeDisplay',
+  )
+}
+
 export const SetTrackVisibilityTool = createTool({
   name: 'SetTrackVisibility',
   description:
@@ -141,6 +163,7 @@ export const SetTrackVisibilityTool = createTool({
 
       const targetAssemblyNames =
         (target as LinearGenomeViewModel).assemblyNames ?? []
+      const targetIsComparative = isLinearComparativeView(target)
 
       const isAssemblyCompatible = (trackAssemblyNames: string[]) => {
         if (!targetAssemblyNames.length || !trackAssemblyNames.length) {
@@ -249,9 +272,18 @@ export const SetTrackVisibilityTool = createTool({
 
       const suggest = (query: string) => {
         const q = norm(query)
-        const filteredTracks = onlyCompatibleWithViewAssembly
-          ? allTracks.filter(t => isAssemblyCompatible(getConfAssemblyNames(t)))
-          : allTracks
+        const filteredTracks = allTracks.filter(track => {
+          if (targetIsComparative && !isComparativeCompatibleTrack(track)) {
+            return false
+          }
+          if (
+            onlyCompatibleWithViewAssembly &&
+            !isAssemblyCompatible(getConfAssemblyNames(track))
+          ) {
+            return false
+          }
+          return true
+        })
         return filteredTracks
           .filter(t => {
             const id = t.trackId ? norm(String(t.trackId)) : ''
@@ -267,12 +299,23 @@ export const SetTrackVisibilityTool = createTool({
 
       const resolve = (query: string, forShow: boolean) => {
         const q = norm(query)
-        const candidateTracks =
-          forShow && onlyCompatibleWithViewAssembly
-            ? allTracks.filter(t =>
-                isAssemblyCompatible(getConfAssemblyNames(t)),
-              )
-            : allTracks
+        const candidateTracks = allTracks.filter(track => {
+          if (
+            forShow &&
+            targetIsComparative &&
+            !isComparativeCompatibleTrack(track)
+          ) {
+            return false
+          }
+          if (
+            forShow &&
+            onlyCompatibleWithViewAssembly &&
+            !isAssemblyCompatible(getConfAssemblyNames(track))
+          ) {
+            return false
+          }
+          return true
+        })
         // Prefer exact ID match, then exact name match, then substring match
         const exactId = candidateTracks.filter(
           t => !!t.trackId && norm(String(t.trackId)) === q,
@@ -293,6 +336,22 @@ export const SetTrackVisibilityTool = createTool({
         const matches = resolve(q, true)
         if (matches.length === 0) {
           const allMatches = resolve(q, false)
+          if (targetIsComparative && allMatches.length > 0) {
+            const incompatibleTracks = allMatches.filter(
+              match => !isComparativeCompatibleTrack(match),
+            )
+            for (const match of incompatibleTracks) {
+              trackDiagnostics.push({
+                trackId: String(match.trackId ?? ''),
+                severity: 'error',
+                message:
+                  'Track is not compatible with comparative helper levels. Use a SyntenyTrack (LinearSyntenyDisplay/LinearComparativeDisplay).',
+              })
+            }
+            if (incompatibleTracks.length === allMatches.length) {
+              continue
+            }
+          }
           if (onlyCompatibleWithViewAssembly && allMatches.length > 0) {
             const incompatibleMatches = allMatches.filter(
               match => !isAssemblyCompatible(getConfAssemblyNames(match)),
@@ -342,11 +401,35 @@ export const SetTrackVisibilityTool = createTool({
         }
 
         if (isLinearComparativeView(target)) {
-          target.showTrack(trackId, level)
-          shown.push(trackId)
+          try {
+            target.showTrack(trackId, level)
+            shown.push(trackId)
+          } catch (error) {
+            trackDiagnostics.push({
+              trackId,
+              severity: 'error',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to show track in comparative view',
+            })
+            continue
+          }
         } else if (isTrackViewModel(target)) {
-          target.showTrack(trackId)
-          shown.push(trackId)
+          try {
+            target.showTrack(trackId)
+            shown.push(trackId)
+          } catch (error) {
+            trackDiagnostics.push({
+              trackId,
+              severity: 'error',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to show track in view',
+            })
+            continue
+          }
         }
         collectDiagnostics(trackId, level)
       }
@@ -377,11 +460,35 @@ export const SetTrackVisibilityTool = createTool({
           continue
         }
         if (isLinearComparativeView(target)) {
-          target.hideTrack(trackId, level)
-          hidden.push(trackId)
+          try {
+            target.hideTrack(trackId, level)
+            hidden.push(trackId)
+          } catch (error) {
+            trackDiagnostics.push({
+              trackId,
+              severity: 'error',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to hide track in comparative view',
+            })
+            continue
+          }
         } else if (isTrackViewModel(target)) {
-          target.hideTrack(trackId)
-          hidden.push(trackId)
+          try {
+            target.hideTrack(trackId)
+            hidden.push(trackId)
+          } catch (error) {
+            trackDiagnostics.push({
+              trackId,
+              severity: 'error',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to hide track in view',
+            })
+            continue
+          }
         } else {
           unmatched.push(q)
         }
