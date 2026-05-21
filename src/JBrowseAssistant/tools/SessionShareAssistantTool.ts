@@ -97,7 +97,7 @@ export const SessionShareAssistantTool = createTool({
       }
 
       const shownTrackNames = shownTrackIds
-        .map(id => allTracks.find(track => track.id === id)?.name)
+        .map(id => allTracks.find(track => track.trackId === id)?.name)
         .filter((name): name is string => Boolean(name))
 
       const operatorInstructions = [

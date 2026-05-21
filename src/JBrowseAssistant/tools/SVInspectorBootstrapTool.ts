@@ -66,7 +66,7 @@ export const SVInspectorBootstrapTool = createTool({
       for (const query of variantTrackQueries) {
         const matches = allTracks.filter(
           track =>
-            includesInsensitive(track.id, query) ||
+            includesInsensitive(track.trackId, query) ||
             includesInsensitive(track.name as string, query),
         )
 
@@ -78,7 +78,7 @@ export const SVInspectorBootstrapTool = createTool({
         if (matches.length > 1) {
           ambiguousTrackQueries.push({
             query,
-            candidates: matches.map(match => match.id),
+            candidates: matches.map(match => match.trackId),
           })
           continue
         }
@@ -93,13 +93,13 @@ export const SVInspectorBootstrapTool = createTool({
           ambiguousTrackQueries.push({
             query,
             candidates: [
-              `${match.id} (assembly mismatch: ${matchAssemblyNames.join(', ')})`,
+              `${match.trackId} (assembly mismatch: ${matchAssemblyNames.join(', ')})`,
             ],
           })
           continue
         }
 
-        resolvedVariantTrackIds.push(match.id)
+        resolvedVariantTrackIds.push(match.trackId)
       }
 
       const nextActions: string[] = []

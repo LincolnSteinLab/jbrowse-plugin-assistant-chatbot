@@ -254,11 +254,13 @@ export const SetTrackVisibilityTool = createTool({
           : allTracks
         return filteredTracks
           .filter(t => {
-            const id = t.id ? norm(String(t.id)) : ''
+            const id = t.trackId ? norm(String(t.trackId)) : ''
             const name = t.name ? norm(String(t.name)) : ''
-            return id.includes(q) || name.includes(q) || q.includes(id)
+            return !!id && (id.includes(q) || q.includes(id))
+              ? true
+              : name.includes(q)
           })
-          .map(t => String(t.id ?? t.name))
+          .map(t => String(t.trackId ?? t.name))
           .filter(Boolean)
           .slice(0, 8)
       }
@@ -273,7 +275,7 @@ export const SetTrackVisibilityTool = createTool({
             : allTracks
         // Prefer exact ID match, then exact name match, then substring match
         const exactId = candidateTracks.filter(
-          t => !!t.id && norm(String(t.id)) === q,
+          t => !!t.trackId && norm(String(t.trackId)) === q,
         )
         if (exactId.length > 0) return exactId
         const exactName = candidateTracks.filter(
@@ -282,7 +284,7 @@ export const SetTrackVisibilityTool = createTool({
         if (exactName.length > 0) return exactName
         return candidateTracks.filter(
           t =>
-            (!!t.id && norm(String(t.id)).includes(q)) ||
+            (!!t.trackId && norm(String(t.trackId)).includes(q)) ||
             (!!t.name && norm(String(t.name)).includes(q)),
         )
       }
@@ -298,7 +300,7 @@ export const SetTrackVisibilityTool = createTool({
             for (const match of incompatibleMatches) {
               assemblyMismatches.push({
                 query: q,
-                trackId: String(match.id ?? ''),
+                trackId: String(match.trackId ?? ''),
                 viewAssemblies: targetAssemblyNames,
                 trackAssemblies: getConfAssemblyNames(match),
               })
@@ -316,13 +318,13 @@ export const SetTrackVisibilityTool = createTool({
           ambiguous.push({
             query: q,
             candidates: matches
-              .map(m => String(m.id ?? m.name))
+              .map(m => String(m.trackId ?? m.name))
               .filter(Boolean)
               .slice(0, 8),
           })
           continue
         }
-        const trackId = String(matches[0]?.id ?? '')
+        const trackId = String(matches[0]?.trackId ?? '')
         if (!trackId) {
           unmatched.push(q)
           continue
@@ -363,13 +365,13 @@ export const SetTrackVisibilityTool = createTool({
           ambiguous.push({
             query: q,
             candidates: matches
-              .map(m => String(m.id ?? m.name))
+              .map(m => String(m.trackId ?? m.name))
               .filter(Boolean)
               .slice(0, 8),
           })
           continue
         }
-        const trackId = String(matches[0]?.id ?? '')
+        const trackId = String(matches[0]?.trackId ?? '')
         if (!trackId) {
           unmatched.push(q)
           continue

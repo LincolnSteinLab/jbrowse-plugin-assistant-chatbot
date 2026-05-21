@@ -81,10 +81,9 @@ export const SyntenySetupTool = createTool({
       const availableComparativeViewTypes = getMultiAssemblyViewTypes(views)
 
       for (const query of comparativeTrackQueries) {
-        const match = allTracks.find(track => {
-          console.log(track)
-          return matchesTrack({ id: track.trackId, name: track.name }, query)
-        })
+        const match = allTracks.find(track =>
+          matchesTrack({ id: track.trackId, name: track.name }, query),
+        )
         if (!match) {
           missingTrackQueries.push(query)
           continue
@@ -98,7 +97,7 @@ export const SyntenySetupTool = createTool({
           resolvedComparativeTrackIds.push(match.trackId)
         } else {
           compatibilityIssues.push({
-            trackId: match.id,
+            trackId: match.trackId,
             trackAssemblies,
             reason: `Track does not cover both requested assemblies (${source}, ${target})`,
           })

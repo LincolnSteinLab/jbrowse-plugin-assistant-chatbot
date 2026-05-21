@@ -189,8 +189,6 @@ export class JBTool<
               }
               throw new NodeInterrupt(hitlRequest)
             }
-            console.log(`Executing tool ${name} with input:`)
-            console.log(input)
             return tool_fn(input, runManager, config)
           },
         }),

@@ -71,9 +71,9 @@ export const ConfigDiagnosticTool = createTool({
         if (trackAssemblyNames.length === 0) {
           issues.push({
             severity: 'warning',
-            trackId: track.id,
+            trackId: track.trackId,
             trackName: track.name,
-            message: `Track "${track.name}" (${track.id}) has no assemblyNames declared.`,
+            message: `Track "${track.name}" (${track.trackId}) has no assemblyNames declared.`,
             suggestion:
               'Check the track config and add the correct assemblyNames field.',
           })
@@ -89,9 +89,9 @@ export const ConfigDiagnosticTool = createTool({
         } else {
           issues.push({
             severity: 'error',
-            trackId: track.id,
+            trackId: track.trackId,
             trackName: track.name,
-            message: `Track "${track.name}" (${track.id}) has assemblyNames [${trackAssemblyNames.join(', ')}] which do not overlap the active assembly [${activeAssemblies.join(', ')}].`,
+            message: `Track "${track.name}" (${track.trackId}) has assemblyNames [${trackAssemblyNames.join(', ')}] which do not overlap the active assembly [${activeAssemblies.join(', ')}].`,
             suggestion: `Add a track compatible with assembly "${activeAssemblies[0]}", or switch the view assembly to one of [${trackAssemblyNames.join(', ')}].`,
           })
         }

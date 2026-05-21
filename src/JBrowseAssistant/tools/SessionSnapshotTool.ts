@@ -93,7 +93,7 @@ export const SessionSnapshotTool = createTool({
               (v as LinearGenomeViewModel).tracks as
                 | BaseTrackModel[]
                 | undefined
-            )?.map(t => t.id),
+            )?.map(t => t.trackId),
           }),
         })),
         defaults: {
