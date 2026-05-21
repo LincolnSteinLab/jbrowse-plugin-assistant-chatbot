@@ -1,8 +1,13 @@
 import { ViewType } from '@jbrowse/core/pluggableElementTypes'
-import { AbstractViewModel, when } from '@jbrowse/core/util'
+import {
+  AbstractViewContainer,
+  AbstractViewModel,
+  AssemblyManager,
+  when,
+} from '@jbrowse/core/util'
 import { z } from 'zod'
 
-import { ToolEnvelope, err, ok } from './ToolEnvelope'
+import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
 import { createTool, withTimeout } from './base'
 import { getPreferredViewType, isNavigableView } from './viewCapabilities'
 
@@ -12,6 +17,13 @@ export interface EnsureViewData {
   created: boolean
   assembly?: string
   locString?: string
+  assemblyList?: string[]
+}
+
+const COMPARATIVE_VIEW_TYPES = ['LinearSyntenyView', 'LinearComparativeView']
+
+function isComparativeViewType(viewType: string): boolean {
+  return COMPARATIVE_VIEW_TYPES.includes(viewType)
 }
 
 function getViewLifecycleState(view: AbstractViewModel): {
@@ -59,19 +71,27 @@ export const EnsureViewTool = createTool({
       ),
     assembly: z.string().optional(),
     locString: z.string().optional(),
+    assemblyList: z
+      .array(z.string())
+      .optional()
+      .describe(
+        'For comparative/synteny views: ordered list of assembly names to initialize the view with. Provide at least 2 entries.',
+      ),
     reuseExisting: z.boolean().optional().default(true),
   }),
   factory_fn:
-    ([addView, viewTypes, views]: [
-      addView: (viewType: string) => AbstractViewModel,
+    ([addView, viewTypes, views, assemblyManager]: [
+      addView: AbstractViewContainer['addView'],
       viewTypes: ViewType[],
       views: AbstractViewModel[],
+      assemblyManager: AssemblyManager,
     ]) =>
     async ({
       viewType,
       preferredCapability,
       assembly,
       locString,
+      assemblyList,
       reuseExisting,
     }): Promise<ToolEnvelope<EnsureViewData>> => {
       const viewTypeNames = viewTypes.map(vt => vt.name)
@@ -102,7 +122,65 @@ export const EnsureViewTool = createTool({
       let created = false
 
       if (!view) {
-        view = addView(selectedViewType)
+        if (isComparativeViewType(selectedViewType)) {
+          // For comparative views, require explicit assemblyList
+          if (!assemblyList || assemblyList.length === 0) {
+            const available = assemblyManager.assemblies
+              .map(a => a.name)
+              .filter(Boolean)
+            return needsInput(
+              'Comparative views require an explicit list of assemblies',
+              { viewType: selectedViewType, created: false },
+              available.length >= 2
+                ? [
+                    `Pass assemblyList with at least 2 assemblies, e.g. ["${available[0]}", "${available[1]}"]`,
+                  ]
+                : available.length === 1
+                  ? [
+                      `Only one assembly loaded: ${available[0]}. Load a second assembly and then pass assemblyList.`,
+                    ]
+                  : [
+                      'Load at least two assemblies first, then pass assemblyList.',
+                    ],
+            )
+          }
+
+          const resolvedAssemblies = assemblyList.filter(Boolean)
+          if (resolvedAssemblies.length < 2) {
+            return needsInput(
+              'Comparative views require at least two assemblies in assemblyList',
+              {
+                viewType: selectedViewType,
+                created: false,
+                assemblyList: resolvedAssemblies,
+              },
+              ['Provide at least two assembly names in assemblyList.'],
+            )
+          }
+
+          const initViews = resolvedAssemblies.map(name => ({
+            assembly: name,
+          }))
+          const init = {
+            views: initViews,
+          }
+          view = addView(selectedViewType, { init })
+        } else {
+          // For non-comparative views, require explicit assembly
+          if (!assembly) {
+            const available = assemblyManager.assemblies
+              .map(a => a.name)
+              .filter(Boolean)
+            return needsInput(
+              `${selectedViewType} requires an assembly to be specified`,
+              { viewType: selectedViewType, created: false },
+              available.length > 0
+                ? [`Pass assembly parameter, for example: "${available[0]}"`]
+                : ['Load at least one assembly first, then pass assembly.'],
+            )
+          }
+          view = addView(selectedViewType)
+        }
         created = true
       }
 
@@ -148,8 +226,14 @@ export const EnsureViewTool = createTool({
         )
       }
 
-      // Try to navigate if locString provided and view is navigable
-      if (locString && isNavigableView(view)) {
+      // Try to navigate if locString provided and view is navigable.
+      // Comparative views do not expose navToLocString at the top level;
+      // navigation is handled via child view init locs instead.
+      if (
+        locString &&
+        !isComparativeViewType(selectedViewType) &&
+        isNavigableView(view)
+      ) {
         const assemblyName = assembly ?? view.assemblyNames[0]
         try {
           await view.navToLocString(locString, assemblyName)
@@ -176,6 +260,7 @@ export const EnsureViewTool = createTool({
           created,
           assembly,
           locString,
+          assemblyList: assemblyList?.length ? assemblyList : undefined,
         },
         initializationTimedOut
           ? [

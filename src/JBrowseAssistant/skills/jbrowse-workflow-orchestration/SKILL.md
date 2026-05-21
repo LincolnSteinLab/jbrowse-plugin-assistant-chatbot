@@ -32,7 +32,7 @@ For synteny setup:
 - call SyntenySetup with sourceAssembly, targetAssembly, and comparativeTrackQueries
 - use the returned availableComparativeViewTypes to decide whether to open a comparative-capable view
 - use resolvedComparativeTrackIds with SetTrackVisibility
-- if a view is needed, call EnsureView with preferredCapability set to multi-assembly or comparative rather than hardcoding a specific view type
+- if a view is needed, call EnsureView with preferredCapability set to multi-assembly or comparative and pass assemblyList as [sourceAssembly, targetAssembly] so the view is initialized with both assemblies; omitting assemblyList will leave the view stuck in an import form
 
 For SV inspector bootstrap:
 - call SVInspectorBootstrap with locString/assembly and variantTrackQueries

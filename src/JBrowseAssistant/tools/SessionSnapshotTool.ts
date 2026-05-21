@@ -61,7 +61,7 @@ export const SessionSnapshotTool = createTool({
         assemblyManager.assemblyList as (AnyConfigurationModel & Assembly)[]
       const availableTracks = includeTracks
         ? allTracks.map(track => ({
-            id: track.id,
+            id: track.trackId,
             name: track.name,
             assemblyNames: getConfAssemblyNames(track),
             type: track.type,

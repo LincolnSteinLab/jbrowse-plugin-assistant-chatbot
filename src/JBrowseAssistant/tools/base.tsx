@@ -7,6 +7,7 @@ import {
 import { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import { BaseTrackModel, ViewType } from '@jbrowse/core/pluggableElementTypes'
 import {
+  AbstractViewContainer,
   AbstractViewModel,
   AssemblyManager,
   TextSearchManager,
@@ -37,7 +38,7 @@ type JBToolFactoryArg =
   | (AnyConfigurationModel & BaseTrackModel)[]
   | TextSearchManager
   | AbstractViewModel[]
-  | ((viewType: string) => AbstractViewModel)
+  | AbstractViewContainer['addView']
   | ViewType[]
   | ChatModelProvider
   | ((provider: ChatModelProvider) => Promise<string | undefined>)
@@ -188,6 +189,8 @@ export class JBTool<
               }
               throw new NodeInterrupt(hitlRequest)
             }
+            console.log(`Executing tool ${name} with input:`)
+            console.log(input)
             return tool_fn(input, runManager, config)
           },
         }),

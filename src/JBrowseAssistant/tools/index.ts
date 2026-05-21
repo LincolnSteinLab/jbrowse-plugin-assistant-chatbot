@@ -35,7 +35,7 @@ export function getTools(
   const getApiKey = model?.apiKeyVault.get
   return {
     sessionSnapshot: SessionSnapshotTool([allTracks, assemblyManager, views]),
-    ensureView: EnsureViewTool([addView, viewTypes, views]),
+    ensureView: EnsureViewTool([addView, viewTypes, views, assemblyManager]),
     findFeature: FindFeatureTool([assemblyManager, textSearchManager, views]),
     navigateGenome: NavigateGenomeTool([views]),
     setTrackVisibility: SetTrackVisibilityTool([
