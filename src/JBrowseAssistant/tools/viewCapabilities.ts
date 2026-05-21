@@ -2,6 +2,10 @@ import { AbstractViewModel } from '@jbrowse/core/util'
 import { LinearSyntenyViewModel } from '@jbrowse/plugin-linear-comparative-view'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+type ComparativeViewLike = AbstractViewModel & {
+  views?: AbstractViewModel[]
+}
+
 /**
  * Capability detection utilities for JBrowse view types.
  * Supports both native and plugin-provided views without hardcoding type names.
@@ -44,6 +48,42 @@ export function getNavigableViews(
   views: AbstractViewModel[],
 ): LinearGenomeViewModel[] {
   return views.filter(isNavigableView)
+}
+
+/**
+ * Check whether a view exposes child views that can be navigated via locString.
+ * This is used for comparative views (e.g. LinearSyntenyView / LinearComparativeView)
+ * where navigation happens on child LinearGenomeView rows.
+ */
+export function hasNavigableComparativeRows(view: AbstractViewModel): boolean {
+  const v = view as ComparativeViewLike
+  return (
+    Array.isArray(v.views) &&
+    v.views.length > 0 &&
+    v.views.some(child => isNavigableView(child))
+  )
+}
+
+/**
+ * Get child rows from a comparative view that support locString navigation.
+ */
+export function getNavigableComparativeRows(
+  view: AbstractViewModel,
+): LinearGenomeViewModel[] {
+  const v = view as ComparativeViewLike
+  return Array.isArray(v.views) ? v.views.filter(isNavigableView) : []
+}
+
+/**
+ * Get top-level views that support locString navigation either directly
+ * (LinearGenomeView) or indirectly through comparative child rows.
+ */
+export function getLocStringNavigableViews(
+  views: AbstractViewModel[],
+): AbstractViewModel[] {
+  return views.filter(
+    view => isNavigableView(view) || hasNavigableComparativeRows(view),
+  )
 }
 
 /**
