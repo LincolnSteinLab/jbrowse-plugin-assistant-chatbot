@@ -36,7 +36,7 @@ export function getTools(
   return {
     sessionSnapshot: SessionSnapshotTool([allTracks, assemblyManager, views]),
     ensureView: EnsureViewTool([addView, viewTypes, views, assemblyManager]),
-    findFeature: FindFeatureTool([assemblyManager, textSearchManager, views]),
+    findFeature: FindFeatureTool([assemblyManager, textSearchManager]),
     navigateGenome: NavigateGenomeTool([views]),
     setTrackVisibility: SetTrackVisibilityTool([
       allTracks,

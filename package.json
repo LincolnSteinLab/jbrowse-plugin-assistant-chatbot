@@ -96,6 +96,7 @@
     "x-var": "^2.1.0"
   },
   "overrides": {
+    "@cypress/request": "^4.0.1",
     "@jbrowse/development-tools": {
       "@babel/plugin-proposal-class-properties": "npm:@babel/plugin-transform-class-properties@^7.25.9",
       "@jbrowse/core": "^4.0.3",

@@ -1,12 +1,5 @@
-import {
-  AbstractViewModel,
-  AssemblyManager,
-  TextSearchManager,
-} from '@jbrowse/core/util'
-import {
-  fetchResults,
-  LinearGenomeViewModel,
-} from '@jbrowse/plugin-linear-genome-view'
+import type { SearchType } from '@jbrowse/core/data_adapters/BaseAdapter'
+import { AssemblyManager, TextSearchManager } from '@jbrowse/core/util'
 import { z } from 'zod'
 
 import { ToolEnvelope, err, needsInput, ok } from './ToolEnvelope'
@@ -14,6 +7,15 @@ import { createTool, withTimeout } from './base'
 
 export interface FindFeatureData {
   assembly?: string
+  assemblyGroups?: {
+    assembly: string
+    candidates: {
+      label: string
+      locString: string
+      score?: number
+      source?: string
+    }[]
+  }[]
   candidates: {
     label: string
     locString: string
@@ -29,25 +31,21 @@ export const FindFeatureTool = createTool({
   schema: z.object({
     query: z.string().min(1),
     assembly: z.string().optional(),
-    searchType: z
-      .enum(['exact', 'prefix', 'fuzzy'])
-      .optional()
-      .default('exact'),
+    tracks: z.array(z.string().min(1)).optional(),
+    searchType: z.enum(['full', 'prefix', 'exact']).optional().default('exact'),
     maxResults: z.number().int().positive().max(50).optional().default(10),
-    viewId: z.string().optional(),
   }),
   factory_fn:
-    ([assemblyManager, textSearchManager, views]: [
+    ([assemblyManager, textSearchManager]: [
       assemblyManager: AssemblyManager,
       textSearchManager: TextSearchManager | undefined,
-      views: AbstractViewModel[],
     ]) =>
     async ({
       query,
       assembly,
+      tracks,
       searchType,
       maxResults,
-      viewId,
     }): Promise<ToolEnvelope<FindFeatureData>> => {
       const normalizedQuery = query.trim()
       if (!normalizedQuery) {
@@ -56,86 +54,165 @@ export const FindFeatureTool = createTool({
         })
       }
 
-      const lgviews = views.filter(
-        view => view.type === 'LinearGenomeView',
-      ) as LinearGenomeViewModel[]
-      const view =
-        (viewId ? lgviews.find(v => v.id === viewId) : lgviews[0]) ?? lgviews[0]
+      const normalizedSearchType: SearchType = searchType
+      const normalizedTracks = tracks
+        ?.map(track => track.trim())
+        .filter(track => track.length > 0)
 
-      if (!view) {
-        return err('No Linear Genome View is open', { candidates: [] }, [
-          'Open a LinearGenomeView and retry feature search',
-        ])
-      }
-
-      const assemblyName = assembly ?? view.assemblyNames?.[0]
-      if (!assemblyName) {
-        const assemblyOptions = assemblyManager.assemblies
-          .map(a => a.name)
-          .filter(Boolean)
-        return needsInput(
-          'Assembly is required to search features',
-          { candidates: [] },
-          assemblyOptions.length
-            ? [`Specify assembly, for example: ${assemblyOptions[0]}`]
-            : ['Specify assembly by name'],
-        )
-      }
-
-      let resolvedAssembly
-      try {
-        resolvedAssembly = await withTimeout(
+      const searchAssembly = async (assemblyName: string) => {
+        const resolvedAssembly = await withTimeout(
           assemblyManager.waitForAssembly(assemblyName),
           10_000,
         )
-      } catch {
-        return err(
-          `Assembly lookup timed out for ${assemblyName}`,
-          { candidates: [] },
-          ['Verify assembly loading has completed and try again'],
-        )
-      }
-      if (!resolvedAssembly) {
-        return err('Assembly could not be resolved', { candidates: [] }, [
-          `Check that assembly ${assemblyName} is loaded`,
-        ])
-      }
-
-      const results = await fetchResults({
-        queryString: normalizedQuery,
-        searchType: searchType === 'fuzzy' ? 'exact' : searchType,
-        searchScope: view.searchScope(resolvedAssembly.name),
-        rankSearchResults: view.rankSearchResults.bind(view),
-        textSearchManager,
-        assembly: resolvedAssembly,
-      })
-
-      const candidates: FindFeatureData['candidates'] = []
-      for (const result of results.slice(0, maxResults)) {
-        if (!result.locString) {
-          continue
+        if (!resolvedAssembly) {
+          return undefined
         }
-        candidates.push({
-          label: result.label,
-          locString: result.locString,
-          score: result.score,
+
+        const textResults =
+          (await textSearchManager?.search(
+            {
+              queryString: normalizedQuery,
+              searchType: normalizedSearchType,
+            },
+            {
+              assemblyName: resolvedAssembly.name,
+              includeAggregateIndexes: true,
+              tracks: normalizedTracks?.length ? normalizedTracks : undefined,
+            },
+            results => results,
+          )) ?? []
+
+        const refResults =
+          resolvedAssembly.allRefNames
+            ?.filter(ref =>
+              normalizedSearchType === 'exact'
+                ? ref.toLowerCase() === normalizedQuery.toLowerCase()
+                : normalizedSearchType === 'prefix'
+                  ? ref.toLowerCase().startsWith(normalizedQuery.toLowerCase())
+                  : ref.toLowerCase().includes(normalizedQuery.toLowerCase()),
+            )
+            .slice(0, 10)
+            .map(ref => ({
+              label: ref,
+              locString: ref,
+            })) ?? []
+
+        const candidates: FindFeatureData['candidates'] = []
+        const dedupe = new Set<string>()
+
+        for (const result of textResults) {
+          if (!result.locString) {
+            continue
+          }
+          const key = `${result.label}::${result.locString}`
+          if (dedupe.has(key)) {
+            continue
+          }
+          dedupe.add(key)
+          candidates.push({
+            label: result.label,
+            locString: result.locString,
+            score: result.score,
+          })
+          if (candidates.length >= maxResults) {
+            break
+          }
+        }
+
+        if (candidates.length < maxResults) {
+          for (const result of refResults) {
+            const key = `${result.label}::${result.locString}`
+            if (dedupe.has(key)) {
+              continue
+            }
+            dedupe.add(key)
+            candidates.push(result)
+            if (candidates.length >= maxResults) {
+              break
+            }
+          }
+        }
+
+        return {
+          assembly: resolvedAssembly.name,
+          candidates,
+        }
+      }
+
+      if (assembly) {
+        let result
+        try {
+          result = await searchAssembly(assembly)
+        } catch {
+          return err(
+            `Assembly lookup timed out for ${assembly}`,
+            { candidates: [] },
+            ['Verify assembly loading has completed and try again'],
+          )
+        }
+
+        if (!result) {
+          return err('Assembly could not be resolved', { candidates: [] }, [
+            `Check that assembly ${assembly} is loaded`,
+          ])
+        }
+
+        if (!result.candidates.length) {
+          return ok(
+            'No feature matches found',
+            {
+              assembly: result.assembly,
+              candidates: [],
+            },
+            ['Try a different identifier or a coordinate range'],
+          )
+        }
+
+        return ok('Feature candidates retrieved', {
+          assembly: result.assembly,
+          candidates: result.candidates,
         })
       }
 
-      if (!candidates.length) {
-        return ok(
-          'No feature matches found',
-          {
-            assembly: resolvedAssembly.name,
-            candidates: [],
-          },
-          ['Try a different identifier or a coordinate range'],
+      const assemblyNames = assemblyManager.assemblies
+        .map(a => a.name)
+        .filter((a): a is string => !!a)
+
+      if (!assemblyNames.length) {
+        return needsInput(
+          'No assemblies are available to search',
+          { candidates: [], assemblyGroups: [] },
+          ['Load an assembly, or specify an assembly name and retry'],
         )
       }
 
-      return ok('Feature candidates retrieved', {
-        assembly: resolvedAssembly.name,
-        candidates,
+      const groups: NonNullable<FindFeatureData['assemblyGroups']> = []
+      for (const assemblyName of assemblyNames) {
+        try {
+          const result = await searchAssembly(assemblyName)
+          if (result?.candidates.length) {
+            groups.push(result)
+          }
+        } catch {
+          // Skip timed-out assemblies in grouped mode so other assemblies can still return.
+          continue
+        }
+      }
+
+      if (!groups.length) {
+        return ok(
+          'No feature matches found in any loaded assembly',
+          {
+            candidates: [],
+            assemblyGroups: [],
+          },
+          ['Try a different identifier or specify an assembly explicitly'],
+        )
+      }
+
+      return ok('Feature candidates retrieved across assemblies', {
+        candidates: [],
+        assemblyGroups: groups,
       })
     },
 })

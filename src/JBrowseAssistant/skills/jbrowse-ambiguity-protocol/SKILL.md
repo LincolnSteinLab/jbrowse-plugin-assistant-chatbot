@@ -13,7 +13,7 @@ This skill defines exactly when and how the agent must ask the user for clarific
 
 ### Stop and ask when:
 
-1. **FindFeature returns multiple results** and the user did not provide a gene symbol that unambiguously selects one entry (e.g., same name appears in multiple assemblies or on multiple chromosomes).
+1. **FindFeature returns multiple results** (including multiple assembly groups when assembly was omitted) and the user did not provide a gene symbol that unambiguously selects one entry (e.g., same name appears in multiple assemblies or on multiple chromosomes).
 
 2. **SetTrackVisibility receives a display name that matches more than one track ID** and the user did not specify assembly context.
 
